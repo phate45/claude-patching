@@ -47,7 +47,7 @@ function readPatchMetadata(content) {
 }
 
 /**
- * Write patch metadata to cli.js (prepended as comment)
+ * Write patch metadata to cli.js (after shebang if present)
  */
 function writePatchMetadata(content, metadata) {
   const metaComment = `/* ${PATCH_MARKER} ${JSON.stringify(metadata)} */\n`;
@@ -55,6 +55,14 @@ function writePatchMetadata(content, metadata) {
   // Remove existing metadata if present
   const cleanRegex = new RegExp(`/\\* ${PATCH_MARKER} \\{.*?\\} \\*/\\n?`);
   const cleanContent = content.replace(cleanRegex, '');
+
+  // Insert after shebang (must stay on line 1) or prepend if no shebang
+  if (cleanContent.startsWith('#!')) {
+    const newlineIdx = cleanContent.indexOf('\n');
+    const shebang = cleanContent.slice(0, newlineIdx + 1);
+    const rest = cleanContent.slice(newlineIdx + 1);
+    return shebang + metaComment + rest;
+  }
 
   return metaComment + cleanContent;
 }
