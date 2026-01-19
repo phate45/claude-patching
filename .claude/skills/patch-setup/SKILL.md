@@ -23,7 +23,7 @@ Begin your response with a status summary:
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| cli.js location | ✓/✗/⚠ | path or error |
+| Patch status | ✓/✗/⚠ | patches applied, CC version |
 | Backup (cli.js.original) | ✓/✗/⚠ | version info |
 | tweakcc reference | ✓/✗/⚠ | update status |
 | Prettified (cli.pretty.js) | ✓/✗/⚠ | line count |
@@ -32,38 +32,39 @@ Begin your response with a status summary:
 
 Then provide details for any issues found.
 
-## Step 1: Locate cli.js
+## Step 1: Check Patch Status
 
-Read the pnpm wrapper script to find the Claude Code installation:
+Use the apply-patches script to check current status (it auto-discovers the cli.js path):
 
 ```bash
-cat ~/.local/share/pnpm/claude
+node apply-patches.js --status
 ```
 
-**Extract** the cli.js path from the `exec node ... cli.js` line. The path follows pattern:
-```
-$HOME/.local/share/pnpm/global/5/.pnpm/@anthropic-ai+claude-code@VERSION/.../cli.js
-```
+This will show:
+- The auto-discovered cli.js path
+- CC version (extracted from path)
+- Any existing patch metadata (patches already applied, date applied)
 
 **Error states:**
-- Wrapper script not found → STOP. Report "Claude Code not installed via pnpm"
-- Cannot parse cli.js path → STOP. Report "Unexpected wrapper script format"
+- "Could not auto-discover cli.js path" → Report "Claude Code not installed via pnpm. Manual path required."
+- Path shown but file doesn't exist → Report error details
 
-**Extract version** from the path (the `@VERSION` part, e.g., `2.1.3`).
+**Extract** the cli.js path and CC version from the output for use in later steps.
 
 ## Step 2: Check/Create Backup
 
-Check if `cli.js.original` exists in the project directory:
+Check if `cli.js.original` exists in the project directory. Use the cli.js path from Step 1.
 
 ```bash
 ls -la cli.js.original 2>/dev/null
+ls -la /path/to/cli.js 2>/dev/null
 ```
 
 **States:**
 - File exists, same size as current cli.js → ✓ "Backup current"
 - File exists, different size → ⚠ "Backup exists but size differs (CC may have updated)"
   - Report both sizes, ask user if they want to update backup
-- File doesn't exist → Create backup:
+- File doesn't exist → Create backup using the path from Step 1:
   ```bash
   cp /path/to/cli.js ./cli.js.original
   ```
@@ -163,11 +164,11 @@ End with actionable summary:
 ## Ready for Patching
 
 Environment is ready. You can now:
+- Check status: `node apply-patches.js --status`
 - Search code: `ast-grep run --pattern '...' --lang js cli.chunks/`
-- Test patches: `node patch-*.js --check /path/to/cli.js`
-- Apply patches: `node apply-patches.js /path/to/cli.js`
+- Test patches: `node apply-patches.js --check`
+- Apply patches: `node apply-patches.js`
 
-CLI path: /full/path/to/cli.js
 CC version: X.Y.Z
 ```
 

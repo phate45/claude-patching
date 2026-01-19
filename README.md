@@ -20,15 +20,23 @@ The `chunk-pretty.sh` utility exists to split the prettified file into chunks fo
 ## Quick Start
 
 ```bash
-# Find your cli.js path
-cat ~/.local/share/pnpm/claude
+# Check current patch status
+node apply-patches.js --status
+
+# Dry run - verify patterns match
+node apply-patches.js --check
 
 # Apply all patches
-node apply-patches.js /path/to/cli.js
+node apply-patches.js
 
-# Or apply individually with --check first
-node patch-thinking-visibility.js --check /path/to/cli.js
-node patch-thinking-visibility.js /path/to/cli.js
+# See all options
+node apply-patches.js --help
+```
+
+The script auto-discovers the cli.js path from pnpm installations. For other package managers, provide the path manually:
+
+```bash
+node apply-patches.js /path/to/cli.js
 ```
 
 ## Patches
@@ -88,11 +96,19 @@ Adds truecolor (16M colors) support for Ghostty terminal.
 **Why it's needed:**
 Ghostty uses `TERM=xterm-ghostty` and supports truecolor, but Claude Code only recognizes `xterm-kitty` for truecolor detection. Without this patch, Ghostty only gets basic 16 colors because it matches `/^xterm/` but not `/-256(color)?$/`.
 
+## Patch Metadata
+
+The `apply-patches.js` script tracks applied patches via a JSON comment at the start of cli.js:
+
+```javascript
+/* __CLAUDE_PATCHES__ {"ccVersion":"2.1.12","appliedAt":"2026-01-19","patches":[...]} */
+```
+
+This allows safe re-runs - already-applied patches are skipped automatically. Use `--force` to re-apply all patches, or `--stamp` to mark patches as applied without running them (useful for already-patched files).
+
 ## Individual Patch Usage
 
-**Important:** Patches are not idempotent. They search for original patterns which don't exist after patching. Always restore from `cli.js.original` before re-applying patches.
-
-Each patch supports `--check` for dry run:
+Individual patch scripts require the cli.js path explicitly (no auto-discovery):
 
 ```bash
 # Dry run - check if pattern matches
@@ -101,6 +117,8 @@ node patch-thinking-visibility.js --check /path/to/cli.js
 # Apply patch
 node patch-thinking-visibility.js /path/to/cli.js
 ```
+
+**Note:** Individual patches are not idempotent - they search for original patterns which don't exist after patching. The metadata system in `apply-patches.js` handles this; for individual patches, restore from backup before re-applying.
 
 ## Backups and Recovery
 
@@ -167,18 +185,25 @@ pnpm install -g @anthropic-ai/claude-code
 
 ### After CC Updates
 
-CC updates overwrite cli.js, removing patches. After updating:
-
-1. Back up the new cli.js as `cli.js.original`
-2. Regenerate `cli.pretty.js` with js-beautify
-3. Test patches with `--check` (patterns may have changed)
-4. Re-apply patches
+CC updates replace cli.js entirely, removing both patches and metadata. After updating:
 
 ```bash
+# Check status (will show "No patch metadata found")
+node apply-patches.js --status
+
+# Test patches (patterns may have changed between versions)
+node apply-patches.js --check
+
+# Re-apply patches
+node apply-patches.js
+```
+
+If developing new patches, also update the local backup and prettified version:
+
+```bash
+# Get the cli.js path from --status output, then:
 cp /path/to/cli.js ./cli.js.original
 js-beautify -f cli.js.original -o cli.pretty.js
-node apply-patches.js --check /path/to/cli.js
-node apply-patches.js /path/to/cli.js
 ```
 
 ## Troubleshooting

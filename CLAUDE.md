@@ -2,26 +2,20 @@
 
 Minimal patches for Claude Code without the full tweakcc toolchain.
 
-## Finding cli.js
+## Applying Patches
 
-Claude Code is installed via pnpm. Read the wrapper script to find the current path:
-
-```bash
-cat ~/.local/share/pnpm/claude
-```
-
-The path follows this pattern:
-```
-~/.local/share/pnpm/global/5/.pnpm/@anthropic-ai+claude-code@<VERSION>/node_modules/@anthropic-ai/claude-code/cli.js
-```
-
-## Patches
-
-See `README.md` for patch descriptions and usage. Apply all patches:
+The script auto-discovers the cli.js path from pnpm installations:
 
 ```bash
-node apply-patches.js /path/to/cli.js
+node apply-patches.js           # Apply all patches
+node apply-patches.js --check   # Dry run - verify patterns match
+node apply-patches.js --status  # Show current patch status
+node apply-patches.js --help    # Full usage info
 ```
+
+Patches are tracked via metadata embedded in cli.js, so re-running is safe (already-applied patches are skipped).
+
+See `README.md` for individual patch descriptions.
 
 ## Reference: tweakcc
 
