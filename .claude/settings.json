@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git pull:*)",
+      "Bash(node apply-patches.js:*)",
+      "Bash(ast-grep:*)",
+      "Skill(ast-grep)",
+      "Skill(patch-setup)",
+      "Bash(js-beautify:*)",
+      "Bash(sed:*)",
+      "Bash(./chunk-pretty.sh:*)"
+    ]
+  }
+}

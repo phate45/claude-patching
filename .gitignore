@@ -1,0 +1,8 @@
+# Claude Code source files (copyrighted)
+cli.js.original
+cli.pretty.js
+cli.chunks/
+
+# Local settings and personal workflows
+.claude/settings.local.json
+.claude/skills/writing-work-logs/
