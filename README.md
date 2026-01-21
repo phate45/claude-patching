@@ -1,6 +1,6 @@
 # Claude Code Patches
 
-Minimal patches for Claude Code's `cli.js`, supporting the version i'm currently using (as of this commit, `2.1.12`).
+Minimal patches for Claude Code's `cli.js`, supporting the version i'm currently using (as of this commit, `2.1.14`).
 
 ## Explainer
 
@@ -101,7 +101,7 @@ Ghostty uses `TERM=xterm-ghostty` and supports truecolor, but Claude Code only r
 The `apply-patches.js` script tracks applied patches via a JSON comment at the start of cli.js:
 
 ```javascript
-/* __CLAUDE_PATCHES__ {"ccVersion":"2.1.12","appliedAt":"2026-01-19","patches":[...]} */
+/* __CLAUDE_PATCHES__ {"ccVersion":"2.1.14","appliedAt":"2026-01-21","patches":[...]} */
 ```
 
 This allows safe re-runs - already-applied patches are skipped automatically. Use `--force` to re-apply all patches, or `--stamp` to mark patches as applied without running them (useful for already-patched files).
