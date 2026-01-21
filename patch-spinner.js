@@ -96,8 +96,10 @@ let mirrorMatches = [];
 if (LOOP_MODE) {
   // Pattern: VAR1=SPINNERFUNC(),VAR2=[...VAR1,...[...VAR1].reverse()]
   // This creates the mirrored animation array
+  // Note: funcName may contain $ which must be escaped for regex
+  const escapedFuncName = funcName.replace(/\$/g, '\\$');
   const mirrorPattern = new RegExp(
-    `([$\\w]+)=${funcName}\\(\\),([$\\w]+)=\\[\\.\\.\\.\\1,\\.\\.\\.\\[\\.\\.\\.\\1\\]\\.reverse\\(\\)\\]`,
+    `([$\\w]+)=${escapedFuncName}\\(\\),([$\\w]+)=\\[\\.\\.\\.\\1,\\.\\.\\.\\[\\.\\.\\.\\1\\]\\.reverse\\(\\)\\]`,
     'g'
   );
 
