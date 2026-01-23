@@ -4,18 +4,29 @@ Minimal patches for Claude Code without the full tweakcc toolchain.
 
 ## Applying Patches
 
-The script auto-discovers the cli.js path from pnpm installations:
+Two installation types are supported:
+
+### pnpm/npm Install (cli.js)
 
 ```bash
 node apply-patches.js           # Apply all patches
 node apply-patches.js --check   # Dry run - verify patterns match
 node apply-patches.js --status  # Show current patch status
-node apply-patches.js --help    # Full usage info
 ```
 
-Patches are tracked via metadata embedded in cli.js, so re-running is safe (already-applied patches are skipped).
+Auto-discovers cli.js from pnpm installations. Patches tracked via metadata in cli.js.
 
-See `README.md` for individual patch descriptions.
+### Native Install (Bun binary)
+
+```bash
+node apply-patches-binary.js           # Apply all patches
+node apply-patches-binary.js --check   # Dry run - verify patterns match
+node apply-patches-binary.js --status  # Show binary info
+```
+
+Auto-discovers from `~/.local/bin/claude` symlink. Extracts JS, patches, reassembles with updated size marker.
+
+See `README.md` for individual patch descriptions. See `bun-patching` skill for binary format details.
 
 ## Reference: tweakcc
 
@@ -41,7 +52,12 @@ Liberally dispatch haiku explorers to pull information from `/tmp/tweakcc`. Exam
 
 ## Development Workflow
 
-Claude Code's `cli.js` is a ~11MB minified/bundled JavaScript file. These tools make exploration easier.
+Run `/patch-setup` to prepare the environment. It auto-detects install type and:
+- For pnpm: copies cli.js → cli.js.original
+- For native: extracts JS from binary → cli.js.extracted → cli.js.original
+- Generates cli.pretty.js (prettified) and cli.chunks/ (for ast-grep)
+
+Claude Code's JS is a ~11MB minified/bundled file (~215MB in native binary). These tools make exploration easier.
 
 ### Tools
 
