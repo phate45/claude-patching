@@ -41,35 +41,25 @@ Then provide details for any issues found.
 
 ## Step 1: Detect Installation Type
 
-Check for both installation types and determine which is active:
+Use the unified patching script to detect installations:
 
 ```bash
-# Check for native install (Bun binary)
-ls -la ~/.local/bin/claude 2>/dev/null && file $(readlink -f ~/.local/bin/claude) 2>/dev/null
-
-# Check for pnpm install
-node apply-patches.js --status 2>/dev/null || echo "pnpm install not found"
+node claude-patching.js --status
 ```
 
-**Detection logic:**
-1. If `~/.local/bin/claude` exists and points to an ELF executable → **Native install**
-2. If `apply-patches.js --status` succeeds → **pnpm install**
-3. Neither found → Report error and exit
+This shows all detected installations with versions and paths.
 
-**For native install:**
-- Binary path: resolve symlink `~/.local/bin/claude` → e.g., `~/.local/share/claude/versions/X.Y.Z`
-- Version: extract from path (last component)
-- Set `INSTALL_TYPE=native`
-
-**For pnpm install:**
-- cli.js path: from apply-patches.js output
-- Version: from path `@anthropic-ai+claude-code@X.Y.Z`
-- Set `INSTALL_TYPE=pnpm`
+**Possible outputs:**
+- `bare (pnpm/npm)` - standalone cli.js installation
+- `native (Bun binary)` - compiled binary at ~/.local/bin/claude
+- Both may be present simultaneously
 
 **Store** these values for later steps:
-- `INSTALL_TYPE` (native or pnpm)
+- `INSTALL_TYPE` (native, bare, or both)
 - `SOURCE_PATH` (binary or cli.js path)
 - `CC_VERSION`
+
+If no installations detected → Report error and exit.
 
 ## Step 2: Extract JS (Native Only)
 
@@ -228,36 +218,22 @@ Include these facts in the output for the user to decide what to do.
 
 ## Final Report
 
-End with actionable summary based on install type:
+End with actionable summary based on detected install(s):
 
-**For pnpm install:**
 ```
-## Ready for Patching (pnpm)
+## Ready for Patching
 
 Environment is ready. You can now:
-- Check status: `node apply-patches.js --status`
+- Show installs: `node claude-patching.js --status`
 - Search code: `ast-grep run --pattern '...' --lang js cli.chunks/`
-- Test patches: `node apply-patches.js --check`
-- Apply patches: `node apply-patches.js`
+- Test patches: `node claude-patching.js [--bare|--native] --check`
+- Apply patches: `node claude-patching.js [--bare|--native] --apply`
 
-CC version: X.Y.Z
-Install type: pnpm
+Detected installations:
+  [List each detected install with version]
 ```
 
-**For native install:**
-```
-## Ready for Patching (native)
-
-Environment is ready. You can now:
-- Check status: `node apply-patches-binary.js --status`
-- Search code: `ast-grep run --pattern '...' --lang js cli.chunks/`
-- Test patches: `node apply-patches-binary.js --check`
-- Apply patches: `node apply-patches-binary.js`
-
-CC version: X.Y.Z
-Install type: native (Bun binary)
-Binary path: ~/.local/share/claude/versions/X.Y.Z
-```
+If only one install exists, `--bare`/`--native` flags are optional.
 
 Or if issues found:
 

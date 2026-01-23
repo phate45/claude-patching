@@ -4,27 +4,21 @@ Minimal patches for Claude Code without the full tweakcc toolchain.
 
 ## Applying Patches
 
-Two installation types are supported:
-
-### pnpm/npm Install (cli.js)
+Unified CLI supports both installation types:
 
 ```bash
-node apply-patches.js           # Apply all patches
-node apply-patches.js --check   # Dry run - verify patterns match
-node apply-patches.js --status  # Show current patch status
+node claude-patching.js --status              # Show detected installations
+node claude-patching.js --check               # Dry run (auto-select if single install)
+node claude-patching.js --apply               # Apply patches
+node claude-patching.js --native --check      # Target native install explicitly
+node claude-patching.js --bare --apply        # Target bare install explicitly
 ```
 
-Auto-discovers cli.js from pnpm installations. Patches tracked via metadata in cli.js.
+**Installation types:**
+- `--bare` — pnpm/npm install (standalone cli.js)
+- `--native` — Bun-compiled binary (~/.local/bin/claude)
 
-### Native Install (Bun binary)
-
-```bash
-node apply-patches-binary.js           # Apply all patches
-node apply-patches-binary.js --check   # Dry run - verify patterns match
-node apply-patches-binary.js --status  # Show binary info
-```
-
-Auto-discovers from `~/.local/bin/claude` symlink. Extracts JS, patches, reassembles with updated size marker.
+If only one install exists, target flags are optional. If both exist, you must specify.
 
 See `README.md` for individual patch descriptions. See `bun-patching` skill for binary format details.
 
