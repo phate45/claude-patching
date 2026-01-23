@@ -29,7 +29,7 @@ const fs = require('fs');
 //   ["✶","✷","✸","✹","✺"]       - star burst
 //   ["·","✦","✧","✦"]           - twinkling star
 //
-const SPINNER_CHARS = ["◐","◓","◑","◒"];
+const SPINNER_CHARS = ["·","∴","∴","·","∵","∵"];
 
 // Animation mode:
 //   false = mirror (default): cycles forward then backward (0,1,2,3,2,1,0,...)
@@ -73,34 +73,88 @@ try {
 // We match the entire function and replace it with a simple return
 const spinnerFuncPattern = /function ([$\w]+)\(\)\{if\(process\.env\.TERM==="xterm-ghostty"\)return\["[·✢✳✶✻\*]+(?:","[·✢✳✶✻\*]+)*"\];return process\.platform==="darwin"\?\["[·✢✳✶✻✽]+(?:","[·✢✳✶✻✽]+)*"\]:\["[·✢✳✶✻\*✽]+(?:","[·✢✳✶✻\*✽]+)*"\]\}/;
 
-const match = content.match(spinnerFuncPattern);
+// Pattern for already-patched spinner function (simple return form)
+// Patched: function $vA(){return["◐","◓","◑","◒"]}
+// We match functions that return a short array of non-ASCII chars (typical spinner chars)
+const patchedSpinnerPattern = /function ([$\w]+)\(\)\{return(\["[^"]+(?:","[^"]+)*"\])\}/g;
+
+let match = content.match(spinnerFuncPattern);
+let isRepatch = false;
+let currentChars = null;
+
+if (!match) {
+  // Try to find an already-patched spinner function
+  // Look for simple return functions with short arrays of non-ASCII characters
+  let patchedMatch;
+  while ((patchedMatch = patchedSpinnerPattern.exec(content)) !== null) {
+    const candidateName = patchedMatch[1];
+    const arrayStr = patchedMatch[2];
+
+    // Parse the array to check if it looks like spinner chars
+    try {
+      const arr = JSON.parse(arrayStr);
+      // Spinner arrays are typically 4-12 single-char strings with non-ASCII
+      if (arr.length >= 2 && arr.length <= 16 &&
+          arr.every(c => typeof c === 'string' && c.length === 1)) {
+        // Check if this function is referenced in a mirror pattern (confirms it's the spinner)
+        const escapedName = candidateName.replace(/\$/g, '\\$');
+        const mirrorRef = new RegExp(`[$\\w]+=${escapedName}\\(\\)`);
+        if (mirrorRef.test(content)) {
+          match = patchedMatch;
+          isRepatch = true;
+          currentChars = arr;
+          break;
+        }
+      }
+    } catch (e) {
+      // Not valid JSON, skip
+    }
+  }
+}
 
 if (!match) {
   console.error('❌ Could not find spinner function pattern');
   console.error('   This might be an unsupported Claude Code version');
+  console.error('   Or the spinner function was modified in an unexpected way');
   process.exit(1);
 }
 
 const funcName = match[1];
-console.log(`✓ Found spinner function: ${funcName}()`);
-console.log();
-console.log('Original:');
-console.log(`  ${match[0].slice(0, 80)}...`);
+
+if (isRepatch) {
+  console.log(`✓ Found already-patched spinner function: ${funcName}()`);
+  console.log(`  Current chars: ${currentChars.join(' ')}`);
+  console.log();
+  console.log('Current:');
+  console.log(`  ${match[0]}`);
+} else {
+  console.log(`✓ Found spinner function: ${funcName}()`);
+  console.log();
+  console.log('Original:');
+  console.log(`  ${match[0].slice(0, 80)}...`);
+}
 
 // Build replacement - simple function that returns our custom array
 const charsJson = JSON.stringify(SPINNER_CHARS);
 const replacement = `function ${funcName}(){return${charsJson}}`;
 
 console.log();
-console.log('Patched:');
+console.log('New:');
 console.log(`  ${replacement}`);
 console.log();
 console.log(`Spinner sequence: ${SPINNER_CHARS.join(' ')}`);
-console.log(`Animation mode: ${LOOP_MODE ? 'loop' : 'mirror'}`);
+
+if (isRepatch) {
+  console.log();
+  console.log('(Re-patching spinner characters only - mirror/freeze already handled)');
+} else {
+  console.log(`Animation mode: ${LOOP_MODE ? 'loop' : 'mirror'}`);
+}
 
 // If LOOP_MODE is enabled, also patch the mirror array construction
+// Skip if re-patching (already done)
 let mirrorMatches = [];
-if (LOOP_MODE) {
+if (LOOP_MODE && !isRepatch) {
   // Pattern: VAR1=SPINNERFUNC(),VAR2=[...VAR1,...[...VAR1].reverse()]
   // This creates the mirrored animation array
   // Note: funcName may contain $ which must be escaped for regex
@@ -129,9 +183,10 @@ if (LOOP_MODE) {
 }
 
 // Find freeze branch if NO_FREEZE is enabled
+// Skip if re-patching (already done)
 // Pattern: the whole interval call containing if(!z){K(4);return}
 let freezeMatches = [];
-if (NO_FREEZE) {
+if (NO_FREEZE && !isRepatch) {
   // Match the whole useInterval call with the freeze branch
   // _7(()=>{if(!z){K(4);return}K((Z0)=>Z0+1)},120)
   const freezePattern = /\b([$\w]+)\(\(\)=>\{if\(!([$\w]+)\)\{([$\w]+)\(\d+\);return\}(\3)\(\([^)]+\)=>[^)]+\+1\)\},(\d+)\)/g;

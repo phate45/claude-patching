@@ -69,22 +69,31 @@ This approach wraps *text strings* with chalk styling before they become React e
 Customizes the spinner animation shown while Claude is working.
 
 **What it does:**
-1. Finds the `RxA()` function that returns platform-specific spinner characters
+1. Finds the spinner function that returns platform-specific characters
 2. Replaces it with a simple function returning a custom character sequence
+3. Optionally patches animation mode (loop vs mirror)
+4. Optionally removes the freeze-on-disconnect behavior
 
 **Configuration:**
-Edit `SPINNER_CHARS` at the top of the patch file:
+Edit the constants at the top of the patch file:
 
 ```javascript
-const SPINNER_CHARS = ["◐","◓","◑","◒"];  // rotating half-moon (default)
+const SPINNER_CHARS = ["·","∴","∴","·","∵","∵"];  // default: therefore/because (doubled)
+const LOOP_MODE = true;   // true=continuous loop, false=bounce back-and-forth
+const NO_FREEZE = true;   // true=always animate, false=freeze when disconnected
 ```
 
-**Alternative sequences:**
-- `["·","∴","·","∵"]` - therefore/because (matches "∴ Thinking" header)
+**Character sequences:**
+- `["·","∴","∴","·","∵","∵"]` - therefore/because doubled (default, matches "∴ Thinking")
+- `["◐","◓","◑","◒"]` - rotating half-moon
 - `["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"]` - braille spinner
 - `["○","◔","◑","◕","●","◕","◑","◔"]` - filling circle
 - `["◢","◣","◤","◥"]` - rotating triangle
 - `["✧","·","✦","·"]` - twinkling star
+
+**Tip:** Double up characters (e.g., `["◢","◢","◣","◣",...]`) to slow down the animation.
+
+**Re-patching:** This patch supports changing spinner characters on an already-patched cli.js. Just edit `SPINNER_CHARS` and re-run — no need to restore from backup first.
 
 ### patch-ghostty-term.js
 
