@@ -40,6 +40,13 @@ const SPINNER_CHARS = ["◐","◓","◑","◒"];
 //
 const LOOP_MODE = true;
 
+// No-freeze mode:
+//   When true, removes the code that freezes the spinner when disconnected.
+//   CC freezes the spinner on frame 4 when !isConnected. With custom spinners
+//   (especially 4-char ones), this shows as stuck on the first frame (4%4=0).
+//
+const NO_FREEZE = true;
+
 // ============================================================
 // PATCH IMPLEMENTATION
 // ============================================================
@@ -121,6 +128,34 @@ if (LOOP_MODE) {
   }
 }
 
+// Find freeze branch if NO_FREEZE is enabled
+// Pattern: the whole interval call containing if(!z){K(4);return}
+let freezeMatches = [];
+if (NO_FREEZE) {
+  // Match the whole useInterval call with the freeze branch
+  // _7(()=>{if(!z){K(4);return}K((Z0)=>Z0+1)},120)
+  const freezePattern = /\b([$\w]+)\(\(\)=>\{if\(!([$\w]+)\)\{([$\w]+)\(\d+\);return\}(\3)\(\([^)]+\)=>[^)]+\+1\)\},(\d+)\)/g;
+
+  let m;
+  while ((m = freezePattern.exec(content)) !== null) {
+    freezeMatches.push({
+      full: m[0],
+      hookName: m[1],
+      condVar: m[2],
+      setterName: m[3],
+      interval: m[5]
+    });
+  }
+
+  if (freezeMatches.length > 0) {
+    console.log();
+    console.log(`✓ Found ${freezeMatches.length} freeze branch(es) to remove`);
+    for (const fm of freezeMatches) {
+      console.log(`  ${fm.hookName}(...{if(!${fm.condVar}){${fm.setterName}(4);return}...}, ${fm.interval})`);
+    }
+  }
+}
+
 if (dryRun) {
   console.log();
   console.log('(Dry run - no changes made)');
@@ -137,6 +172,20 @@ if (LOOP_MODE) {
     // To:     VAR1=func(),VAR2=[...VAR1]
     const loopReplacement = `${mm.baseVar}=${funcName}(),${mm.arrayVar}=[...${mm.baseVar}]`;
     patchedContent = patchedContent.replace(mm.full, loopReplacement);
+  }
+}
+
+// Apply freeze branch removal if NO_FREEZE
+if (NO_FREEZE) {
+  for (const fm of freezeMatches) {
+    // Change: _7(()=>{if(!z){K(4);return}K((Z0)=>Z0+1)},120)
+    // To:     _7(()=>{K((Z0)=>Z0+1)},120)
+    // We remove the if(!z){K(4);return} part
+    const noFreezeReplacement = fm.full.replace(
+      /if\(![$\w]+\)\{[$\w]+\(\d+\);return\}/,
+      ''
+    );
+    patchedContent = patchedContent.replace(fm.full, noFreezeReplacement);
   }
 }
 
