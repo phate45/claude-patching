@@ -9,6 +9,8 @@ Minimal patches for Claude Code, supporting both installation methods:
 This is my little collection of 'adjustments', originally inspired by [tweakcc](https://github.com/Piebald-AI/tweakcc). However, their approach is a little heavy handed, so i went and made my own thing with just the things i want/need.
 Use at your own peril.
 
+For currently supported CC versions, see the contents of the [patches](./patches/) folder.
+
 ### Supported setup
 
 Optional requirements (for developing new patches):

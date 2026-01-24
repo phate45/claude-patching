@@ -28,14 +28,45 @@ const SIZE_MARKER_SIZE = 8;
 // Metadata marker for tracking applied patches (bare install only)
 const PATCH_MARKER = '__CLAUDE_PATCHES__';
 
-const PATCHES = [
-  { file: 'patch-thinking-visibility.js', id: 'thinking-visibility', version: '1.0' },
-  { file: 'patch-thinking-style.js', id: 'thinking-style', version: '1.0' },
-  { file: 'patch-spinner.js', id: 'spinner', version: '1.0' },
-  { file: 'patch-ghostty-term.js', id: 'ghostty-term', version: '1.0' },
-];
-
 const SCRIPT_DIR = __dirname;
+const PATCHES_DIR = path.join(SCRIPT_DIR, 'patches');
+
+/**
+ * Load patch index for a specific Claude Code version
+ * @param {string} version - e.g., "2.1.14"
+ * @returns {{ version: string, patches: Array<{id: string, file: string}> } | null}
+ */
+function loadPatchIndex(version) {
+  const indexPath = path.join(PATCHES_DIR, version, 'index.json');
+
+  if (!fs.existsSync(indexPath)) {
+    return null;
+  }
+
+  try {
+    const content = fs.readFileSync(indexPath, 'utf8');
+    return JSON.parse(content);
+  } catch (err) {
+    console.error(`Failed to parse ${indexPath}: ${err.message}`);
+    return null;
+  }
+}
+
+/**
+ * List available patch versions
+ */
+function listAvailableVersions() {
+  if (!fs.existsSync(PATCHES_DIR)) {
+    return [];
+  }
+
+  return fs.readdirSync(PATCHES_DIR)
+    .filter(entry => {
+      const indexPath = path.join(PATCHES_DIR, entry, 'index.json');
+      return fs.existsSync(indexPath);
+    })
+    .sort();
+}
 
 // ============ Detection ============
 
@@ -248,9 +279,10 @@ function reassembleBinary(patchedJsPath, outputPath) {
 
 /**
  * Run a single patch script
+ * @param {string} patchFile - Path relative to PATCHES_DIR (e.g., "2.1.14/patch-spinner.js")
  */
 function runPatch(patchFile, targetPath, dryRun) {
-  const patchPath = path.join(SCRIPT_DIR, patchFile);
+  const patchPath = path.join(PATCHES_DIR, patchFile);
 
   if (!fs.existsSync(patchPath)) {
     return { success: false, error: `Patch file not found: ${patchFile}` };
@@ -276,17 +308,42 @@ function runPatch(patchFile, targetPath, dryRun) {
 
 /**
  * Apply patches to a target (bare or native)
+ * @param {object} install - Installation info
+ * @param {boolean} dryRun - If true, only check without applying
+ * @param {string} [patchVersionOverride] - Override which version's patches to use (for cross-version testing)
  */
-function applyPatches(install, dryRun) {
+function applyPatches(install, dryRun, patchVersionOverride) {
   const isNative = install.type === 'native';
   let targetPath = install.path;
   let tempPath = null;
   let originalBuffer = null;
   let existingMeta = null;
 
+  const patchVersion = patchVersionOverride || install.version;
+
   console.log(`\nTarget: ${install.type} install`);
   console.log(`Version: ${install.version}`);
   console.log(`Path: ${install.path}`);
+
+  if (patchVersionOverride) {
+    console.log(`\nTesting patches from: ${patchVersionOverride}`);
+  }
+
+  // Load patch index for this version
+  const patchIndex = loadPatchIndex(patchVersion);
+  if (!patchIndex) {
+    const available = listAvailableVersions();
+    console.error(`\n❌ No patches available for version ${patchVersion}`);
+    if (available.length > 0) {
+      console.error(`   Available versions: ${available.join(', ')}`);
+    } else {
+      console.error(`   No patch versions found in ${PATCHES_DIR}`);
+    }
+    return false;
+  }
+
+  const patches = patchIndex.patches;
+  console.log(`Patches: ${patches.map(p => p.id).join(', ')}`);
 
   // For native: extract JS first
   if (isNative) {
@@ -320,7 +377,7 @@ function applyPatches(install, dryRun) {
   let failCount = 0;
   const appliedPatches = [];
 
-  for (const patch of PATCHES) {
+  for (const patch of patches) {
     console.log(`→ ${patch.id}`);
     const result = runPatch(patch.file, targetPath, dryRun);
 
@@ -328,7 +385,7 @@ function applyPatches(install, dryRun) {
       const lines = result.output.split('\n').map(l => '  ' + l).join('\n');
       console.log(lines);
       successCount++;
-      appliedPatches.push({ id: patch.id, version: patch.version });
+      appliedPatches.push({ id: patch.id, file: patch.file });
     } else if (result.notFound) {
       console.log(`  ✗ Pattern not found (incompatible version or already applied)`);
       notFoundCount++;
@@ -351,7 +408,7 @@ function applyPatches(install, dryRun) {
   if (successCount === 0) {
     if (tempPath) fs.unlinkSync(tempPath);
     console.log(`\nNo patches were applied.`);
-    return notFoundCount === PATCHES.length;
+    return notFoundCount === patches.length;
   }
 
   // Create backup
@@ -411,6 +468,11 @@ function applyPatches(install, dryRun) {
 // ============ CLI ============
 
 function printHelp() {
+  const versions = listAvailableVersions();
+  const versionInfo = versions.length > 0
+    ? versions.join(', ')
+    : '(none found)';
+
   console.log(`
 claude-patching.js - Unified Claude Code patcher
 
@@ -427,7 +489,8 @@ ACTIONS
   --apply      Apply patches
 
 OPTIONS
-  --help       Show this help
+  --help                     Show this help
+  --patches-from <version>   Use patches from a different version (with --check only)
 
 EXAMPLES
   node claude-patching.js --status              # Show all detected installs
@@ -435,8 +498,13 @@ EXAMPLES
   node claude-patching.js --native --apply      # Apply to native install
   node claude-patching.js --bare --check        # Check bare install
 
-PATCHES
-  ${PATCHES.map(p => p.id).join(', ')}
+  # Test which 2.1.14 patches work on 2.1.19
+  node claude-patching.js --native --check --patches-from 2.1.14
+
+SUPPORTED VERSIONS
+  ${versionInfo}
+
+Patches are loaded from patches/<version>/index.json
 `);
 }
 
@@ -511,6 +579,17 @@ const wantApply = args.includes('--apply');
 const wantBare = args.includes('--bare');
 const wantNative = args.includes('--native');
 
+// Parse --patches-from <version>
+let patchesFromVersion = null;
+const patchesFromIdx = args.indexOf('--patches-from');
+if (patchesFromIdx !== -1) {
+  patchesFromVersion = args[patchesFromIdx + 1];
+  if (!patchesFromVersion || patchesFromVersion.startsWith('--')) {
+    console.error('Error: --patches-from requires a version argument');
+    process.exit(1);
+  }
+}
+
 // Validate arguments
 if (wantBare && wantNative) {
   console.error('Error: Cannot specify both --bare and --native');
@@ -526,6 +605,11 @@ if (actionCount === 0) {
 
 if (actionCount > 1) {
   console.error('Error: Cannot combine multiple actions');
+  process.exit(1);
+}
+
+if (patchesFromVersion && !wantCheck) {
+  console.error('Error: --patches-from can only be used with --check');
   process.exit(1);
 }
 
@@ -576,5 +660,5 @@ if (wantBare) {
 
 // Execute action
 const dryRun = wantCheck;
-const success = applyPatches(target, dryRun);
+const success = applyPatches(target, dryRun, patchesFromVersion);
 process.exit(success ? 0 : 1);

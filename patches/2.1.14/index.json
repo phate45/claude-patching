@@ -1,0 +1,9 @@
+{
+  "version": "2.1.14",
+  "patches": [
+    { "id": "thinking-visibility", "file": "2.1.14/patch-thinking-visibility.js" },
+    { "id": "thinking-style", "file": "2.1.14/patch-thinking-style.js" },
+    { "id": "spinner", "file": "2.1.14/patch-spinner.js" },
+    { "id": "ghostty-term", "file": "2.1.14/patch-ghostty-term.js" }
+  ]
+}
