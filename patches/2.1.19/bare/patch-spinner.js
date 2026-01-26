@@ -144,17 +144,12 @@ console.log(`  ${replacement}`);
 console.log();
 console.log(`Spinner sequence: ${SPINNER_CHARS.join(' ')}`);
 
-if (isRepatch) {
-  console.log();
-  console.log('(Re-patching spinner characters only - mirror/freeze already handled)');
-} else {
-  console.log(`Animation mode: ${LOOP_MODE ? 'loop' : 'mirror'}`);
-}
+console.log(`Animation mode: ${LOOP_MODE ? 'loop' : 'mirror'}`);
 
 // If LOOP_MODE is enabled, also patch the mirror array construction
-// Skip if re-patching (already done)
+// Check even on repatch in case previous run didn't match
 let mirrorMatches = [];
-if (LOOP_MODE && !isRepatch) {
+if (LOOP_MODE) {
   // Pattern: VAR1=SPINNERFUNC(),VAR2=[...VAR1,...[...VAR1].reverse()]
   const escapedFuncName = funcName.replace(/\$/g, '\\$');
   const mirrorPattern = new RegExp(
@@ -181,20 +176,24 @@ if (LOOP_MODE && !isRepatch) {
 }
 
 // Find freeze branch if NO_FREEZE is enabled
-// Skip if re-patching (already done)
+// Check even on repatch in case previous run didn't match the pattern
 let freezeMatches = [];
-if (NO_FREEZE && !isRepatch) {
-  // Match the whole useInterval call with the freeze branch
-  const freezePattern = /\b([$\w]+)\(\(\)=>\{if\(!([$\w]+)\)\{([$\w]+)\(\d+\);return\}(\3)\(\([^)]+\)=>[^)]+\+1\)\},(\d+)\)/g;
+if (NO_FREEZE) {
+  // 2.1.19 bare uses memo-cached callback pattern:
+  //   VAR=()=>{if(!COND){SETTER(4);return}SETTER(INCREMENT)}
+  // followed later by zY(VAR,120) for the interval hook
+  //
+  // Match the callback assignment with freeze branch
+  const freezePattern = /([$\w]+)=\(\)=>\{if\(!([$\w]+)\)\{([$\w]+)\(4\);return\}(\3)\(([$\w]+)\)\}/g;
 
   let m;
   while ((m = freezePattern.exec(content)) !== null) {
     freezeMatches.push({
       full: m[0],
-      hookName: m[1],
+      callbackVar: m[1],
       condVar: m[2],
       setterName: m[3],
-      interval: m[5]
+      incrementVar: m[5]
     });
   }
 
@@ -202,7 +201,7 @@ if (NO_FREEZE && !isRepatch) {
     console.log();
     console.log(`Found ${freezeMatches.length} freeze branch(es) to remove`);
     for (const fm of freezeMatches) {
-      console.log(`  ${fm.hookName}(...{if(!${fm.condVar}){${fm.setterName}(4);return}...}, ${fm.interval})`);
+      console.log(`  ${fm.callbackVar}=()=>{if(!${fm.condVar}){${fm.setterName}(4);return}${fm.setterName}(${fm.incrementVar})}`);
     }
   }
 }
@@ -227,10 +226,9 @@ if (LOOP_MODE) {
 // Apply freeze branch removal if NO_FREEZE
 if (NO_FREEZE) {
   for (const fm of freezeMatches) {
-    const noFreezeReplacement = fm.full.replace(
-      /if\(![$\w]+\)\{[$\w]+\(\d+\);return\}/,
-      ''
-    );
+    // Change: VAR=()=>{if(!COND){SETTER(4);return}SETTER(INCREMENT)}
+    // To:     VAR=()=>{SETTER(INCREMENT)}
+    const noFreezeReplacement = `${fm.callbackVar}=()=>{${fm.setterName}(${fm.incrementVar})}`;
     patchedContent = patchedContent.replace(fm.full, noFreezeReplacement);
   }
 }
