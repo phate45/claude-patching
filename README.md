@@ -1,8 +1,8 @@
 # Claude Code Patches
 
 Minimal patches for Claude Code, supporting both installation methods:
-- **bare** — pnpm/npm install (standalone `cli.js`)
-- **native** — Bun-compiled binary (`~/.local/bin/claude`)
+- **bare** — pnpm/npm install (standalone `cli.js`) — **fully supported**
+- **native** — Bun-compiled binary (`~/.local/bin/claude`) — **WIP** (repackaging issues)
 
 ## Explainer
 
@@ -10,6 +10,10 @@ This is my little collection of 'adjustments', originally inspired by [tweakcc](
 Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
+
+**Current status (2.1.19):**
+- Bare install: All 4 patches working (ghostty-term, thinking-visibility, thinking-style, spinner)
+- Native install: Patches match but binary repackaging has issues — use bare for now
 
 ### Supported setup
 
@@ -58,13 +62,15 @@ Makes thinking/reasoning blocks visible inline in the TUI (normally only visible
 Styles thinking block content with dim gray italic text (like older CC versions).
 
 **What it does:**
-1. Modifies `QV` (markdown renderer) to accept a `dim` prop
+1. Modifies the markdown renderer to accept a `dim` prop
 2. When `dim=true`, wraps rendered text strings in `chalk.dim.italic()`
-3. Modifies `dvA` (thinking component) to pass `dim:!0` to QV
+3. Modifies the thinking component to pass `dim:!0` to the markdown renderer
 
 This approach wraps *text strings* with chalk styling before they become React elements, avoiding the "Box can't be inside Text" issue.
 
 **Note:** Apply after the visibility patch. Both are independent but complementary.
+
+**Note:** Function names differ between install types (e.g., `qO` in bare vs `VJ` in native) — the patches handle this automatically.
 
 ### patch-spinner.js
 

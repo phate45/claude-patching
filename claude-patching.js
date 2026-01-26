@@ -32,11 +32,12 @@ const SCRIPT_DIR = __dirname;
 const PATCHES_DIR = path.join(SCRIPT_DIR, 'patches');
 
 /**
- * Load patch index for a specific Claude Code version
+ * Load patch index for a specific Claude Code version and install type
  * @param {string} version - e.g., "2.1.14"
+ * @param {string} installType - "bare" or "native"
  * @returns {{ version: string, patches: Array<{id: string, file: string}> } | null}
  */
-function loadPatchIndex(version) {
+function loadPatchIndex(version, installType) {
   const indexPath = path.join(PATCHES_DIR, version, 'index.json');
 
   if (!fs.existsSync(indexPath)) {
@@ -45,7 +46,21 @@ function loadPatchIndex(version) {
 
   try {
     const content = fs.readFileSync(indexPath, 'utf8');
-    return JSON.parse(content);
+    const index = JSON.parse(content);
+
+    // Support both old format (flat patches array) and new format (per-type patches)
+    if (Array.isArray(index.patches)) {
+      // Old format: patches is an array - use for all install types
+      return index;
+    }
+
+    // New format: patches is an object with common/bare/native keys
+    const common = index.patches.common || [];
+    const typeSpecific = index.patches[installType] || [];
+    return {
+      version: index.version,
+      patches: [...common, ...typeSpecific],
+    };
   } catch (err) {
     console.error(`Failed to parse ${indexPath}: ${err.message}`);
     return null;
@@ -329,8 +344,8 @@ function applyPatches(install, dryRun, patchVersionOverride) {
     console.log(`\nTesting patches from: ${patchVersionOverride}`);
   }
 
-  // Load patch index for this version
-  const patchIndex = loadPatchIndex(patchVersion);
+  // Load patch index for this version and install type
+  const patchIndex = loadPatchIndex(patchVersion, install.type);
   if (!patchIndex) {
     const available = listAvailableVersions();
     console.error(`\n❌ No patches available for version ${patchVersion}`);

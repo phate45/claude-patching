@@ -1,8 +1,19 @@
 # Claude Code source files (copyrighted)
 cli.js.original
+cli.js.extracted
 cli.pretty.js
 cli.chunks/
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Debug/analysis artifacts
+*.broken
+*.bak
+dbg.log
 
 # Local settings and personal workflows
 .claude/settings.local.json
 .claude/skills/writing-work-logs/
+.envrc
