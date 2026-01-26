@@ -1,8 +1,14 @@
 # Claude Code source files (copyrighted)
+cli.js.bare.original
+cli.js.native.original
+cli.js.bare.pretty
+cli.js.native.pretty
+cli.chunks/
+
+# Legacy naming (pre-2026-01-26)
 cli.js.original
 cli.js.extracted
 cli.pretty.js
-cli.chunks/
 
 # Node.js
 node_modules/

@@ -29,6 +29,9 @@ The `chunk-pretty.sh` utility splits the prettified file into chunks for `ast-gr
 # Show detected installations and patch status
 node claude-patching.js --status
 
+# Prepare environment (creates backups, updates tweakcc reference)
+node claude-patching.js --setup
+
 # Dry run - verify patterns match
 node claude-patching.js --check
 
@@ -142,30 +145,34 @@ node patch-thinking-visibility.js /path/to/cli.js
 
 ### Before Patching
 
-**The script creates `.bak` backups automatically.** For extra safety, keep a clean copy in this repo:
+Run `--setup` to create local backups automatically:
 
 ```bash
-# Get the path from --status, then backup
-node claude-patching.js --status
-
-# For bare install:
-cp /path/to/cli.js ./cli.js.original
-
-# For native install:
-cp ~/.local/share/claude/versions/X.Y.Z ./claude.original
+node claude-patching.js --setup
 ```
+
+This creates:
+- `cli.js.bare.original` — backup of bare install (if detected and unpatched)
+- `cli.js.native.original` — backup of native install (if detected and unpatched)
+- `cli.js.{type}.pretty` — prettified versions for code exploration
+
+**Safety:** Setup won't overwrite an existing backup if the source is already patched. This prevents accidentally losing a clean backup.
+
+The `--apply` command also creates `.bak` files next to the original as an additional safeguard.
 
 ### Restoring from Backup
 
 If patches cause issues:
 
 ```bash
-# For bare:
-cp ./cli.js.original /path/to/cli.js
+# Get the install path
+node claude-patching.js --status
 
-# For native:
-cp ./claude.original ~/.local/share/claude/versions/X.Y.Z
-chmod +x ~/.local/share/claude/versions/X.Y.Z
+# For bare - restore from local backup:
+cp ./cli.js.bare.original /path/to/cli.js
+
+# Or restore from .bak file created during patching:
+cp /path/to/cli.js.bak /path/to/cli.js
 ```
 
 ### Full Recovery (Fresh CC Install)
@@ -208,19 +215,14 @@ CC updates replace the installation entirely, removing patches and metadata. Aft
 # Check status (will show "Patches: (none)")
 node claude-patching.js --status
 
+# Update backups and prettified files (detects version change automatically)
+node claude-patching.js --setup
+
 # Test patches (patterns may have changed between versions)
 node claude-patching.js --check
 
 # Re-apply patches
 node claude-patching.js --apply
-```
-
-If developing new patches, also update the local backup and prettified version:
-
-```bash
-# Get path from --status, then backup and prettify
-cp /path/to/source ./cli.js.original
-js-beautify -f cli.js.original -o cli.pretty.js
 ```
 
 ## Troubleshooting

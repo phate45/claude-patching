@@ -8,6 +8,7 @@ Unified CLI supports both installation types:
 
 ```bash
 node claude-patching.js --status              # Show detected installations
+node claude-patching.js --setup               # Prepare environment (backups, prettify, tweakcc)
 node claude-patching.js --check               # Dry run (auto-select if single install)
 node claude-patching.js --apply               # Apply patches
 node claude-patching.js --native --check      # Target native install explicitly
@@ -25,11 +26,7 @@ See `README.md` for individual patch descriptions. See `bun-patching` skill for 
 ## Reference: tweakcc
 
 The [tweakcc](https://github.com/Piebald-AI/tweakcc) project is the authoritative reference for CC patching. A local clone lives at `/tmp/tweakcc`.
-
-**Before starting any patching work:**
-```bash
-cd /tmp/tweakcc && git pull
-```
+Run `node claude-patching.js --setup` to clone/update it automatically.
 
 **Key resources in tweakcc:**
 - `src/patches/` - Battle-tested patch patterns for many features
@@ -46,10 +43,13 @@ Liberally dispatch haiku explorers to pull information from `/tmp/tweakcc`. Exam
 
 ## Development Workflow
 
-Run `/patch-setup` to prepare the environment. It auto-detects install type and:
-- For pnpm: copies cli.js → cli.js.original
-- For native: extracts JS from binary → cli.js.extracted → cli.js.original
-- Generates cli.pretty.js (prettified) and cli.chunks/ (for ast-grep)
+Run `node claude-patching.js --setup` to prepare the environment. It:
+- Detects installations and shows their patch status
+- Updates tweakcc reference (`/tmp/tweakcc`)
+- Creates backups (`cli.js.bare.original`, `cli.js.native.original`) - only if source is unpatched
+- Generates prettified versions (`cli.js.bare.pretty`, `cli.js.native.pretty`)
+
+**Note:** Setup won't overwrite a clean backup if the source is patched (detected via `__CLAUDE_PATCHES__` marker).
 
 Claude Code's JS is a ~11MB minified/bundled file (~215MB in native binary). These tools make exploration easier.
 
@@ -65,39 +65,22 @@ Claude Code's JS is a ~11MB minified/bundled file (~215MB in native binary). The
 | **webcrack** | Bundle deobfuscation | `pnpm dlx webcrack cli.js > cracked.js` |
 | **jq** | JSON data wrangling | For tool outputs, AST JSON, etc. |
 
-**Tool notes:**
-- `js-beautify` handles the 11MB cli.js well; `prettier` may OOM
-- `ast-grep` works but struggles on 468K-line files; extract relevant sections first
-- Keep `cli.pretty.js` around for exploration (17MB, ~468K lines)
+**ast-grep limitation:** The parser fails silently after ~200K lines (tree-sitter limit). The workaround:
 
-**ast-grep limitation:** The parser fails silently after ~200K lines (tree-sitter limit). Two workarounds:
-
-**Option A: Chunk the file** (preferred for broad searches)
+**Chunk the file**
 ```bash
-./chunk-pretty.sh                              # Creates cli.chunks/ with 100K-line chunks
-ast-grep run --pattern 'function $N() { $$$B }' --lang js cli.chunks/
+./chunk-pretty.sh <--bare|--native> # Creates cli.chunks/ with 100K-line chunks, pick which source you are working on
 ```
 
-**Option B: Extract sections** (for targeted searches)
-```bash
-grep -n 'targetString' cli.pretty.js           # Find location
-sed -n '268000,270000p' cli.pretty.js > excerpt.js  # Extract section
-ast-grep run --pattern 'function $N() { $$$B }' --lang js excerpt.js
-```
+### Working on patches
 
-### Creating a New Patch
+1. **Prepare the workspace**
+   Run `node claude-patching.js --setup` to create backups and prettified files.
 
-1. **Prepare** - Format cli.js for readability (if not already done):
-   ```bash
-   js-beautify -f cli.js.original -o cli.pretty.js
-   ```
-
-2. **Explore** - Find target code with grep, then use ast-grep on excerpts:
-   ```bash
-   grep -n 'uniqueString' cli.pretty.js           # Find location
-   sed -n '1000,2000p' cli.pretty.js > excerpt.js  # Extract section
-   ast-grep --lang js -p 'function $N($$$P) { $$$B }' excerpt.js
-   ```
+2. **Explore** - Find target code with `rg` and/or `ast-grep`:
+   - Use `rg -oP '<query>' /path/to/minified.js` for targeted searching
+   - Use `ast-grep run --pattern '<query>' --lang js cli.chunks/` for semantic search
+   **Important:** Load the `ast-grep` skill before using the tool, the skill contains extra guidance and example queries
 
 3. **Understand** - Read surrounding code in cli.pretty.js to grasp context
 

@@ -8,6 +8,7 @@
  *
  * Usage:
  *   node claude-patching.js --status              # Show detected installations
+ *   node claude-patching.js --setup               # Prepare patching environment
  *   node claude-patching.js --check               # Dry run (auto-select if single install)
  *   node claude-patching.js --apply               # Apply patches (auto-select if single install)
  *   node claude-patching.js --native --check      # Target native install explicitly
@@ -19,14 +20,18 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// ============ Constants ============
-
-const BUN_TRAILER = Buffer.from('\n---- Bun! ----\n');
-const TRAILER_SIZE = 16;
-const SIZE_MARKER_SIZE = 8;
-
-// Metadata marker for tracking applied patches (bare install only)
-const PATCH_MARKER = '__CLAUDE_PATCHES__';
+const {
+  PATCH_MARKER,
+  BUN_TRAILER,
+  TRAILER_SIZE,
+  SIZE_MARKER_SIZE,
+  detectBareInstall,
+  detectNativeInstall,
+  detectInstalls,
+  readPatchMetadata,
+  writePatchMetadata,
+  parseBunBinary,
+} = require('./lib/shared');
 
 const SCRIPT_DIR = __dirname;
 const PATCHES_DIR = path.join(SCRIPT_DIR, 'patches');
@@ -83,176 +88,7 @@ function listAvailableVersions() {
     .sort();
 }
 
-// ============ Detection ============
-
-/**
- * Detect bare (pnpm/npm) installation
- */
-function detectBareInstall() {
-  const wrapperPath = path.join(os.homedir(), '.local/share/pnpm/claude');
-
-  if (!fs.existsSync(wrapperPath)) {
-    return null;
-  }
-
-  try {
-    const wrapperContent = fs.readFileSync(wrapperPath, 'utf8');
-
-    // Extract from NODE_PATH
-    const nodePathMatch = wrapperContent.match(
-      /NODE_PATH="([^"]*@anthropic-ai\+claude-code@([^/]+)\/node_modules\/@anthropic-ai\/claude-code)/
-    );
-
-    if (nodePathMatch) {
-      const cliPath = path.join(nodePathMatch[1], 'cli.js');
-      if (fs.existsSync(cliPath)) {
-        return {
-          type: 'bare',
-          path: cliPath,
-          version: nodePathMatch[2],
-        };
-      }
-    }
-
-    // Fallback: extract from exec line
-    const execMatch = wrapperContent.match(
-      /\$basedir\/(global\/\d+\/\.pnpm\/@anthropic-ai\+claude-code@([^/]+)\/node_modules\/@anthropic-ai\/claude-code\/cli\.js)/
-    );
-
-    if (execMatch) {
-      const pnpmDir = path.join(os.homedir(), '.local/share/pnpm');
-      const cliPath = path.join(pnpmDir, execMatch[1]);
-      if (fs.existsSync(cliPath)) {
-        return {
-          type: 'bare',
-          path: cliPath,
-          version: execMatch[2],
-        };
-      }
-    }
-  } catch (err) {
-    // Ignore errors
-  }
-
-  return null;
-}
-
-/**
- * Detect native (Bun binary) installation
- */
-function detectNativeInstall() {
-  const symlinkPath = path.join(os.homedir(), '.local/bin/claude');
-
-  if (!fs.existsSync(symlinkPath)) {
-    return null;
-  }
-
-  try {
-    const realPath = fs.realpathSync(symlinkPath);
-
-    // Check if it's an ELF binary (Bun-compiled)
-    const fd = fs.openSync(realPath, 'r');
-    const header = Buffer.alloc(4);
-    fs.readSync(fd, header, 0, 4, 0);
-    fs.closeSync(fd);
-
-    // ELF magic number: 0x7f 'E' 'L' 'F'
-    if (header[0] !== 0x7f || header[1] !== 0x45 || header[2] !== 0x4c || header[3] !== 0x46) {
-      return null;
-    }
-
-    // Extract version from path (e.g., .../versions/2.1.17)
-    const versionMatch = realPath.match(/versions\/([^/]+)$/);
-    const version = versionMatch ? versionMatch[1] : 'unknown';
-
-    return {
-      type: 'native',
-      path: realPath,
-      version,
-    };
-  } catch (err) {
-    return null;
-  }
-}
-
-/**
- * Detect all installations
- */
-function detectInstalls() {
-  return {
-    bare: detectBareInstall(),
-    native: detectNativeInstall(),
-  };
-}
-
-// ============ Metadata (Bare Install Only) ============
-
-/**
- * Read patch metadata from cli.js
- */
-function readPatchMetadata(content) {
-  const regex = new RegExp(`/\\* ${PATCH_MARKER} (\\{.*?\\}) \\*/`);
-  const match = content.match(regex);
-  if (match) {
-    try {
-      return JSON.parse(match[1]);
-    } catch {
-      return null;
-    }
-  }
-  return null;
-}
-
-/**
- * Write patch metadata to cli.js (after shebang if present)
- */
-function writePatchMetadata(content, metadata) {
-  const metaComment = `/* ${PATCH_MARKER} ${JSON.stringify(metadata)} */\n`;
-
-  // Remove existing metadata if present
-  const cleanRegex = new RegExp(`/\\* ${PATCH_MARKER} \\{.*?\\} \\*/\\n?`);
-  const cleanContent = content.replace(cleanRegex, '');
-
-  // Insert after shebang (must stay on line 1) or prepend if no shebang
-  if (cleanContent.startsWith('#!')) {
-    const newlineIdx = cleanContent.indexOf('\n');
-    const shebang = cleanContent.slice(0, newlineIdx + 1);
-    const rest = cleanContent.slice(newlineIdx + 1);
-    return shebang + metaComment + rest;
-  }
-
-  return metaComment + cleanContent;
-}
-
 // ============ Bun Binary Handling ============
-
-/**
- * Parse Bun binary structure
- */
-function parseBunBinary(buffer) {
-  const fileSize = buffer.length;
-  const trailerStart = fileSize - TRAILER_SIZE - SIZE_MARKER_SIZE;
-  const trailerEnd = fileSize - SIZE_MARKER_SIZE;
-
-  const trailer = buffer.slice(trailerStart, trailerEnd);
-
-  if (!trailer.equals(BUN_TRAILER)) {
-    return { valid: false, error: 'Bun trailer not found' };
-  }
-
-  const sizeMarker = buffer.slice(trailerEnd);
-  const storedSize = Number(sizeMarker.readBigUInt64LE(0));
-
-  if (storedSize !== fileSize) {
-    return { valid: false, error: `Size mismatch: stored=${storedSize}, actual=${fileSize}` };
-  }
-
-  return {
-    valid: true,
-    trailerOffset: trailerStart,
-    fileSize,
-  };
-}
 
 /**
  * Extract JS from Bun binary to temp file
@@ -500,6 +336,7 @@ TARGETS (optional if only one install detected)
 
 ACTIONS
   --status     Show detected installations
+  --setup      Prepare patching environment (backups, prettify, tweakcc)
   --check      Dry run - verify patch patterns match
   --apply      Apply patches
 
@@ -589,6 +426,7 @@ if (args.includes('--help') || args.includes('-h')) {
 }
 
 const wantStatus = args.includes('--status');
+const wantSetup = args.includes('--setup');
 const wantCheck = args.includes('--check');
 const wantApply = args.includes('--apply');
 const wantBare = args.includes('--bare');
@@ -611,9 +449,9 @@ if (wantBare && wantNative) {
   process.exit(1);
 }
 
-const actionCount = [wantStatus, wantCheck, wantApply].filter(Boolean).length;
+const actionCount = [wantStatus, wantSetup, wantCheck, wantApply].filter(Boolean).length;
 if (actionCount === 0) {
-  console.error('Error: No action specified. Use --status, --check, or --apply');
+  console.error('Error: No action specified. Use --status, --setup, --check, or --apply');
   console.error('Run with --help for usage information.');
   process.exit(1);
 }
@@ -634,6 +472,14 @@ const installs = detectInstalls();
 // Handle --status
 if (wantStatus) {
   printStatus(installs);
+  process.exit(0);
+}
+
+// Handle --setup
+if (wantSetup) {
+  const { runSetup } = require('./lib/setup');
+  const report = runSetup();
+  console.log(report);
   process.exit(0);
 }
 
