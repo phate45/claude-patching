@@ -12,7 +12,7 @@ Use at your own peril.
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
 **Current status (2.1.20):**
-- Bare install: All 4 patches working (ghostty-term, thinking-visibility, thinking-style, spinner)
+- Bare install: All 5 patches working (ghostty-term, thinking-visibility, thinking-style, spinner, system-reminders)
 - Native install: Patches match but binary repackaging has issues — use bare for now
 
 ### Supported setup
@@ -116,6 +116,32 @@ Adds truecolor (16M colors) support for Ghostty terminal.
 
 **Why it's needed:**
 Ghostty uses `TERM=xterm-ghostty` and supports truecolor, but Claude Code only recognizes `xterm-kitty` for truecolor detection. Without this patch, Ghostty only gets basic 16 colors because it matches `/^xterm/` but not `/-256(color)?$/`.
+
+### patch-system-reminders.js
+
+Reduces token overhead from injected system reminders.
+
+**What it does:**
+1. Removes the malware warning injected after every file read (~70 tokens each)
+2. Replaces the verbose task tools reminder with a concise version
+3. Replaces the file modification notice (removes file content dump)
+
+**Why it's needed:**
+CC injects `<system-reminder>` tags into tool results. The malware warning fires on *every* `Read` tool call, burning ~70 tokens each time. The file modification reminder dumps entire file contents on every external change. Over a long conversation history, this adds up to millions of wasted tokens.
+
+**Configuration:**
+Edit the constants at the top of the patch file:
+
+```javascript
+const MALWARE_REMINDER = 'remove';       // 'remove' or 'keep'
+const TASK_REMINDER = 'concise';         // 'concise', 'remove', or 'keep'
+const FILE_MODIFIED_REMINDER = 'concise'; // 'concise', 'remove', or 'keep'
+```
+
+**Token savings:**
+- Malware reminder: ~70 tokens × N file reads per conversation
+- Task reminder: ~100 tokens → ~15 tokens (when triggered)
+- File modification: ~500+ tokens → ~25 tokens (per changed file)
 
 ## Patch Metadata
 

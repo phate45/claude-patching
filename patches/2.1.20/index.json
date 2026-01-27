@@ -7,7 +7,8 @@
     "bare": [
       { "id": "thinking-visibility", "file": "2.1.19/bare/patch-thinking-visibility.js" },
       { "id": "thinking-style", "file": "2.1.20/bare/patch-thinking-style.js" },
-      { "id": "spinner", "file": "2.1.19/bare/patch-spinner.js" }
+      { "id": "spinner", "file": "2.1.19/bare/patch-spinner.js" },
+      { "id": "system-reminders", "file": "2.1.20/bare/patch-system-reminders.js" }
     ],
     "native": [
       { "id": "thinking-visibility", "file": "2.1.19/patch-thinking-visibility.js" },
