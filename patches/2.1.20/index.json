@@ -1,0 +1,18 @@
+{
+  "version": "2.1.20",
+  "patches": {
+    "common": [
+      { "id": "ghostty-term", "file": "2.1.14/patch-ghostty-term.js" }
+    ],
+    "bare": [
+      { "id": "thinking-visibility", "file": "2.1.19/bare/patch-thinking-visibility.js" },
+      { "id": "thinking-style", "file": "2.1.20/bare/patch-thinking-style.js" },
+      { "id": "spinner", "file": "2.1.19/bare/patch-spinner.js" }
+    ],
+    "native": [
+      { "id": "thinking-visibility", "file": "2.1.19/patch-thinking-visibility.js" },
+      { "id": "thinking-style", "file": "2.1.19/patch-thinking-style.js" },
+      { "id": "spinner", "file": "2.1.19/patch-spinner.js" }
+    ]
+  }
+}

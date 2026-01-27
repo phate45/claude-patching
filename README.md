@@ -11,7 +11,7 @@ Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
-**Current status (2.1.19):**
+**Current status (2.1.20):**
 - Bare install: All 4 patches working (ghostty-term, thinking-visibility, thinking-style, spinner)
 - Native install: Patches match but binary repackaging has issues — use bare for now
 
