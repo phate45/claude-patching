@@ -36,6 +36,38 @@ const {
 const SCRIPT_DIR = __dirname;
 const PATCHES_DIR = path.join(SCRIPT_DIR, 'patches');
 
+// JSON mode: output structured JSONL when CLAUDECODE=1
+const jsonMode = process.env.CLAUDECODE === '1';
+
+/**
+ * Emit a JSON event to stdout (JSON mode only)
+ */
+function emitJson(obj) {
+  if (jsonMode) {
+    console.log(JSON.stringify(obj));
+  }
+}
+
+/**
+ * Log a message (human mode only)
+ */
+function log(msg) {
+  if (!jsonMode) {
+    console.log(msg);
+  }
+}
+
+/**
+ * Log an error (human mode only, or emit JSON error event)
+ */
+function logError(msg) {
+  if (jsonMode) {
+    emitJson({ type: 'error', message: msg });
+  } else {
+    console.error(msg);
+  }
+}
+
 /**
  * Load patch index for a specific Claude Code version and install type
  * @param {string} version - e.g., "2.1.14"
@@ -67,7 +99,7 @@ function loadPatchIndex(version, installType) {
       patches: [...common, ...typeSpecific],
     };
   } catch (err) {
-    console.error(`Failed to parse ${indexPath}: ${err.message}`);
+    logError(`Failed to parse ${indexPath}: ${err.message}`);
     return null;
   }
 }
@@ -141,18 +173,37 @@ function runPatch(patchFile, targetPath, dryRun) {
 
   const args = dryRun ? ['--check', targetPath] : [targetPath];
 
+  // Inherit CLAUDECODE env so patches output JSON when we're in JSON mode
+  const env = { ...process.env };
+
   try {
     const result = execSync(`node "${patchPath}" ${args.map(a => `"${a}"`).join(' ')}`, {
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
+      env,
     });
     return { success: true, output: result.trim() };
   } catch (err) {
     const stderr = err.stderr || '';
     const stdout = err.stdout || '';
-    if (stderr.includes('Could not find') || stdout.includes('Could not find')) {
-      return { success: false, notFound: true, output: stderr || stdout };
+    const combined = stdout + stderr;
+
+    // Detect "pattern not found" or "already patched" cases
+    const notFoundPatterns = [
+      'Could not find',
+      'already patched',
+      '"Status":"already patched"',
+      'pattern not found',
+    ];
+
+    const isNotFound = notFoundPatterns.some(p =>
+      combined.toLowerCase().includes(p.toLowerCase())
+    );
+
+    if (isNotFound) {
+      return { success: false, notFound: true, output: combined.trim() };
     }
+
     return { success: false, output: stderr || err.message };
   }
 }
@@ -172,41 +223,54 @@ function applyPatches(install, dryRun, patchVersionOverride) {
 
   const patchVersion = patchVersionOverride || install.version;
 
-  console.log(`\nTarget: ${install.type} install`);
-  console.log(`Version: ${install.version}`);
-  console.log(`Path: ${install.path}`);
+  // Emit start event in JSON mode
+  emitJson({
+    type: 'start',
+    mode: dryRun ? 'check' : 'apply',
+    target: install.type,
+    version: install.version,
+    patchVersion,
+  });
+
+  log(`\nTarget: ${install.type} install`);
+  log(`Version: ${install.version}`);
+  log(`Path: ${install.path}`);
 
   if (patchVersionOverride) {
-    console.log(`\nTesting patches from: ${patchVersionOverride}`);
+    log(`\nTesting patches from: ${patchVersionOverride}`);
   }
 
   // Load patch index for this version and install type
   const patchIndex = loadPatchIndex(patchVersion, install.type);
   if (!patchIndex) {
     const available = listAvailableVersions();
-    console.error(`\n❌ No patches available for version ${patchVersion}`);
-    if (available.length > 0) {
-      console.error(`   Available versions: ${available.join(', ')}`);
-    } else {
-      console.error(`   No patch versions found in ${PATCHES_DIR}`);
+    logError(`No patches available for version ${patchVersion}`);
+    if (!jsonMode) {
+      if (available.length > 0) {
+        console.error(`   Available versions: ${available.join(', ')}`);
+      } else {
+        console.error(`   No patch versions found in ${PATCHES_DIR}`);
+      }
     }
+    emitJson({ type: 'summary', applied: 0, skipped: 0, failed: 1, success: false });
     return false;
   }
 
   const patches = patchIndex.patches;
-  console.log(`Patches: ${patches.map(p => p.id).join(', ')}`);
+  log(`Patches: ${patches.map(p => p.id).join(', ')}`);
 
   // For native: extract JS first
   if (isNative) {
-    console.log(`\nExtracting JS from Bun binary...`);
+    log(`\nExtracting JS from Bun binary...`);
     try {
       const extracted = extractJsFromBinary(install.path);
       tempPath = extracted.tempPath;
       originalBuffer = extracted.originalBuffer;
       targetPath = tempPath;
-      console.log(`Extracted to: ${tempPath}`);
+      log(`Extracted to: ${tempPath}`);
     } catch (err) {
-      console.error(`\n❌ Extraction failed: ${err.message}`);
+      logError(`Extraction failed: ${err.message}`);
+      emitJson({ type: 'summary', applied: 0, skipped: 0, failed: 1, success: false });
       return false;
     }
   }
@@ -216,12 +280,12 @@ function applyPatches(install, dryRun, patchVersionOverride) {
   const content = fs.readFileSync(metaSourcePath, 'utf8');
   existingMeta = readPatchMetadata(content);
   if (existingMeta) {
-    console.log(`\nExisting patches: ${existingMeta.patches.map(p => p.id).join(', ')}`);
-    console.log(`Applied: ${existingMeta.appliedAt}`);
+    log(`\nExisting patches: ${existingMeta.patches.map(p => p.id).join(', ')}`);
+    log(`Applied: ${existingMeta.appliedAt}`);
   }
 
   // Run patches
-  console.log(`\n${dryRun ? 'Checking' : 'Applying'} patches:\n`);
+  log(`\n${dryRun ? 'Checking' : 'Applying'} patches:\n`);
 
   let successCount = 0;
   let notFoundCount = 0;
@@ -229,36 +293,50 @@ function applyPatches(install, dryRun, patchVersionOverride) {
   const appliedPatches = [];
 
   for (const patch of patches) {
-    console.log(`→ ${patch.id}`);
+    // Emit patch start event in JSON mode
+    emitJson({ type: 'patch_start', id: patch.id, file: patch.file });
+    log(`→ ${patch.id}`);
+
     const result = runPatch(patch.file, targetPath, dryRun);
 
     if (result.success) {
-      const lines = result.output.split('\n').map(l => '  ' + l).join('\n');
-      console.log(lines);
+      if (jsonMode) {
+        // Pass through JSONL output directly (each line is already valid JSON)
+        for (const line of result.output.split('\n').filter(l => l.trim())) {
+          console.log(line);
+        }
+      } else {
+        const lines = result.output.split('\n').map(l => '  ' + l).join('\n');
+        console.log(lines);
+      }
       successCount++;
       appliedPatches.push({ id: patch.id, file: patch.file });
     } else if (result.notFound) {
-      console.log(`  ✗ Pattern not found (incompatible version or already applied)`);
+      emitJson({ type: 'patch_skipped', id: patch.id, reason: 'pattern_not_found' });
+      log(`  ✗ Pattern not found (incompatible version or already applied)`);
       notFoundCount++;
     } else {
-      console.log(`  ✗ Failed: ${result.output || result.error}`);
+      emitJson({ type: 'patch_failed', id: patch.id, error: result.output || result.error });
+      log(`  ✗ Failed: ${result.output || result.error}`);
       failCount++;
     }
-    console.log();
+    log('');
   }
 
   // Summary
-  console.log(`Results: ${successCount} applied, ${notFoundCount} skipped, ${failCount} failed`);
+  const summaryMsg = `Results: ${successCount} applied, ${notFoundCount} skipped, ${failCount} failed`;
+  log(summaryMsg);
+  emitJson({ type: 'summary', applied: successCount, skipped: notFoundCount, failed: failCount, success: failCount === 0 });
 
   if (dryRun) {
     if (tempPath) fs.unlinkSync(tempPath);
-    console.log(`\n✓ Dry run complete`);
+    log(`\n✓ Dry run complete`);
     return failCount === 0;
   }
 
   if (successCount === 0) {
     if (tempPath) fs.unlinkSync(tempPath);
-    console.log(`\nNo patches were applied.`);
+    log(`\nNo patches were applied.`);
     return notFoundCount === patches.length;
   }
 
@@ -266,7 +344,8 @@ function applyPatches(install, dryRun, patchVersionOverride) {
   const backupPath = install.path + '.bak';
   if (!fs.existsSync(backupPath)) {
     fs.copyFileSync(install.path, backupPath);
-    console.log(`\n✓ Backed up to ${backupPath}`);
+    log(`\n✓ Backed up to ${backupPath}`);
+    emitJson({ type: 'info', message: `Backup created: ${backupPath}` });
   }
 
   // Update metadata in the patched JS
@@ -292,15 +371,19 @@ function applyPatches(install, dryRun, patchVersionOverride) {
     try {
       const result = reassembleBinary(tempPath, install.path);
       result.originalSize = originalBuffer.length;
-      console.log(`\n✓ Reassembled binary`);
-      console.log(`  Original: ${result.originalSize.toLocaleString()} bytes`);
-      console.log(`  Patched: ${result.newSize.toLocaleString()} bytes`);
-      console.log(`  Delta: ${(result.newSize - result.originalSize).toLocaleString()} bytes`);
+      log(`\n✓ Reassembled binary`);
+      log(`  Original: ${result.originalSize.toLocaleString()} bytes`);
+      log(`  Patched: ${result.newSize.toLocaleString()} bytes`);
+      log(`  Delta: ${(result.newSize - result.originalSize).toLocaleString()} bytes`);
+      emitJson({
+        type: 'info',
+        message: `Binary reassembled: ${result.originalSize} -> ${result.newSize} bytes`,
+      });
     } catch (err) {
-      console.error(`\n❌ Reassembly failed: ${err.message}`);
+      logError(`Reassembly failed: ${err.message}`);
       if (fs.existsSync(backupPath)) {
         fs.copyFileSync(backupPath, install.path);
-        console.log('Restored from backup');
+        log('Restored from backup');
       }
       return false;
     } finally {
@@ -309,10 +392,11 @@ function applyPatches(install, dryRun, patchVersionOverride) {
   }
 
   if (appliedPatches.length > 0) {
-    console.log(`\n✓ Metadata updated`);
+    log(`\n✓ Metadata updated`);
   }
 
-  console.log(`\n✓ Done! Restart Claude Code to see changes.`);
+  log(`\n✓ Done! Restart Claude Code to see changes.`);
+  emitJson({ type: 'result', status: 'success', message: 'Patches applied successfully' });
   return true;
 }
 
@@ -361,6 +445,57 @@ Patches are loaded from patches/<version>/index.json
 }
 
 function printStatus(installs) {
+  // JSON mode: output structured object
+  if (jsonMode) {
+    const status = { type: 'status', installs: {} };
+
+    if (installs.bare) {
+      const bareInfo = {
+        version: installs.bare.version,
+        path: installs.bare.path,
+        patches: null,
+        appliedAt: null,
+      };
+      try {
+        const content = fs.readFileSync(installs.bare.path, 'utf8');
+        const meta = readPatchMetadata(content);
+        if (meta) {
+          bareInfo.patches = meta.patches.map(p => p.id);
+          bareInfo.appliedAt = meta.appliedAt;
+        }
+      } catch (err) {
+        bareInfo.error = 'unable to read';
+      }
+      status.installs.bare = bareInfo;
+    }
+
+    if (installs.native) {
+      const nativeInfo = {
+        version: installs.native.version,
+        path: installs.native.path,
+        patches: null,
+        appliedAt: null,
+      };
+      try {
+        const extracted = extractJsFromBinary(installs.native.path);
+        const content = fs.readFileSync(extracted.tempPath, 'utf8');
+        const meta = readPatchMetadata(content);
+        fs.unlinkSync(extracted.tempPath);
+        if (meta) {
+          nativeInfo.patches = meta.patches.map(p => p.id);
+          nativeInfo.appliedAt = meta.appliedAt;
+        }
+      } catch (err) {
+        nativeInfo.error = 'unable to read';
+      }
+      status.installs.native = nativeInfo;
+    }
+
+    emitJson(status);
+    return;
+  }
+
+  // Human mode: formatted text
   console.log(`\nDetected Installations:\n`);
 
   if (!installs.bare && !installs.native) {
@@ -516,7 +651,7 @@ if (wantBare) {
   }
 
   target = available[0];
-  console.log(`Auto-selected: ${target.type} install`);
+  log(`Auto-selected: ${target.type} install`);
 }
 
 // Execute action

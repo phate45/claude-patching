@@ -15,13 +15,14 @@
  */
 
 const fs = require('fs');
+const output = require('../../lib/output');
 
 const args = process.argv.slice(2);
 const dryRun = args[0] === '--check';
 const targetPath = dryRun ? args[1] : args[0];
 
 if (!targetPath) {
-  console.error('Usage: node patch-ghostty-term.js [--check] <cli.js path>');
+  output.error('Usage: node patch-ghostty-term.js [--check] <cli.js path>');
   process.exit(1);
 }
 
@@ -29,7 +30,7 @@ let content;
 try {
   content = fs.readFileSync(targetPath, 'utf8');
 } catch (err) {
-  console.error(`Failed to read ${targetPath}:`, err.message);
+  output.error(`Failed to read ${targetPath}`, [err.message]);
   process.exit(1);
 }
 
@@ -44,24 +45,24 @@ const kittyPattern = /([$\w]+)\.TERM==="xterm-kitty"\)return 3/g;
 const matches = [...content.matchAll(kittyPattern)];
 
 if (matches.length === 0) {
-  console.error('❌ Could not find xterm-kitty color detection pattern');
-  console.error('   This might be an unsupported Claude Code version');
+  output.error('Could not find xterm-kitty color detection pattern', [
+    'This might be an unsupported Claude Code version'
+  ]);
   process.exit(1);
 }
 
-console.log(`✓ Found ${matches.length} xterm-kitty color check(s)`);
-console.log();
+output.discovery('xterm-kitty checks', `${matches.length} found`);
 
-for (const match of matches) {
+for (let i = 0; i < matches.length; i++) {
+  const match = matches[i];
   const varName = match[1];
-  console.log(`  Variable: ${varName}`);
-  console.log(`  Original: if(${varName}.TERM==="xterm-kitty")return 3`);
-  console.log(`  Patched:  if(${varName}.TERM==="xterm-kitty"||${varName}.TERM==="xterm-ghostty")return 3`);
-  console.log();
+  const original = `if(${varName}.TERM==="xterm-kitty")return 3`;
+  const patched = `if(${varName}.TERM==="xterm-kitty"||${varName}.TERM==="xterm-ghostty")return 3`;
+  output.modification(`match ${i + 1}`, original, patched);
 }
 
 if (dryRun) {
-  console.log('(Dry run - no changes made)');
+  output.result('dry_run', 'No changes made');
   process.exit(0);
 }
 
@@ -74,18 +75,17 @@ let patchedContent = content.replace(
 // Verify the patch was applied
 const afterMatches = [...patchedContent.matchAll(/xterm-ghostty.*return 3/g)];
 if (afterMatches.length === 0) {
-  console.error('❌ Patch failed to apply');
+  output.error('Patch failed to apply');
   process.exit(1);
 }
 
 // Write patched file
 try {
   fs.writeFileSync(targetPath, patchedContent);
-  console.log(`✓ Patched ${targetPath}`);
-  console.log();
-  console.log('Ghostty terminal will now get truecolor support (level 3).');
-  console.log('Restart Claude Code to apply the change.');
+  output.result('success', `Patched ${targetPath}`);
+  output.info('Ghostty terminal will now get truecolor support (level 3).');
+  output.info('Restart Claude Code to apply the change.');
 } catch (err) {
-  console.error(`Failed to write patched file: ${err.message}`);
+  output.error('Failed to write patched file', [err.message]);
   process.exit(1);
 }

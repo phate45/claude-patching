@@ -49,6 +49,8 @@ node claude-patching.js --native --check    # Check native install
 node claude-patching.js --bare --apply      # Apply to bare install
 ```
 
+**JSON output:** Set `CLAUDECODE=1` for structured JSONL output (agent-friendly).
+
 ## Patches
 
 ### patch-thinking-visibility.js

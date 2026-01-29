@@ -18,13 +18,14 @@
  */
 
 const fs = require('fs');
+const output = require('../../lib/output');
 
 const args = process.argv.slice(2);
 const dryRun = args[0] === '--check';
 const targetPath = dryRun ? args[1] : args[0];
 
 if (!targetPath) {
-  console.error('Usage: node patch-thinking-style.js [--check] <cli.js path>');
+  output.error('Usage: node patch-thinking-style.js [--check] <cli.js path>');
   process.exit(1);
 }
 
@@ -32,7 +33,7 @@ let content;
 try {
   content = fs.readFileSync(targetPath, 'utf8');
 } catch (err) {
-  console.error(`Failed to read ${targetPath}:`, err.message);
+  output.error(`Failed to read ${targetPath}:`, [err.message]);
   process.exit(1);
 }
 
@@ -46,7 +47,7 @@ const fFuncPattern = /function f\(\)\{if\(([$\w]+)\)([$\w]+)\.push\(([$\w]+)\.de
 const fFuncMatch = content.match(fFuncPattern);
 
 if (!fFuncMatch) {
-  console.error('❌ Could not find f() function pattern (markdown renderer helper)');
+  output.error('Could not find f() function pattern (markdown renderer helper)');
   process.exit(1);
 }
 
@@ -58,11 +59,12 @@ const compVar = fFuncMatch[4];   // p1 (text component)
 const bVar2 = fFuncMatch[6];     // B again (in trim())
 const bVar3 = fFuncMatch[7];     // B again (reset)
 
-console.log(`✓ Found f() function`);
-console.log(`  String accumulator: ${bVar}`);
-console.log(`  Elements array: ${dVar}`);
-console.log(`  React var: ${reactVar}`);
-console.log(`  Text component: ${compVar}`);
+output.discovery('helper function', 'f()', {
+  'String accumulator': bVar,
+  'Elements array': dVar,
+  'React var': reactVar,
+  'Text component': compVar
+});
 
 // Now find the containing markdown renderer function
 // Pattern: function FUNCNAME({children:VAR}){...function f(){if
@@ -70,13 +72,15 @@ const mdWithFPattern = /function ([$\w]+)\(\{children:([$\w]+)\}\)\{.{50,500}fun
 const mdWithFMatch = content.match(mdWithFPattern);
 
 if (!mdWithFMatch) {
-  console.error('❌ Could not find markdown renderer function containing f()');
+  output.error('Could not find markdown renderer function containing f()');
   process.exit(1);
 }
 
 const mdFuncName = mdWithFMatch[1];
 const childrenVar = mdWithFMatch[2];
-console.log(`✓ Found markdown renderer: ${mdFuncName}, children variable: ${childrenVar}`);
+output.discovery('markdown renderer', mdFuncName, {
+  'Children variable': childrenVar
+});
 
 // Helper to escape regex special characters
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -86,7 +90,7 @@ const mdSigPattern = new RegExp(`function ${escapeRegex(mdFuncName)}\\(\\{childr
 const mdSigMatch = content.match(mdSigPattern);
 
 if (!mdSigMatch) {
-  console.error(`❌ Could not match ${mdFuncName} signature`);
+  output.error(`Could not match ${mdFuncName} signature`);
   process.exit(1);
 }
 
@@ -95,12 +99,12 @@ const chalkPattern = /\b([$\w]+)\.dim\.italic\(/;
 const chalkMatch = content.match(chalkPattern);
 
 if (!chalkMatch) {
-  console.error('❌ Could not find chalk variable');
+  output.error('Could not find chalk variable');
   process.exit(1);
 }
 
 const chalkVar = chalkMatch[1];
-console.log(`✓ Found chalk variable: ${chalkVar}`);
+output.discovery('chalk variable', chalkVar);
 
 // ============================================================
 // PATCH 2: Find markdown renderer call in thinking component
@@ -114,41 +118,36 @@ const thinkingMdPattern = new RegExp(
 const thinkingMdMatch = content.match(thinkingMdPattern);
 
 if (!thinkingMdMatch) {
-  console.error(`❌ Could not find thinking ${mdFuncName} pattern`);
+  output.error(`Could not find thinking ${mdFuncName} pattern`);
   process.exit(1);
 }
 
 const thinkingVar = thinkingMdMatch[3]; // H (thinking content)
-console.log(`✓ Found thinking ${mdFuncName} call, thinking var: ${thinkingVar}`);
+output.discovery('thinking call', mdFuncName, {
+  'Thinking var': thinkingVar
+});
 
 // ============================================================
 // Apply patches
 // ============================================================
 
-console.log();
-console.log(`=== Patch 1: Modify ${mdFuncName} signature ===`);
+output.section(`Modify ${mdFuncName} signature`, { index: 1 });
 const newMdSig = `function ${mdFuncName}({children:${childrenVar},dim:_dimStyle})`;
-console.log(`  Old: ${mdSigMatch[0]}`);
-console.log(`  New: ${newMdSig}`);
+output.modification('function signature', mdSigMatch[0], newMdSig);
 
-console.log();
-console.log('=== Patch 2: Modify f() function ===');
+output.section('Modify f() function', { index: 2 });
 // New f function that checks _dimStyle and wraps in chalk.dim.italic if true
 const newFFunc = `function f(){if(${bVar}){let _t=${bVar}.trim();if(_dimStyle)_t=${chalkVar}.dim.italic(_t);${dVar}.push(${reactVar}.default.createElement(${compVar},{key:${dVar}.length},_t))}${bVar3}=""}`;
-console.log(`  Old: ${fFuncMatch[0].slice(0, 80)}...`);
-console.log(`  New: ${newFFunc.slice(0, 80)}...`);
+output.modification('f() function', fFuncMatch[0].slice(0, 80) + '...', newFFunc.slice(0, 80) + '...');
 
-console.log();
-console.log(`=== Patch 3: Modify thinking component to pass dim:!0 ===`);
+output.section('Modify thinking component to pass dim:!0', { index: 3 });
 // Change createElement(MDFUNC,null,H) to createElement(MDFUNC,{dim:!0},H)
 const oldMdCall = `${thinkingMdMatch[2]}(${mdFuncName},null,${thinkingVar})`;
 const newMdCall = `${thinkingMdMatch[2]}(${mdFuncName},{dim:!0},${thinkingVar})`;
-console.log(`  Old: ${oldMdCall}`);
-console.log(`  New: ${newMdCall}`);
+output.modification('thinking component call', oldMdCall, newMdCall);
 
 if (dryRun) {
-  console.log();
-  console.log('(Dry run - no changes made)');
+  output.result('dry_run', 'no changes made');
   process.exit(0);
 }
 
@@ -173,22 +172,21 @@ const changes = [
 ];
 
 if (!changes.every(Boolean)) {
-  console.error('❌ Some patches failed to apply');
-  console.error('  Content changed:', changes[0]);
-  console.error('  dimStyle in sig:', changes[1]);
-  console.error('  dimStyle check:', changes[2]);
-  console.error('  dim:!0 prop:', changes[3]);
+  output.error('Some patches failed to apply', [
+    `Content changed: ${changes[0]}`,
+    `dimStyle in sig: ${changes[1]}`,
+    `dimStyle check: ${changes[2]}`,
+    `dim:!0 prop: ${changes[3]}`
+  ]);
   process.exit(1);
 }
 
 // Write patched file
 try {
   fs.writeFileSync(targetPath, patchedContent);
-  console.log();
-  console.log(`✓ All patches applied to ${targetPath}`);
-  console.log();
-  console.log('Thinking blocks will now render with dim gray text.');
+  output.result('success', `All patches applied to ${targetPath}`);
+  output.info('Thinking blocks will now render with dim gray text.');
 } catch (err) {
-  console.error(`Failed to write patched file: ${err.message}`);
+  output.error(`Failed to write patched file`, [err.message]);
   process.exit(1);
 }

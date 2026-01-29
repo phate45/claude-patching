@@ -18,13 +18,14 @@
 
 const fs = require('fs');
 const path = require('path');
+const output = require('../../lib/output');
 
 const args = process.argv.slice(2);
 const dryRun = args[0] === '--check';
 const targetPath = dryRun ? args[1] : args[0];
 
 if (!targetPath) {
-  console.error('Usage: node patch-thinking-visibility.js [--check] <cli.js path>');
+  output.error('Usage: node patch-thinking-visibility.js [--check] <cli.js path>');
   process.exit(1);
 }
 
@@ -33,7 +34,7 @@ let content;
 try {
   content = fs.readFileSync(targetPath, 'utf8');
 } catch (err) {
-  console.error(`Failed to read ${targetPath}:`, err.message);
+  output.error(`Failed to read ${targetPath}:`, [err.message]);
   process.exit(1);
 }
 
@@ -55,17 +56,16 @@ if (!match) {
 }
 
 if (!match) {
-  console.error('❌ Could not find thinking visibility pattern in cli.js');
-  console.error('   This might be an unsupported Claude Code version');
+  output.error('Could not find thinking visibility pattern in cli.js', [
+    'This might be an unsupported Claude Code version'
+  ]);
   process.exit(1);
 }
 
-console.log('✓ Found thinking visibility pattern');
-console.log(`  Format: ${isNewFormat ? 'new (2.1.19+)' : 'old'}`);
-console.log(`  isTranscriptMode variable: ${match[3]}`);
-console.log();
-console.log('Original:');
-console.log(`  ${match[0].slice(0, 100)}...`);
+output.discovery('thinking visibility pattern', isNewFormat ? 'new (2.1.19+)' : 'old', {
+  isTranscriptMode_variable: match[3]
+});
+output.info(`Original: ${match[0].slice(0, 100)}...`);
 
 // Build the replacement
 let replacement;
@@ -77,13 +77,10 @@ if (isNewFormat) {
   replacement = `${match[1]}${match[2]}true${match[4]}`;
 }
 
-console.log();
-console.log('Patched:');
-console.log(`  ${replacement.slice(0, 100)}...`);
+output.modification('isTranscriptMode prop', match[3], 'true');
 
 if (dryRun) {
-  console.log();
-  console.log('(Dry run - no changes made)');
+  output.result('dry_run', 'No changes made');
   process.exit(0);
 }
 
@@ -95,20 +92,18 @@ const backupPath = targetPath + '.bak';
 try {
   if (!fs.existsSync(backupPath)) {
     fs.copyFileSync(targetPath, backupPath);
-    console.log();
-    console.log(`✓ Backed up original to ${backupPath}`);
+    output.info(`Backup created: ${backupPath}`);
   }
 } catch (err) {
-  console.error(`Warning: Could not create backup: ${err.message}`);
+  output.warning('Could not create backup', [err.message]);
 }
 
 // Write the patched file
 try {
   fs.writeFileSync(targetPath, patchedContent);
-  console.log(`✓ Patched ${targetPath}`);
-  console.log();
-  console.log('Done! Restart Claude Code to see thinking blocks inline.');
+  output.result('success', `Patched ${targetPath}`);
+  output.info('Restart Claude Code to see thinking blocks inline.');
 } catch (err) {
-  console.error(`Failed to write patched file: ${err.message}`);
+  output.error('Failed to write patched file', [err.message]);
   process.exit(1);
 }

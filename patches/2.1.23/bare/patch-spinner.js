@@ -16,6 +16,7 @@
  */
 
 const fs = require('fs');
+const output = require('../../../lib/output');
 
 // ============================================================
 // CONFIGURATION - Edit this to customize your spinner
@@ -42,7 +43,7 @@ const dryRun = args[0] === '--check';
 const targetPath = dryRun ? args[1] : args[0];
 
 if (!targetPath) {
-  console.error('Usage: node patch-spinner.js [--check] <cli.js path>');
+  output.error('Usage: node patch-spinner.js [--check] <cli.js path>');
   process.exit(1);
 }
 
@@ -50,7 +51,7 @@ let content;
 try {
   content = fs.readFileSync(targetPath, 'utf8');
 } catch (err) {
-  console.error(`Failed to read ${targetPath}:`, err.message);
+  output.error(`Failed to read ${targetPath}`, [err.message]);
   process.exit(1);
 }
 
@@ -94,31 +95,25 @@ if (!match) {
 }
 
 if (!match) {
-  console.error('Could not find spinner function pattern');
+  output.error('Could not find spinner function pattern');
   process.exit(1);
 }
 
 const funcName = match[1];
 
 if (isRepatch) {
-  console.log(`Found already-patched spinner function: ${funcName}()`);
-  console.log(`  Current chars: ${currentChars.join(' ')}`);
+  output.discovery('spinner function', funcName + '()', { 'Status': 'already patched', 'Current chars': currentChars.join(' ') });
 } else {
-  console.log(`Found spinner function: ${funcName}()`);
-  console.log();
-  console.log('Original:');
-  console.log(`  ${match[0].slice(0, 120)}...`);
+  output.discovery('spinner function', funcName + '()', { 'Status': 'original' });
+  output.info(`Original: ${match[0].slice(0, 120)}...`);
 }
 
 const charsJson = JSON.stringify(SPINNER_CHARS);
 const replacement = `function ${funcName}(){return${charsJson}}`;
 
-console.log();
-console.log('New:');
-console.log(`  ${replacement}`);
-console.log();
-console.log(`Spinner sequence: ${SPINNER_CHARS.join(' ')}`);
-console.log(`Animation mode: ${LOOP_MODE ? 'loop' : 'mirror'}`);
+output.modification('spinner chars', match[0].slice(0, 120) + '...', replacement);
+output.info(`Spinner sequence: ${SPINNER_CHARS.join(' ')}`);
+output.info(`Animation mode: ${LOOP_MODE ? 'loop' : 'mirror'}`);
 
 // Mirror pattern matching
 let mirrorMatches = [];
@@ -139,10 +134,10 @@ if (LOOP_MODE) {
   }
 
   if (mirrorMatches.length > 0) {
-    console.log();
-    console.log(`Found ${mirrorMatches.length} mirror pattern(s) to patch for loop mode`);
-    for (const mm of mirrorMatches) {
-      console.log(`  ${mm.baseVar} → ${mm.arrayVar}`);
+    output.discovery('mirror patterns', `${mirrorMatches.length} found`);
+    for (let i = 0; i < mirrorMatches.length; i++) {
+      const mm = mirrorMatches[i];
+      output.modification(`mirror ${i}`, mm.full, `${mm.baseVar}=${funcName}(),${mm.arrayVar}=[...${mm.baseVar}]`);
     }
   } else {
     warnings.push('LOOP_MODE enabled but no mirror patterns found - animation may behave unexpectedly');
@@ -184,14 +179,18 @@ if (NO_FREEZE) {
   }
 
   if (freezeMatches.length > 0) {
-    console.log();
-    console.log(`Found ${freezeMatches.length} freeze branch(es) to remove`);
-    for (const fm of freezeMatches) {
+    output.discovery('freeze branches', `${freezeMatches.length} found`);
+    for (let i = 0; i < freezeMatches.length; i++) {
+      const fm = freezeMatches[i];
+      let before, after;
       if (fm.hookName) {
-        console.log(`  ${fm.hookName}(()=>{if(!${fm.condVar}){${fm.setterName}(4);return}...},${fm.interval})`);
+        before = `${fm.hookName}(()=>{if(!${fm.condVar}){${fm.setterName}(4);return}${fm.setterName}((${fm.incVar})=>${fm.incVar}+1)},${fm.interval})`;
+        after = `${fm.hookName}(()=>{${fm.setterName}((${fm.incVar})=>${fm.incVar}+1)},${fm.interval})`;
       } else {
-        console.log(`  ${fm.callbackVar}=()=>{if(!${fm.condVar}){${fm.setterName}(4);return}...}`);
+        before = `${fm.callbackVar}=()=>{if(!${fm.condVar}){${fm.setterName}(4);return}${fm.setterName}(${fm.incrementVar})}`;
+        after = `${fm.callbackVar}=()=>{${fm.setterName}(${fm.incrementVar})}`;
       }
+      output.modification(`freeze ${i}`, before, after);
     }
   } else {
     warnings.push('NO_FREEZE enabled but freeze pattern not found - spinner may still freeze on disconnect');
@@ -201,16 +200,13 @@ if (NO_FREEZE) {
 
 // Print warnings
 if (warnings.length > 0) {
-  console.log();
-  console.log('⚠️  WARNINGS:');
   for (const w of warnings) {
-    console.log(`   ${w}`);
+    output.warning(w);
   }
 }
 
 if (dryRun) {
-  console.log();
-  console.log('(Dry run - no changes made)');
+  output.result('dry_run', 'no changes made');
   // Exit with error only for critical warnings (freeze pattern not found)
   if (criticalWarning) {
     process.exit(1);
@@ -247,13 +243,11 @@ if (NO_FREEZE) {
 // Write patched file
 try {
   fs.writeFileSync(targetPath, patchedContent);
-  console.log();
-  console.log(`Patched ${targetPath}`);
+  output.result('success', `Patched ${targetPath}`);
   if (warnings.length > 0) {
-    console.log();
-    console.log('Note: Some patterns were not found. Check warnings above.');
+    output.info('Note: Some patterns were not found. Check warnings above.');
   }
 } catch (err) {
-  console.error(`Failed to write patched file: ${err.message}`);
+  output.error(`Failed to write patched file`, [err.message]);
   process.exit(1);
 }

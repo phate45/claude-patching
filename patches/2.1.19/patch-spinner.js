@@ -16,6 +16,7 @@
  */
 
 const fs = require('fs');
+const output = require('../../lib/output');
 
 // ============================================================
 // CONFIGURATION - Edit this to customize your spinner
@@ -60,7 +61,7 @@ const dryRun = args[0] === '--check';
 const targetPath = dryRun ? args[1] : args[0];
 
 if (!targetPath) {
-  console.error('Usage: node patch-spinner.js [--check] <cli.js path>');
+  output.error('Usage: node patch-spinner.js [--check] <cli.js path>');
   process.exit(1);
 }
 
@@ -68,7 +69,7 @@ let content;
 try {
   content = fs.readFileSync(targetPath, 'utf8');
 } catch (err) {
-  console.error(`Failed to read ${targetPath}:`, err.message);
+  output.error(`Failed to read ${targetPath}`, [err.message]);
   process.exit(1);
 }
 
@@ -114,42 +115,34 @@ if (!match) {
 }
 
 if (!match) {
-  console.error('❌ Could not find spinner function pattern');
-  console.error('   This might be an unsupported Claude Code version');
-  console.error('   Or the spinner function was modified in an unexpected way');
+  output.error('Could not find spinner function pattern', [
+    'This might be an unsupported Claude Code version',
+    'Or the spinner function was modified in an unexpected way'
+  ]);
   process.exit(1);
 }
 
 const funcName = match[1];
 
 if (isRepatch) {
-  console.log(`✓ Found already-patched spinner function: ${funcName}()`);
-  console.log(`  Current chars: ${currentChars.join(' ')}`);
-  console.log();
-  console.log('Current:');
-  console.log(`  ${match[0]}`);
+  output.discovery('spinner function', funcName + '()', { 'Status': 'already patched', 'Current chars': currentChars.join(' ') });
+  output.info(`Current: ${match[0]}`);
 } else {
-  console.log(`✓ Found spinner function: ${funcName}()`);
-  console.log();
-  console.log('Original:');
-  console.log(`  ${match[0].slice(0, 100)}...`);
+  output.discovery('spinner function', funcName + '()', { 'Status': 'original' });
+  output.info(`Original: ${match[0].slice(0, 100)}...`);
 }
 
 // Build replacement - simple function that returns our custom array
 const charsJson = JSON.stringify(SPINNER_CHARS);
 const replacement = `function ${funcName}(){return${charsJson}}`;
 
-console.log();
-console.log('New:');
-console.log(`  ${replacement}`);
-console.log();
-console.log(`Spinner sequence: ${SPINNER_CHARS.join(' ')}`);
+output.modification('spinner chars', match[0].slice(0, 100) + '...', replacement);
+output.info(`Spinner sequence: ${SPINNER_CHARS.join(' ')}`);
 
 if (isRepatch) {
-  console.log();
-  console.log('(Re-patching spinner characters only - mirror/freeze already handled)');
+  output.info('(Re-patching spinner characters only - mirror/freeze already handled)');
 } else {
-  console.log(`Animation mode: ${LOOP_MODE ? 'loop' : 'mirror'}`);
+  output.info(`Animation mode: ${LOOP_MODE ? 'loop' : 'mirror'}`);
 }
 
 // If LOOP_MODE is enabled, also patch the mirror array construction
@@ -173,10 +166,12 @@ if (LOOP_MODE && !isRepatch) {
   }
 
   if (mirrorMatches.length > 0) {
-    console.log();
-    console.log(`✓ Found ${mirrorMatches.length} mirror pattern(s) to patch for loop mode`);
-    for (const mm of mirrorMatches) {
-      console.log(`  ${mm.baseVar} → ${mm.arrayVar}`);
+    output.discovery('mirror patterns', `${mirrorMatches.length} found`);
+    for (let i = 0; i < mirrorMatches.length; i++) {
+      const mm = mirrorMatches[i];
+      const before = `${mm.baseVar}=${funcName}(),${mm.arrayVar}=[...${mm.baseVar},...[...${mm.baseVar}].reverse()]`;
+      const after = `${mm.baseVar}=${funcName}(),${mm.arrayVar}=[...${mm.baseVar}]`;
+      output.modification(`mirror ${i}`, before, after);
     }
   }
 }
@@ -200,17 +195,18 @@ if (NO_FREEZE && !isRepatch) {
   }
 
   if (freezeMatches.length > 0) {
-    console.log();
-    console.log(`✓ Found ${freezeMatches.length} freeze branch(es) to remove`);
-    for (const fm of freezeMatches) {
-      console.log(`  ${fm.hookName}(...{if(!${fm.condVar}){${fm.setterName}(4);return}...}, ${fm.interval})`);
+    output.discovery('freeze branches', `${freezeMatches.length} found`);
+    for (let i = 0; i < freezeMatches.length; i++) {
+      const fm = freezeMatches[i];
+      const before = `${fm.hookName}(...{if(!${fm.condVar}){${fm.setterName}(4);return}...}, ${fm.interval})`;
+      const after = `${fm.hookName}(...{...}, ${fm.interval})`;
+      output.modification(`freeze ${i}`, before, after);
     }
   }
 }
 
 if (dryRun) {
-  console.log();
-  console.log('(Dry run - no changes made)');
+  output.result('dry_run', 'No changes made');
   process.exit(0);
 }
 
@@ -239,11 +235,9 @@ if (NO_FREEZE) {
 // Write patched file
 try {
   fs.writeFileSync(targetPath, patchedContent);
-  console.log();
-  console.log(`✓ Patched ${targetPath}`);
-  console.log();
-  console.log('Restart Claude Code to see the new spinner.');
+  output.result('success', `Patched ${targetPath}`);
+  output.info('Restart Claude Code to see the new spinner.');
 } catch (err) {
-  console.error(`Failed to write patched file: ${err.message}`);
+  output.error('Failed to write patched file', [err.message]);
   process.exit(1);
 }
