@@ -1,0 +1,259 @@
+#!/usr/bin/env node
+/**
+ * Patch to customize the Claude Code spinner animation (2.1.23 bare)
+ *
+ * The spinner is the animated symbol shown while Claude is working.
+ * This patch replaces the platform-specific spinner function with
+ * a custom sequence.
+ *
+ * Changes from 2.1.19:
+ * - Freeze pattern changed: callback is now inline in s9() call, not assigned to variable
+ * - Increment changed from variable to arrow function: (B1)=>B1+1
+ *
+ * Usage:
+ *   node patch-spinner.js <cli.js path>
+ *   node patch-spinner.js --check <cli.js path>  (dry run)
+ */
+
+const fs = require('fs');
+
+// ============================================================
+// CONFIGURATION - Edit this to customize your spinner
+// ============================================================
+
+const SPINNER_CHARS = ["·","∴","∴","·","∵","∵"];
+
+// Animation mode:
+//   false = mirror (default): cycles forward then backward
+//   true  = loop: cycles forward continuously
+const LOOP_MODE = true;
+
+// No-freeze mode:
+//   When true, removes the code that freezes the spinner when disconnected.
+//   CC freezes the spinner on frame 4 when !isConnected.
+const NO_FREEZE = true;
+
+// ============================================================
+// PATCH IMPLEMENTATION
+// ============================================================
+
+const args = process.argv.slice(2);
+const dryRun = args[0] === '--check';
+const targetPath = dryRun ? args[1] : args[0];
+
+if (!targetPath) {
+  console.error('Usage: node patch-spinner.js [--check] <cli.js path>');
+  process.exit(1);
+}
+
+let content;
+try {
+  content = fs.readFileSync(targetPath, 'utf8');
+} catch (err) {
+  console.error(`Failed to read ${targetPath}:`, err.message);
+  process.exit(1);
+}
+
+// Track warnings for configuration mismatches
+const warnings = [];
+let criticalWarning = false;  // Freeze pattern not found when NO_FREEZE enabled
+
+// Pattern for 2.1.19+ bare spinner function (with darwin branch)
+const spinnerFuncPattern = /function ([$\w]+)\(\)\{if\(process\.env\.TERM==="xterm-ghostty"\)return\["[^"]+(?:","[^"]+)*"\];return process\.platform==="darwin"\?\["[^"]+(?:","[^"]+)*"\]:\["[^"]+(?:","[^"]+)*"\]\}/;
+
+// Pattern for already-patched spinner function
+const patchedSpinnerPattern = /function ([$\w]+)\(\)\{return(\["[^"]+(?:","[^"]+)*"\])\}/g;
+
+let match = content.match(spinnerFuncPattern);
+let isRepatch = false;
+let currentChars = null;
+
+if (!match) {
+  let patchedMatch;
+  while ((patchedMatch = patchedSpinnerPattern.exec(content)) !== null) {
+    const candidateName = patchedMatch[1];
+    const arrayStr = patchedMatch[2];
+
+    try {
+      const arr = JSON.parse(arrayStr);
+      if (arr.length >= 2 && arr.length <= 16 &&
+          arr.every(c => typeof c === 'string' && c.length === 1)) {
+        const escapedName = candidateName.replace(/\$/g, '\\$');
+        const mirrorRef = new RegExp(`[$\\w]+=${escapedName}\\(\\)`);
+        if (mirrorRef.test(content)) {
+          match = patchedMatch;
+          isRepatch = true;
+          currentChars = arr;
+          break;
+        }
+      }
+    } catch (e) {
+      // Not valid JSON, skip
+    }
+  }
+}
+
+if (!match) {
+  console.error('Could not find spinner function pattern');
+  process.exit(1);
+}
+
+const funcName = match[1];
+
+if (isRepatch) {
+  console.log(`Found already-patched spinner function: ${funcName}()`);
+  console.log(`  Current chars: ${currentChars.join(' ')}`);
+} else {
+  console.log(`Found spinner function: ${funcName}()`);
+  console.log();
+  console.log('Original:');
+  console.log(`  ${match[0].slice(0, 120)}...`);
+}
+
+const charsJson = JSON.stringify(SPINNER_CHARS);
+const replacement = `function ${funcName}(){return${charsJson}}`;
+
+console.log();
+console.log('New:');
+console.log(`  ${replacement}`);
+console.log();
+console.log(`Spinner sequence: ${SPINNER_CHARS.join(' ')}`);
+console.log(`Animation mode: ${LOOP_MODE ? 'loop' : 'mirror'}`);
+
+// Mirror pattern matching
+let mirrorMatches = [];
+if (LOOP_MODE) {
+  const escapedFuncName = funcName.replace(/\$/g, '\\$');
+  const mirrorPattern = new RegExp(
+    `([$\\w]+)=${escapedFuncName}\\(\\),([$\\w]+)=\\[\\.\\.\\.\\1,\\.\\.\\.\\[\\.\\.\\.\\1\\]\\.reverse\\(\\)\\]`,
+    'g'
+  );
+
+  let m;
+  while ((m = mirrorPattern.exec(content)) !== null) {
+    mirrorMatches.push({
+      full: m[0],
+      baseVar: m[1],
+      arrayVar: m[2]
+    });
+  }
+
+  if (mirrorMatches.length > 0) {
+    console.log();
+    console.log(`Found ${mirrorMatches.length} mirror pattern(s) to patch for loop mode`);
+    for (const mm of mirrorMatches) {
+      console.log(`  ${mm.baseVar} → ${mm.arrayVar}`);
+    }
+  } else {
+    warnings.push('LOOP_MODE enabled but no mirror patterns found - animation may behave unexpectedly');
+  }
+}
+
+// Freeze pattern matching (2.1.23 format)
+// Pattern: s9(()=>{if(!COND){SETTER(4);return}SETTER((VAR)=>VAR+1)},120)
+let freezeMatches = [];
+if (NO_FREEZE) {
+  // 2.1.23 bare: inline callback in interval hook
+  const freezePattern2123 = /([$\w]+)\(\(\)=>\{if\(!([$\w]+)\)\{([$\w]+)\(4\);return\}\3\(\(([$\w]+)\)=>\4\+1\)\},(\d+)\)/g;
+
+  let m;
+  while ((m = freezePattern2123.exec(content)) !== null) {
+    freezeMatches.push({
+      full: m[0],
+      hookName: m[1],     // s9
+      condVar: m[2],      // P
+      setterName: m[3],   // G
+      incVar: m[4],       // B1
+      interval: m[5]      // 120
+    });
+  }
+
+  // Also try 2.1.19 pattern as fallback
+  if (freezeMatches.length === 0) {
+    const freezePattern2119 = /([$\w]+)=\(\)=>\{if\(!([$\w]+)\)\{([$\w]+)\(4\);return\}(\3)\(([$\w]+)\)\}/g;
+    while ((m = freezePattern2119.exec(content)) !== null) {
+      freezeMatches.push({
+        full: m[0],
+        callbackVar: m[1],
+        condVar: m[2],
+        setterName: m[3],
+        incrementVar: m[5],
+        format: '2.1.19'
+      });
+    }
+  }
+
+  if (freezeMatches.length > 0) {
+    console.log();
+    console.log(`Found ${freezeMatches.length} freeze branch(es) to remove`);
+    for (const fm of freezeMatches) {
+      if (fm.hookName) {
+        console.log(`  ${fm.hookName}(()=>{if(!${fm.condVar}){${fm.setterName}(4);return}...},${fm.interval})`);
+      } else {
+        console.log(`  ${fm.callbackVar}=()=>{if(!${fm.condVar}){${fm.setterName}(4);return}...}`);
+      }
+    }
+  } else {
+    warnings.push('NO_FREEZE enabled but freeze pattern not found - spinner may still freeze on disconnect');
+    criticalWarning = true;
+  }
+}
+
+// Print warnings
+if (warnings.length > 0) {
+  console.log();
+  console.log('⚠️  WARNINGS:');
+  for (const w of warnings) {
+    console.log(`   ${w}`);
+  }
+}
+
+if (dryRun) {
+  console.log();
+  console.log('(Dry run - no changes made)');
+  // Exit with error only for critical warnings (freeze pattern not found)
+  if (criticalWarning) {
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
+// Apply the patches
+let patchedContent = content.replace(match[0], replacement);
+
+// Apply mirror patches
+if (LOOP_MODE) {
+  for (const mm of mirrorMatches) {
+    const loopReplacement = `${mm.baseVar}=${funcName}(),${mm.arrayVar}=[...${mm.baseVar}]`;
+    patchedContent = patchedContent.replace(mm.full, loopReplacement);
+  }
+}
+
+// Apply freeze branch removal
+if (NO_FREEZE) {
+  for (const fm of freezeMatches) {
+    let noFreezeReplacement;
+    if (fm.hookName) {
+      // 2.1.23 format: s9(()=>{SETTER((VAR)=>VAR+1)},INTERVAL)
+      noFreezeReplacement = `${fm.hookName}(()=>{${fm.setterName}((${fm.incVar})=>${fm.incVar}+1)},${fm.interval})`;
+    } else {
+      // 2.1.19 format: VAR=()=>{SETTER(INCREMENT)}
+      noFreezeReplacement = `${fm.callbackVar}=()=>{${fm.setterName}(${fm.incrementVar})}`;
+    }
+    patchedContent = patchedContent.replace(fm.full, noFreezeReplacement);
+  }
+}
+
+// Write patched file
+try {
+  fs.writeFileSync(targetPath, patchedContent);
+  console.log();
+  console.log(`Patched ${targetPath}`);
+  if (warnings.length > 0) {
+    console.log();
+    console.log('Note: Some patterns were not found. Check warnings above.');
+  }
+} catch (err) {
+  console.error(`Failed to write patched file: ${err.message}`);
+  process.exit(1);
+}

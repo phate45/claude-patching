@@ -23,6 +23,52 @@ If only one install exists, target flags are optional. If both exist, you must s
 
 See `README.md` for individual patch descriptions. See `bun-patching` skill for binary format details.
 
+## Patch Structure
+
+Patches are organized by CC version in `patches/<version>/`:
+
+```
+patches/
+├── 2.1.14/
+│   ├── index.json           # Defines which patches apply to this version
+│   ├── patch-spinner.js
+│   └── patch-thinking-visibility.js
+├── 2.1.23/
+│   ├── index.json
+│   └── bare/
+│       └── patch-thinking-style.js   # Install-type specific
+```
+
+**index.json format:**
+```json
+{
+  "version": "2.1.23",
+  "patches": {
+    "common": [
+      { "id": "ghostty-term", "file": "2.1.14/patch-ghostty-term.js" }
+    ],
+    "bare": [
+      { "id": "thinking-style", "file": "2.1.23/bare/patch-thinking-style.js" }
+    ],
+    "native": [
+      { "id": "thinking-style", "file": "2.1.19/patch-thinking-style.js" }
+    ]
+  }
+}
+```
+
+- **common**: Applied to both bare and native installs
+- **bare**: Only for pnpm/npm installs
+- **native**: Only for Bun binary installs
+- **file**: Path relative to `patches/` — can reference patches from older versions if they still work
+
+**Version porting workflow:**
+1. Create `patches/<new-version>/index.json`
+2. Start by copying the previous version's index
+3. Run `--check` to see which patches fail
+4. For failing patches: search the new cli.js to find what changed, create updated patch in `patches/<new-version>/bare/` or `patches/<new-version>/`
+5. Update index.json to point to the new patch file
+
 ## Reference: tweakcc
 
 The [tweakcc](https://github.com/Piebald-AI/tweakcc) project is the authoritative reference for CC patching. A local clone lives at `/tmp/tweakcc`.
