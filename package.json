@@ -1,0 +1,28 @@
+{
+  "name": "claude-patching",
+  "version": "0.2.0",
+  "description": "Minimal patches for Claude Code without the full tweakcc toolchain",
+  "type": "commonjs",
+  "main": "claude-patching.js",
+  "scripts": {
+    "status": "node claude-patching.js --status",
+    "check:bare": "node claude-patching.js --bare --check",
+    "check:native": "node claude-patching.js --native --check",
+    "apply:bare": "node claude-patching.js --bare --apply",
+    "apply:native": "node claude-patching.js --native --apply"
+  },
+  "keywords": [
+    "claude-code",
+    "patching",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "node-lief": "^1.0.0"
+  },
+  "devDependencies": {}
+}

@@ -21,7 +21,7 @@ node claude-patching.js --bare --apply        # Target bare install explicitly
 
 If only one install exists, target flags are optional. If both exist, you must specify.
 
-See `README.md` for individual patch descriptions. See `bun-patching` skill for binary format details.
+See `README.md` for individual patch descriptions.
 
 ## Patch Structure
 
@@ -86,6 +86,17 @@ Liberally dispatch haiku explorers to pull information from `/tmp/tweakcc`. Exam
 - "Find how tweakcc locates the React variable"
 - "What pattern does tweakcc use for theme customization?"
 - "How does tweakcc handle version differences?"
+
+## Native Binary Internals
+
+The native install uses `lib/bun-binary.ts` for extraction/repacking. Key facts:
+
+- **Format**: ELF binary with Bun data in the overlay (after ELF sections)
+- **Structure**: `[ELF sections][Bun data region][OFFSETS 32B][TRAILER 16B][totalByteCount 8B]`
+- **JS location**: In the modules table, module named `/$bunfs/root/claude`
+- **Dependency**: `node-lief` for ELF parsing (run `npm install`)
+
+When JS size changes, all StringPointer offsets must be recalculated. See `.plans/native-binary-patching-implementation.md` for the full technical breakdown.
 
 ## Development Workflow
 

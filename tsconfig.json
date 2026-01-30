@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "declaration": false,
+    "allowJs": true,
+    "checkJs": false,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "lib": ["ES2022"]
+  },
+  "include": [
+    "lib/**/*.ts",
+    "claude-patching.js"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

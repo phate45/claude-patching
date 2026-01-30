@@ -22,16 +22,17 @@ const os = require('os');
 
 const {
   PATCH_MARKER,
-  BUN_TRAILER,
-  TRAILER_SIZE,
-  SIZE_MARKER_SIZE,
   detectBareInstall,
   detectNativeInstall,
   detectInstalls,
   readPatchMetadata,
   writePatchMetadata,
-  parseBunBinary,
 } = require('./lib/shared');
+
+const {
+  extractClaudeJs,
+  repackWithModifiedJs,
+} = require('./lib/bun-binary.ts');
 
 const SCRIPT_DIR = __dirname;
 const PATCHES_DIR = path.join(SCRIPT_DIR, 'patches');
@@ -124,38 +125,37 @@ function listAvailableVersions() {
 
 /**
  * Extract JS from Bun binary to temp file
+ * Uses proper LIEF-based extraction from lib/bun-binary.ts
  */
-function extractJsFromBinary(binaryPath) {
-  const buffer = fs.readFileSync(binaryPath);
-  const info = parseBunBinary(buffer);
-
-  if (!info.valid) {
-    throw new Error(info.error);
-  }
-
+function extractJsFromBinaryToTemp(binaryPath) {
+  const jsBuffer = extractClaudeJs(binaryPath);
   const tempPath = path.join(os.tmpdir(), `claude-cli-${Date.now()}.js`);
-  const jsContent = buffer.slice(0, info.trailerOffset);
-  fs.writeFileSync(tempPath, jsContent);
+  fs.writeFileSync(tempPath, jsBuffer);
 
-  return { tempPath, originalBuffer: buffer, info };
+  return {
+    tempPath,
+    originalJsSize: jsBuffer.length,
+    originalBinarySize: fs.statSync(binaryPath).size,
+  };
 }
 
 /**
  * Reassemble Bun binary from patched JS
+ * Uses proper LIEF-based repacking from lib/bun-binary.ts
  */
-function reassembleBinary(patchedJsPath, outputPath) {
-  const patchedJs = fs.readFileSync(patchedJsPath);
-  const newSize = patchedJs.length + TRAILER_SIZE + SIZE_MARKER_SIZE;
-  const newBuffer = Buffer.alloc(newSize);
+function reassembleBinaryFromTemp(tempPath, binaryPath, outputPath) {
+  const modifiedJs = fs.readFileSync(tempPath);
+  const originalBinarySize = fs.statSync(binaryPath).size;
 
-  patchedJs.copy(newBuffer, 0);
-  BUN_TRAILER.copy(newBuffer, patchedJs.length);
-  newBuffer.writeBigUInt64LE(BigInt(newSize), patchedJs.length + TRAILER_SIZE);
+  repackWithModifiedJs(binaryPath, modifiedJs, outputPath);
 
-  fs.writeFileSync(outputPath, newBuffer);
-  fs.chmodSync(outputPath, 0o755);
+  const newBinarySize = fs.statSync(outputPath).size;
 
-  return { newSize, originalSize: null }; // originalSize set by caller
+  return {
+    originalSize: originalBinarySize,
+    newSize: newBinarySize,
+    jsDelta: modifiedJs.length,
+  };
 }
 
 // ============ Patch Application ============
@@ -218,7 +218,6 @@ function applyPatches(install, dryRun, patchVersionOverride) {
   const isNative = install.type === 'native';
   let targetPath = install.path;
   let tempPath = null;
-  let originalBuffer = null;
   let existingMeta = null;
 
   const patchVersion = patchVersionOverride || install.version;
@@ -263,11 +262,11 @@ function applyPatches(install, dryRun, patchVersionOverride) {
   if (isNative) {
     log(`\nExtracting JS from Bun binary...`);
     try {
-      const extracted = extractJsFromBinary(install.path);
+      const extracted = extractJsFromBinaryToTemp(install.path);
       tempPath = extracted.tempPath;
-      originalBuffer = extracted.originalBuffer;
       targetPath = tempPath;
       log(`Extracted to: ${tempPath}`);
+      log(`JS size: ${extracted.originalJsSize.toLocaleString()} bytes`);
     } catch (err) {
       logError(`Extraction failed: ${err.message}`);
       emitJson({ type: 'summary', applied: 0, skipped: 0, failed: 1, success: false });
@@ -369,8 +368,7 @@ function applyPatches(install, dryRun, patchVersionOverride) {
   // For native: reassemble binary
   if (isNative) {
     try {
-      const result = reassembleBinary(tempPath, install.path);
-      result.originalSize = originalBuffer.length;
+      const result = reassembleBinaryFromTemp(tempPath, install.path, install.path);
       log(`\n✓ Reassembled binary`);
       log(`  Original: ${result.originalSize.toLocaleString()} bytes`);
       log(`  Patched: ${result.newSize.toLocaleString()} bytes`);
@@ -477,7 +475,7 @@ function printStatus(installs) {
         appliedAt: null,
       };
       try {
-        const extracted = extractJsFromBinary(installs.native.path);
+        const extracted = extractJsFromBinaryToTemp(installs.native.path);
         const content = fs.readFileSync(extracted.tempPath, 'utf8');
         const meta = readPatchMetadata(content);
         fs.unlinkSync(extracted.tempPath);
@@ -534,7 +532,7 @@ function printStatus(installs) {
 
     // Extract JS to check for patch metadata
     try {
-      const extracted = extractJsFromBinary(installs.native.path);
+      const extracted = extractJsFromBinaryToTemp(installs.native.path);
       const content = fs.readFileSync(extracted.tempPath, 'utf8');
       const meta = readPatchMetadata(content);
       fs.unlinkSync(extracted.tempPath);
