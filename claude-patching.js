@@ -121,6 +121,48 @@ function listAvailableVersions() {
     .sort();
 }
 
+/**
+ * Find the best fallback patch version for a given target version.
+ * Returns the latest available version that is <= targetVersion.
+ * Uses semver-style comparison (2.1.31 > 2.1.25 > 2.1.19 etc.)
+ */
+function findFallbackVersion(targetVersion) {
+  const available = listAvailableVersions();
+  if (available.length === 0) return null;
+
+  // Parse version string into comparable parts
+  const parseVersion = (v) => {
+    const parts = v.split('.').map(p => parseInt(p, 10) || 0);
+    return parts;
+  };
+
+  // Compare two version arrays: returns -1 if a < b, 0 if equal, 1 if a > b
+  const compareVersions = (a, b) => {
+    const partsA = parseVersion(a);
+    const partsB = parseVersion(b);
+    const maxLen = Math.max(partsA.length, partsB.length);
+    for (let i = 0; i < maxLen; i++) {
+      const partA = partsA[i] || 0;
+      const partB = partsB[i] || 0;
+      if (partA < partB) return -1;
+      if (partA > partB) return 1;
+    }
+    return 0;
+  };
+
+  // Find the latest version that is <= targetVersion
+  let best = null;
+  for (const v of available) {
+    if (compareVersions(v, targetVersion) <= 0) {
+      if (!best || compareVersions(v, best) > 0) {
+        best = v;
+      }
+    }
+  }
+
+  return best;
+}
+
 // ============ Bun Binary Handling ============
 
 /**
@@ -426,6 +468,12 @@ OPTIONS
   --help                     Show this help
   --patches-from <version>   Use patches from a different version (with --check only)
 
+AUTO-FALLBACK (--check only)
+  When checking a version without its own patches folder, the tool automatically
+  uses the latest available patch version for testing. Does not apply to --apply
+  since patches often break across versions - create version-specific patches first.
+  Example: checking 2.1.32 with only 2.1.31 patches available will use 2.1.31.
+
 EXAMPLES
   node claude-patching.js --status              # Show all detected installs
   node claude-patching.js --check               # Check patches (auto-select)
@@ -654,5 +702,25 @@ if (wantBare) {
 
 // Execute action
 const dryRun = wantCheck;
-const success = applyPatches(target, dryRun, patchesFromVersion);
+
+// Auto-fallback (--check only): if no patches exist for current version and no explicit
+// --patches-from, automatically use the latest available patch version for testing.
+// This is check-only because patches often break across versions.
+let effectivePatchVersion = patchesFromVersion;
+if (!effectivePatchVersion && dryRun) {
+  const indexPath = path.join(PATCHES_DIR, target.version, 'index.json');
+  if (!fs.existsSync(indexPath)) {
+    const fallback = findFallbackVersion(target.version);
+    if (fallback) {
+      effectivePatchVersion = fallback;
+      log(`No patches for ${target.version}, using ${fallback} (latest available)`);
+      emitJson({
+        type: 'info',
+        message: `Auto-fallback: using patches from ${fallback} for ${target.version}`
+      });
+    }
+  }
+}
+
+const success = applyPatches(target, dryRun, effectivePatchVersion);
 process.exit(success ? 0 : 1);

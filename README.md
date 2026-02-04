@@ -2,7 +2,7 @@
 
 Minimal patches for Claude Code, supporting both installation methods:
 - **bare** — pnpm/npm install (standalone `cli.js`) — **fully supported**
-- **native** — Bun-compiled binary (`~/.local/bin/claude`) — **WIP** (repackaging issues)
+- **native** — Bun-compiled binary (`~/.local/bin/claude`) — **fully supported**
 
 ## Explainer
 
@@ -11,8 +11,9 @@ Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
-**Current status (2.1.25):**
-- All 5 patches working (ghostty-term, thinking-visibility, thinking-style, spinner, system-reminders) for both installations
+**Current status (2.1.31):**
+- 4 patches working (ghostty-term, thinking-visibility, spinner, system-reminders) for both installations
+- thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
 
 ### Supported setup
 
@@ -49,19 +50,15 @@ node claude-patching.js --bare --apply      # Apply to bare install
 ```
 
 **JSON output:** Set `CLAUDECODE=1` for structured JSONL output (agent-friendly).
+Note: This is automatically set within Claude Code's `Bash` tool executions.
 
 ## Patches
 
-### patch-thinking-visibility.js
+### thinking-visibility
 
 Makes thinking/reasoning blocks visible inline in the TUI (normally only visible in transcript mode via Ctrl+O).
 
-**What it does:**
-1. Finds the `case"thinking":` renderer in the minified React code
-2. Removes the `if(!isTranscriptMode && !verbose) return null` guard
-3. Sets `isTranscriptMode` to `true` so thinking renders inline
-
-### patch-thinking-style.js
+### thinking-style
 
 Styles thinking block content with dim gray italic text (like older CC versions).
 
@@ -72,11 +69,9 @@ Styles thinking block content with dim gray italic text (like older CC versions)
 
 This approach wraps *text strings* with chalk styling before they become React elements, avoiding the "Box can't be inside Text" issue.
 
-**Note:** Apply after the visibility patch. Both are independent but complementary.
+**Note:** Apply after the visibility patch.
 
-**Note:** Function names differ between install types (e.g., `qO` in bare vs `VJ` in native) — the patches handle this automatically.
-
-### patch-spinner.js
+### patch-spinner
 
 Customizes the spinner animation shown while Claude is working.
 
@@ -107,7 +102,7 @@ const NO_FREEZE = true;   // true=always animate, false=freeze when disconnected
 
 **Re-patching:** This patch supports changing spinner characters on an already-patched cli.js. Just edit `SPINNER_CHARS` and re-run — no need to restore from backup first.
 
-### patch-ghostty-term.js
+### ghostty-term
 
 Adds truecolor (16M colors) support for Ghostty terminal.
 
@@ -118,7 +113,7 @@ Adds truecolor (16M colors) support for Ghostty terminal.
 **Why it's needed:**
 Ghostty uses `TERM=xterm-ghostty` and supports truecolor, but Claude Code only recognizes `xterm-kitty` for truecolor detection. Without this patch, Ghostty only gets basic 16 colors because it matches `/^xterm/` but not `/-256(color)?$/`.
 
-### patch-system-reminders.js
+### system-reminders
 
 Reduces token overhead from injected system reminders.
 
