@@ -11,8 +11,8 @@ Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
-**Current status (2.1.31):**
-- 4 patches working (ghostty-term, thinking-visibility, spinner, system-reminders) for both installations
+**Current status (2.1.32):**
+- 5 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory) for both installations
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
 
 ### Supported setup
@@ -112,6 +112,23 @@ Adds truecolor (16M colors) support for Ghostty terminal.
 
 **Why it's needed:**
 Ghostty uses `TERM=xterm-ghostty` and supports truecolor, but Claude Code only recognizes `xterm-kitty` for truecolor detection. Without this patch, Ghostty only gets basic 16 colors because it matches `/^xterm/` but not `/-256(color)?$/`.
+
+### auto-memory
+
+Enables the `tengu_oboe` feature-flagged auto memory system.
+
+**What it does:**
+1. Finds the GrowthBook feature flag check for `tengu_oboe`
+2. Replaces the server-side flag lookup with a hard `true`
+3. Preserves the `CLAUDE_CODE_DISABLE_AUTO_MEMORY` env var kill switch
+
+**Effect when enabled:**
+- `MEMORY.md` is loaded into the system prompt from `~/.claude/projects/<project>/memory/`
+- First 200 lines are injected; longer files are truncated with a warning
+- Custom agents gain memory scopes (`user`, `project`, `local`) via frontmatter
+- Memory directories get automatic read/write permission bypasses
+
+**Disable at runtime:** `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 claude`
 
 ### system-reminders
 
