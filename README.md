@@ -17,6 +17,8 @@ For currently supported CC versions, see the contents of the [patches](./patches
 
 ### Supported setup
 
+**Runtime:** Node.js 18+ or [Bun](https://bun.sh). Bun handles the TypeScript sources natively without additional flags. If using Node < 25, you may need `--experimental-strip-types`.
+
 Optional requirements (for developing new patches):
 - `js-beautify` for prettifying the minified js to something that can be parsed and read
 - `ast-grep` for semantic code search in the prettified js
