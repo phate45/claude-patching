@@ -29,10 +29,28 @@ const {
   writePatchMetadata,
 } = require('./lib/shared');
 
-const {
-  extractClaudeJs,
-  repackWithModifiedJs,
-} = require('./lib/bun-binary.ts');
+// Lazy-load bun-binary.ts — it requires node-lief which may not be installed.
+// Only needed for native binary operations.
+let _bunBinary = null;
+function getBunBinary() {
+  if (!_bunBinary) {
+    try {
+      _bunBinary = require('./lib/bun-binary.ts');
+    } catch (err) {
+      if (err.code === 'MODULE_NOT_FOUND' && err.message.includes('node-lief')) {
+        throw new Error(
+          'node-lief is required for native binary operations.\n' +
+          '  Install it with: npm install\n' +
+          '  (Only needed if you want to patch the native Bun binary installation)'
+        );
+      }
+      throw err;
+    }
+  }
+  return _bunBinary;
+}
+function extractClaudeJs(...args) { return getBunBinary().extractClaudeJs(...args); }
+function repackWithModifiedJs(...args) { return getBunBinary().repackWithModifiedJs(...args); }
 
 const SCRIPT_DIR = __dirname;
 const PATCHES_DIR = path.join(SCRIPT_DIR, 'patches');
@@ -532,7 +550,9 @@ function printStatus(installs) {
           nativeInfo.appliedAt = meta.appliedAt;
         }
       } catch (err) {
-        nativeInfo.error = 'unable to read';
+        nativeInfo.error = err.message && err.message.includes('node-lief')
+          ? 'node-lief not installed'
+          : 'unable to read';
       }
       status.installs.native = nativeInfo;
     }
@@ -592,7 +612,11 @@ function printStatus(installs) {
         console.log(`    Patches: (none)`);
       }
     } catch (err) {
-      console.log(`    Patches: (unable to read)`);
+      if (err.message && err.message.includes('node-lief')) {
+        console.log(`    Patches: (requires node-lief — run npm install to inspect native binary)`);
+      } else {
+        console.log(`    Patches: (unable to read)`);
+      }
     }
     console.log();
   }
