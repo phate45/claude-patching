@@ -9,6 +9,7 @@
  * Usage:
  *   node claude-patching.js --status              # Show detected installations
  *   node claude-patching.js --setup               # Prepare patching environment
+ *   node claude-patching.js --init                # Create index for installed version
  *   node claude-patching.js --check               # Dry run (auto-select if single install)
  *   node claude-patching.js --apply               # Apply patches (auto-select if single install)
  *   node claude-patching.js --native --check      # Target native install explicitly
@@ -140,6 +141,22 @@ function listAvailableVersions() {
 }
 
 /**
+ * Compare two version strings: returns -1 if a < b, 0 if equal, 1 if a > b
+ */
+function compareVersions(a, b) {
+  const partsA = a.split('.').map(p => parseInt(p, 10) || 0);
+  const partsB = b.split('.').map(p => parseInt(p, 10) || 0);
+  const maxLen = Math.max(partsA.length, partsB.length);
+  for (let i = 0; i < maxLen; i++) {
+    const partA = partsA[i] || 0;
+    const partB = partsB[i] || 0;
+    if (partA < partB) return -1;
+    if (partA > partB) return 1;
+  }
+  return 0;
+}
+
+/**
  * Find the best fallback patch version for a given target version.
  * Returns the latest available version that is <= targetVersion.
  * Uses semver-style comparison (2.1.31 > 2.1.25 > 2.1.19 etc.)
@@ -147,26 +164,6 @@ function listAvailableVersions() {
 function findFallbackVersion(targetVersion) {
   const available = listAvailableVersions();
   if (available.length === 0) return null;
-
-  // Parse version string into comparable parts
-  const parseVersion = (v) => {
-    const parts = v.split('.').map(p => parseInt(p, 10) || 0);
-    return parts;
-  };
-
-  // Compare two version arrays: returns -1 if a < b, 0 if equal, 1 if a > b
-  const compareVersions = (a, b) => {
-    const partsA = parseVersion(a);
-    const partsB = parseVersion(b);
-    const maxLen = Math.max(partsA.length, partsB.length);
-    for (let i = 0; i < maxLen; i++) {
-      const partA = partsA[i] || 0;
-      const partB = partsB[i] || 0;
-      if (partA < partB) return -1;
-      if (partA > partB) return 1;
-    }
-    return 0;
-  };
 
   // Find the latest version that is <= targetVersion
   let best = null;
@@ -479,6 +476,7 @@ TARGETS (optional if only one install detected)
 ACTIONS
   --status     Show detected installations
   --setup      Prepare patching environment (backups, prettify, tweakcc)
+  --init       Create index.json for installed version from latest existing index
   --check      Dry run - verify patch patterns match
   --apply      Apply patches
 
@@ -494,6 +492,7 @@ AUTO-FALLBACK (--check only)
 
 EXAMPLES
   node claude-patching.js --status              # Show all detected installs
+  node claude-patching.js --init                # Create index for installed version
   node claude-patching.js --check               # Check patches (auto-select)
   node claude-patching.js --native --apply      # Apply to native install
   node claude-patching.js --bare --check        # Check bare install
@@ -632,6 +631,7 @@ if (args.includes('--help') || args.includes('-h')) {
 
 const wantStatus = args.includes('--status');
 const wantSetup = args.includes('--setup');
+const wantInit = args.includes('--init');
 const wantCheck = args.includes('--check');
 const wantApply = args.includes('--apply');
 const wantBare = args.includes('--bare');
@@ -654,9 +654,9 @@ if (wantBare && wantNative) {
   process.exit(1);
 }
 
-const actionCount = [wantStatus, wantSetup, wantCheck, wantApply].filter(Boolean).length;
+const actionCount = [wantStatus, wantSetup, wantInit, wantCheck, wantApply].filter(Boolean).length;
 if (actionCount === 0) {
-  console.error('Error: No action specified. Use --status, --setup, --check, or --apply');
+  console.error('Error: No action specified. Use --status, --setup, --init, --check, or --apply');
   console.error('Run with --help for usage information.');
   process.exit(1);
 }
@@ -685,6 +685,64 @@ if (wantSetup) {
   const { runSetup } = require('./lib/setup');
   const report = runSetup();
   console.log(report);
+  process.exit(0);
+}
+
+// Handle --init
+if (wantInit) {
+  // Collect detected versions
+  const versions = [];
+  if (installs.bare) versions.push(installs.bare.version);
+  if (installs.native) versions.push(installs.native.version);
+
+  if (versions.length === 0) {
+    console.error('Error: No Claude Code installations detected');
+    process.exit(1);
+  }
+
+  // Pick the newer version if they differ
+  const targetVersion = versions.reduce((a, b) => compareVersions(a, b) >= 0 ? a : b);
+
+  if (versions.length === 2 && versions[0] !== versions[1]) {
+    log(`Detected versions: bare=${installs.bare.version}, native=${installs.native.version}`);
+    log(`Picking newer version: ${targetVersion}`);
+  } else {
+    log(`Detected version: ${targetVersion}`);
+  }
+
+  // Check if index already exists for this version
+  const targetDir = path.join(PATCHES_DIR, targetVersion);
+  const targetIndex = path.join(targetDir, 'index.json');
+
+  if (fs.existsSync(targetIndex)) {
+    logError(`patches/${targetVersion}/index.json already exists`);
+    process.exit(1);
+  }
+
+  // Find the most recent existing index to copy from
+  const available = listAvailableVersions();
+  if (available.length === 0) {
+    logError('No existing patch versions to copy from');
+    process.exit(1);
+  }
+
+  const sourceVersion = available[available.length - 1]; // sorted, last is latest
+  const sourceIndex = path.join(PATCHES_DIR, sourceVersion, 'index.json');
+  const sourceContent = JSON.parse(fs.readFileSync(sourceIndex, 'utf8'));
+
+  // Create the new index with updated version
+  const newIndex = { ...sourceContent, version: targetVersion };
+
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
+
+  fs.writeFileSync(targetIndex, JSON.stringify(newIndex, null, 2) + '\n');
+
+  log(`\nCreated patches/${targetVersion}/index.json (copied from ${sourceVersion})`);
+  log(`\nNext steps:`);
+  log(`  node claude-patching.js --check    # verify patches still match`);
+  emitJson({ type: 'result', status: 'success', version: targetVersion, copiedFrom: sourceVersion });
   process.exit(0);
 }
 

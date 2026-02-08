@@ -11,28 +11,18 @@ Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
-**Current status (2.1.34):**
+**Current status (2.1.37):**
 - 5 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory) for both installations
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
+- something changed with the binary installation packaging .. workaround was found, but it's better to watch out
 
-### Supported setup
-
-**Runtime:** Node.js 18+ or [Bun](https://bun.sh). Bun handles the TypeScript sources natively without additional flags. If using Node < 25, you may need `--experimental-strip-types`.
-
-Optional requirements (for developing new patches):
-- `js-beautify` for prettifying the minified js to something that can be parsed and read
-- `ast-grep` for semantic code search in the prettified js
-
-The `chunk-pretty.sh` utility splits the prettified file into chunks for `ast-grep` (the pretty js has ~500K lines, and `ast-grep` chokes at 200K).
+**Runtime:** Node.js 22+ or [Bun](https://bun.sh). Bun handles the TypeScript sources natively without additional flags. If using Node < 25, you may need `--experimental-strip-types`.
 
 ## Quick Start
 
 ```bash
 # Show detected installations and patch status
 node claude-patching.js --status
-
-# Prepare environment (creates backups, updates tweakcc reference)
-node claude-patching.js --setup
 
 # Dry run - verify patterns match
 node claude-patching.js --check
@@ -53,6 +43,30 @@ node claude-patching.js --bare --apply      # Apply to bare install
 
 **JSON output:** Set `CLAUDECODE=1` for structured JSONL output (agent-friendly).
 Note: This is automatically set within Claude Code's `Bash` tool executions.
+
+## After CC Updates
+
+CC updates replace the installation entirely, removing patches and metadata.
+
+```bash
+# Check status (will show "Patches: (none)")
+node claude-patching.js --status
+
+# Test patches (patterns may have changed between versions)
+node claude-patching.js --check
+
+# Create index.json for the new version (copies from latest existing)
+# Great if the above check returns that all the patches can be applied without changes.
+node claude-patching.js --init
+
+# If so, re-apply patches
+node claude-patching.js --apply
+
+# If not, update backups and prettified files, and get ready for some js spelunking
+node claude-patching.js --setup
+```
+
+`--init` detects the installed version(s) and creates a new `patches/<version>/index.json` from the most recent existing index. If bare and native are on different versions, it picks the newer one.
 
 ## Patches
 
@@ -168,20 +182,6 @@ The patching script tracks applied patches via a JSON comment embedded in the JS
 
 This works for both bare and native installs (the native binary contains plaintext JS). Run `--status` to see applied patches.
 
-## Individual Patch Usage
-
-Individual patch scripts require the cli.js path explicitly (no auto-discovery):
-
-```bash
-# Dry run - check if pattern matches
-node patch-thinking-visibility.js --check /path/to/cli.js
-
-# Apply patch
-node patch-thinking-visibility.js /path/to/cli.js
-```
-
-**Note:** Individual patches are not idempotent - they search for original patterns which don't exist after patching. The metadata system in `claude-patching.js` handles this; for individual patches, restore from backup before re-applying.
-
 ## Backups and Recovery
 
 ### Before Patching
@@ -248,23 +248,9 @@ rm -rf "$STORE_PATH"/*claude-code*
 pnpm install -g @anthropic-ai/claude-code
 ```
 
-### After CC Updates
+## Development
 
-CC updates replace the installation entirely, removing patches and metadata. After updating:
-
-```bash
-# Check status (will show "Patches: (none)")
-node claude-patching.js --status
-
-# Update backups and prettified files (detects version change automatically)
-node claude-patching.js --setup
-
-# Test patches (patterns may have changed between versions)
-node claude-patching.js --check
-
-# Re-apply patches
-node claude-patching.js --apply
-```
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for patch development workflow, tooling, and individual patch usage.
 
 ## Troubleshooting
 

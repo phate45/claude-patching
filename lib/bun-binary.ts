@@ -60,17 +60,6 @@ interface BunData {
   elfBinary: LIEF.ELF.Binary;
 }
 
-interface ModuleMetadata {
-  name: Buffer;
-  contents: Buffer;
-  sourcemap: Buffer;
-  bytecode: Buffer;
-  encoding: number;
-  loader: number;
-  moduleFormat: number;
-  side: number;
-}
-
 // ============ Parsing Functions ============
 
 /**
@@ -279,162 +268,88 @@ function extractClaudeJs(binaryPath: string): Buffer {
 // ============ Repacking ============
 
 /**
- * Rebuild Bun data with modified JS content
+ * Replace the Claude JS module contents in-place within the Bun data.
  *
- * Layout: [strings with null terminators][modules table][compileExecArgv + null][OFFSETS][TRAILER]
+ * The Bun binary format uses overlapping string regions (bytecode overlaps
+ * source, etc.), so rebuilding the entire data region from scratch inflates
+ * it massively. Instead, we do a surgical in-place replacement:
+ *
+ * - If the new JS is smaller or equal: overwrite at the original offset,
+ *   pad the remainder with spaces to preserve the original size, and
+ *   update the StringPointer length in the modules table.
+ * - If the new JS is larger: error out (patches should never grow the JS
+ *   significantly; if they do, the approach needs rethinking).
  */
-function repackBunData(
+function replaceClaudeJsInPlace(
   bunData: Buffer,
   bunOffsets: BunOffsets,
   modifiedJs: Buffer
 ): Buffer {
-  // Phase 1: Collect all module data
-  const stringsData: Buffer[] = [];
-  const modulesMetadata: ModuleMetadata[] = [];
+  // Find the claude module
+  let claudeModule: BunModule | undefined;
+  let claudeIndex: number | undefined;
 
-  mapModules(bunData, bunOffsets, (module, moduleName) => {
-    const nameBytes = getStringContent(bunData, module.name);
-
-    // Replace claude module contents with modified JS
-    let contentsBytes: Buffer;
+  mapModules(bunData, bunOffsets, (module, moduleName, index) => {
     if (isClaudeModule(moduleName)) {
-      contentsBytes = modifiedJs;
-      debug(`Replacing ${moduleName}: ${module.contents.length} -> ${modifiedJs.length} bytes`);
-    } else {
-      contentsBytes = getStringContent(bunData, module.contents);
+      claudeModule = module;
+      claudeIndex = index;
+      debug(`Found ${moduleName} at module index ${index}`);
+      debug(`  contents: offset=${module.contents.offset}, length=${module.contents.length}`);
+      return true;
     }
-
-    const sourcemapBytes = getStringContent(bunData, module.sourcemap);
-    const bytecodeBytes = getStringContent(bunData, module.bytecode);
-
-    modulesMetadata.push({
-      name: nameBytes,
-      contents: contentsBytes,
-      sourcemap: sourcemapBytes,
-      bytecode: bytecodeBytes,
-      encoding: module.encoding,
-      loader: module.loader,
-      moduleFormat: module.moduleFormat,
-      side: module.side,
-    });
-
-    // Each module contributes 4 strings (name, contents, sourcemap, bytecode)
-    stringsData.push(nameBytes, contentsBytes, sourcemapBytes, bytecodeBytes);
-
     return undefined;
   });
 
-  // Phase 2: Calculate new layout
-  let currentOffset = 0;
-  const stringOffsets: StringPointer[] = [];
-
-  for (const stringData of stringsData) {
-    stringOffsets.push({ offset: currentOffset, length: stringData.length });
-    currentOffset += stringData.length + 1; // +1 for null terminator
+  if (!claudeModule || claudeIndex === undefined) {
+    throw new Error('Claude module not found in binary during repack');
   }
 
-  const modulesListOffset = currentOffset;
-  const modulesListSize = modulesMetadata.length * SIZEOF_MODULE;
-  currentOffset += modulesListSize;
+  const originalLength = claudeModule.contents.length;
+  const newLength = modifiedJs.length;
+  const delta = newLength - originalLength;
 
-  // compileExecArgv is a separate string region
-  const compileExecArgvBytes = getStringContent(bunData, bunOffsets.compileExecArgvPtr);
-  const compileExecArgvOffset = currentOffset;
-  const compileExecArgvLength = compileExecArgvBytes.length;
-  currentOffset += compileExecArgvLength + 1; // +1 for null terminator
+  debug(`JS replacement: ${originalLength} -> ${newLength} (delta: ${delta})`);
 
-  const offsetsOffset = currentOffset;
-  currentOffset += SIZEOF_OFFSETS;
-
-  const trailerOffset = currentOffset;
-  currentOffset += BUN_TRAILER.length;
-
-  debug(`New buffer layout:`);
-  debug(`  Strings: 0 - ${modulesListOffset}`);
-  debug(`  Modules: ${modulesListOffset} - ${modulesListOffset + modulesListSize}`);
-  debug(`  compileExecArgv: ${compileExecArgvOffset} - ${compileExecArgvOffset + compileExecArgvLength}`);
-  debug(`  Offsets: ${offsetsOffset}`);
-  debug(`  Trailer: ${trailerOffset}`);
-  debug(`  Total: ${currentOffset} bytes`);
-
-  // Phase 3: Build new buffer
-  const newBuffer = Buffer.allocUnsafe(currentOffset);
-  newBuffer.fill(0);
-
-  // Write all strings with null terminators
-  let stringIdx = 0;
-  for (const { offset, length } of stringOffsets) {
-    if (length > 0) {
-      stringsData[stringIdx].copy(newBuffer, offset, 0, length);
-    }
-    newBuffer[offset + length] = 0; // null terminator
-    stringIdx++;
+  if (delta > 0) {
+    throw new Error(
+      `Patched JS is ${delta} bytes larger than original (${newLength} vs ${originalLength}).\n` +
+      'In-place replacement requires new JS to be <= original size.\n' +
+      'The patches may be adding too much code.'
+    );
   }
 
-  // Write compileExecArgv
-  if (compileExecArgvLength > 0) {
-    compileExecArgvBytes.copy(newBuffer, compileExecArgvOffset, 0, compileExecArgvLength);
-  }
-  newBuffer[compileExecArgvOffset + compileExecArgvLength] = 0; // null terminator
+  // Copy the entire bunData so we can modify it
+  const result = Buffer.from(bunData);
 
-  // Write module structures
-  for (let i = 0; i < modulesMetadata.length; i++) {
-    const metadata = modulesMetadata[i];
-    const baseStringIdx = i * 4;
-    const moduleOffset = modulesListOffset + i * SIZEOF_MODULE;
-    let pos = moduleOffset;
+  // Overwrite the claude contents region with modified JS
+  modifiedJs.copy(result, claudeModule.contents.offset);
 
-    // Write 4 StringPointers (8 bytes each)
-    newBuffer.writeUInt32LE(stringOffsets[baseStringIdx].offset, pos);
-    newBuffer.writeUInt32LE(stringOffsets[baseStringIdx].length, pos + 4);
-    pos += SIZEOF_STRING_POINTER;
-
-    newBuffer.writeUInt32LE(stringOffsets[baseStringIdx + 1].offset, pos);
-    newBuffer.writeUInt32LE(stringOffsets[baseStringIdx + 1].length, pos + 4);
-    pos += SIZEOF_STRING_POINTER;
-
-    newBuffer.writeUInt32LE(stringOffsets[baseStringIdx + 2].offset, pos);
-    newBuffer.writeUInt32LE(stringOffsets[baseStringIdx + 2].length, pos + 4);
-    pos += SIZEOF_STRING_POINTER;
-
-    newBuffer.writeUInt32LE(stringOffsets[baseStringIdx + 3].offset, pos);
-    newBuffer.writeUInt32LE(stringOffsets[baseStringIdx + 3].length, pos + 4);
-    pos += SIZEOF_STRING_POINTER;
-
-    // Write 4 flags (1 byte each)
-    newBuffer.writeUInt8(metadata.encoding, pos);
-    newBuffer.writeUInt8(metadata.loader, pos + 1);
-    newBuffer.writeUInt8(metadata.moduleFormat, pos + 2);
-    newBuffer.writeUInt8(metadata.side, pos + 3);
+  // Pad remaining bytes with spaces (valid JS whitespace, preserves null terminator after region)
+  if (delta < 0) {
+    const padStart = claudeModule.contents.offset + newLength;
+    const padLength = -delta;
+    result.fill(0x20, padStart, padStart + padLength); // 0x20 = space
+    debug(`Padded ${padLength} bytes with spaces`);
   }
 
-  // Write OFFSETS structure
-  // byteCount = offset of the OFFSETS structure (size of [data][OFFSETS][TRAILER])
-  const newByteCount = BigInt(offsetsOffset);
-  let pos = offsetsOffset;
+  // Update the contents StringPointer length in the modules table.
+  // The modules table is at bunOffsets.modulesPtr within bunData.
+  // Each module is SIZEOF_MODULE (36) bytes, contents pointer is at offset +8.
+  const moduleEntryOffset = bunOffsets.modulesPtr.offset + (claudeIndex * SIZEOF_MODULE);
+  const contentsLengthOffset = moduleEntryOffset + 8 + 4; // +8 for contents field, +4 for offset (to get to length)
+  result.writeUInt32LE(newLength, contentsLengthOffset);
 
-  newBuffer.writeBigUInt64LE(newByteCount, pos);
-  pos += 8;
+  debug(`Updated contents length at byte ${contentsLengthOffset}: ${originalLength} -> ${newLength}`);
 
-  newBuffer.writeUInt32LE(modulesListOffset, pos);
-  newBuffer.writeUInt32LE(modulesListSize, pos + 4);
-  pos += 8;
-
-  newBuffer.writeUInt32LE(bunOffsets.entryPointId, pos);
-  pos += 4;
-
-  newBuffer.writeUInt32LE(compileExecArgvOffset, pos);
-  newBuffer.writeUInt32LE(compileExecArgvLength, pos + 4);
-  // pos += 8 + 4 padding (we don't need to write padding, buffer is zeroed)
-
-  // Write trailer
-  BUN_TRAILER.copy(newBuffer, trailerOffset);
-
-  return newBuffer;
+  return result;
 }
 
 /**
  * Replace JS in a native binary and write to output path
+ *
+ * Instead of using LIEF's write() (which reconstructs the entire ELF and can
+ * produce pathologically large output), we splice the binary manually:
+ * keep the original ELF bytes verbatim, replace only the overlay.
  */
 function repackWithModifiedJs(
   binaryPath: string,
@@ -445,28 +360,38 @@ function repackWithModifiedJs(
 
   debug(`Original bunData size: ${bunData.length}`);
 
-  // Rebuild Bun data with modified JS
-  const newBunData = repackBunData(bunData, bunOffsets, modifiedJs);
+  // In-place replacement: swap claude JS within the existing data layout.
+  // This preserves the Bun format's overlapping string regions.
+  const newBunData = replaceClaudeJsInPlace(bunData, bunOffsets, modifiedJs);
 
   debug(`New bunData size: ${newBunData.length}`);
 
-  // Create new overlay: [newBunData][totalByteCount as u64 LE]
-  // totalByteCount = size of entire overlay
-  const totalByteCount = BigInt(newBunData.length + 8);
-  const totalByteCountBuf = Buffer.alloc(8);
-  totalByteCountBuf.writeBigUInt64LE(totalByteCount);
+  // Reconstruct overlay: [bunData (without offsets/trailer)][totalByteCount as u64 LE]
+  // The bunData blob from extractBunData includes [dataRegion][offsets][trailer],
+  // and the file format appends [totalByteCount] after the trailer.
+  // Since we kept the same size, totalByteCount stays the same.
+  const originalBinary = fs.readFileSync(binaryPath);
+  const originalOverlay = elfBinary.overlay;
+  const overlayStart = originalBinary.length - originalOverlay.length;
 
+  // Rebuild overlay: [newBunData][totalByteCount from original]
+  const totalByteCountBuf = originalOverlay.subarray(originalOverlay.length - 8);
   const newOverlay = Buffer.concat([newBunData, totalByteCountBuf]);
 
-  debug(`New overlay size: ${newOverlay.length}`);
+  debug(`ELF portion: 0..${overlayStart} (${overlayStart} bytes)`);
+  debug(`Original overlay: ${originalOverlay.length} bytes`);
+  debug(`New overlay: ${newOverlay.length} bytes`);
 
-  // Set new overlay on ELF binary
-  elfBinary.overlay = newOverlay;
+  // Splice: original ELF bytes + new overlay
+  const elfPortion = originalBinary.subarray(0, overlayStart);
 
   // Write atomically (temp file + rename)
   const tempPath = outputPath + '.tmp';
   try {
-    elfBinary.write(tempPath);
+    const fd = fs.openSync(tempPath, 'w');
+    fs.writeSync(fd, elfPortion);
+    fs.writeSync(fd, newOverlay);
+    fs.closeSync(fd);
 
     // Preserve original file permissions
     const stat = fs.statSync(binaryPath);
@@ -519,6 +444,6 @@ module.exports = {
   repackWithModifiedJs,
   // Expose internals for testing/debugging
   extractBunData,
-  repackBunData,
+  replaceClaudeJsInPlace,
   isClaudeModule,
 };
