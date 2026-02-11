@@ -11,10 +11,9 @@ Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
-**Current status (2.1.37):**
-- 5 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory) for both installations
+**Current status (2.1.39):**
+- 6 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory, no-collapse-reads) for both installations
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
-- something changed with the binary installation packaging .. workaround was found, but it's better to watch out
 
 **Runtime:** Node.js 22+ or [Bun](https://bun.sh). Bun handles the TypeScript sources natively without additional flags. If using Node < 25, you may need `--experimental-strip-types`.
 
@@ -145,6 +144,17 @@ Enables the `tengu_oboe` feature-flagged auto memory system.
 - Memory directories get automatic read/write permission bypasses
 
 **Disable at runtime:** `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 claude`
+
+### no-collapse-reads
+
+Disables the collapsing of consecutive Read/Search tool calls into summary lines.
+
+**What it does:**
+1. Finds the predicate function that classifies tool uses as "collapsible" (Read, Grep, Glob)
+2. Short-circuits it to always return false
+
+**Why it's needed:**
+CC 2.1.39 introduced `collapsed_read_search` grouping — consecutive Read/Grep/Glob calls get collapsed into a single line like "Read 3 files (ctrl+o to expand)". This hides useful context about which files were read and how many lines each contained. The patch restores the previous behavior where each tool call is displayed individually.
 
 ### system-reminders
 
