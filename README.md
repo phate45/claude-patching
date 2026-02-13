@@ -12,7 +12,7 @@ Use at your own peril.
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
 **Current status (2.1.41):**
-- 6 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory, no-collapse-reads) for both installations
+- 7 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory, no-collapse-reads, quiet-notifications) for both installations
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
 
 **Runtime:** Node.js 22+ or [Bun](https://bun.sh). Bun handles the TypeScript sources natively without additional flags. If using Node < 25, you may need `--experimental-strip-types`.
@@ -182,6 +182,23 @@ const FILE_MODIFIED_REMINDER = 'concise'; // 'concise', 'remove', or 'keep'
 - Task reminder: ~100 tokens → ~15 tokens (when triggered)
 - File modification: ~500+ tokens → ~25 tokens (per changed file)
 
+### quiet-notifications
+
+Suppresses duplicate background agent notifications when `TaskOutput` has already read the output.
+
+**What it does:**
+1. Flags task IDs in a `globalThis` Set when `TaskOutput` successfully retrieves output
+2. Intercepts the hD1 queue consumer (React useEffect path) — skips notification if flagged
+3. Intercepts the main loop consumer (streaming fallback path) — skips with `continue` if flagged
+
+**Why it's needed:**
+When a background agent completes, its notification is enqueued via polling *before* `TaskOutput` can read the result (100ms polling delay). If the model calls `TaskOutput` during its turn, the notification is still queued and fires after the turn ends — duplicating the agent's output in context. Over sessions with heavy background agent use, this wastes significant context on redundant content.
+
+**Behavior:**
+- If `TaskOutput` reads the output → notification is silently suppressed
+- If `TaskOutput` is never called → notification fires normally
+- If `TaskOutput` returns `not_ready` (agent still running) → no flag set, notification fires normally
+
 ## Patch Metadata
 
 The patching script tracks applied patches via a JSON comment embedded in the JS:
@@ -216,14 +233,12 @@ The `--apply` command also creates `.bak` files next to the original as an addit
 If patches cause issues:
 
 ```bash
-# Get the install path
-node claude-patching.js --status
+# Restore from .bak (created by --apply before patching)
+node claude-patching.js --bare --restore
+node claude-patching.js --native --restore
 
-# For bare - restore from local backup:
+# Or manually from workspace backup:
 cp ./cli.js.bare.original /path/to/cli.js
-
-# Or restore from .bak file created during patching:
-cp /path/to/cli.js.bak /path/to/cli.js
 ```
 
 ### Full Recovery (Fresh CC Install)

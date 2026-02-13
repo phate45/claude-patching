@@ -14,6 +14,7 @@
  *   node claude-patching.js --apply               # Apply patches (auto-select if single install)
  *   node claude-patching.js --native --check      # Target native install explicitly
  *   node claude-patching.js --bare --apply        # Target bare install explicitly
+ *   node claude-patching.js --bare --restore      # Restore bare install from .bak
  */
 
 const { execSync } = require('child_process');
@@ -28,6 +29,10 @@ const {
   detectInstalls,
   readPatchMetadata,
   writePatchMetadata,
+  isPatched,
+  extractVersion,
+  formatBytes,
+  safeStats,
 } = require('./lib/shared');
 
 // Lazy-load bun-binary.ts — it requires node-lief which may not be installed.
@@ -340,15 +345,50 @@ function applyPatches(install, dryRun, patchVersionOverride) {
     log(`Applied: ${existingMeta.appliedAt}`);
   }
 
+  // Create backup BEFORE patching — bare patches write directly to install.path,
+  // so the file must be backed up while it's still in its pre-patch state.
+  if (!dryRun) {
+    const backupPath = install.path + '.bak';
+    if (!fs.existsSync(backupPath)) {
+      const preApplyContent = isNative
+        ? extractClaudeJs(install.path).toString('utf8')
+        : fs.readFileSync(install.path, 'utf8');
+      if (isPatched(preApplyContent)) {
+        log(`\n⚠ Skipped backup: source already has patch marker. Restore a clean source first.`);
+        emitJson({ type: 'warning', message: 'Skipped .bak creation: source already patched' });
+      } else {
+        fs.copyFileSync(install.path, backupPath);
+        log(`\n✓ Backed up to ${backupPath}`);
+        emitJson({ type: 'info', message: `Backup created: ${backupPath}` });
+      }
+    }
+  }
+
+  // Build set of already-applied patch IDs (spinner is always re-run since symbols are configurable)
+  const alreadyApplied = new Set(
+    (existingMeta?.patches || []).map(p => p.id).filter(id => id !== 'spinner')
+  );
+
   // Run patches
   log(`\n${dryRun ? 'Checking' : 'Applying'} patches:\n`);
 
   let successCount = 0;
   let notFoundCount = 0;
+  let skipMetaCount = 0;
   let failCount = 0;
   const appliedPatches = [];
 
   for (const patch of patches) {
+    // Skip patches already recorded in metadata
+    if (alreadyApplied.has(patch.id)) {
+      emitJson({ type: 'patch_skipped', id: patch.id, reason: 'already_applied' });
+      log(`→ ${patch.id}`);
+      log(`  ✓ Already applied (per metadata)`);
+      log('');
+      skipMetaCount++;
+      continue;
+    }
+
     // Emit patch start event in JSON mode
     emitJson({ type: 'patch_start', id: patch.id, file: patch.file });
     log(`→ ${patch.id}`);
@@ -368,8 +408,12 @@ function applyPatches(install, dryRun, patchVersionOverride) {
       successCount++;
       appliedPatches.push({ id: patch.id, file: patch.file });
     } else if (result.notFound) {
-      emitJson({ type: 'patch_skipped', id: patch.id, reason: 'pattern_not_found' });
+      emitJson({ type: 'patch_skipped', id: patch.id, reason: 'pattern_not_found', output: result.output || undefined });
       log(`  ✗ Pattern not found (incompatible version or already applied)`);
+      if (result.output) {
+        const lines = result.output.split('\n').map(l => '    ' + l).join('\n');
+        log(lines);
+      }
       notFoundCount++;
     } else {
       emitJson({ type: 'patch_failed', id: patch.id, error: result.output || result.error });
@@ -380,9 +424,12 @@ function applyPatches(install, dryRun, patchVersionOverride) {
   }
 
   // Summary
-  const summaryMsg = `Results: ${successCount} applied, ${notFoundCount} skipped, ${failCount} failed`;
-  log(summaryMsg);
-  emitJson({ type: 'summary', applied: successCount, skipped: notFoundCount, failed: failCount, success: failCount === 0 });
+  const skipTotal = notFoundCount + skipMetaCount;
+  const summaryParts = [`${successCount} applied`, `${skipTotal} skipped`];
+  if (skipMetaCount > 0) summaryParts[1] += ` (${skipMetaCount} already applied)`;
+  if (failCount > 0) summaryParts.push(`${failCount} failed`);
+  log(`Results: ${summaryParts.join(', ')}`);
+  emitJson({ type: 'summary', applied: successCount, skipped: notFoundCount, skippedMeta: skipMetaCount, failed: failCount, success: failCount === 0 });
 
   if (dryRun) {
     if (tempPath) fs.unlinkSync(tempPath);
@@ -394,14 +441,6 @@ function applyPatches(install, dryRun, patchVersionOverride) {
     if (tempPath) fs.unlinkSync(tempPath);
     log(`\nNo patches were applied.`);
     return notFoundCount === patches.length;
-  }
-
-  // Create backup
-  const backupPath = install.path + '.bak';
-  if (!fs.existsSync(backupPath)) {
-    fs.copyFileSync(install.path, backupPath);
-    log(`\n✓ Backed up to ${backupPath}`);
-    emitJson({ type: 'info', message: `Backup created: ${backupPath}` });
   }
 
   // Update metadata in the patched JS
@@ -474,11 +513,12 @@ TARGETS (optional if only one install detected)
   --native     Target native installation (Bun binary)
 
 ACTIONS
-  --status     Show detected installations
+  --status     Show detected installations and workspace artifact versions
   --setup      Prepare patching environment (backups, prettify, tweakcc)
   --init       Create index.json for installed version from latest existing index
   --check      Dry run - verify patch patterns match
   --apply      Apply patches
+  --restore    Restore from .bak backup (undo patches)
 
 OPTIONS
   --help                     Show this help
@@ -507,53 +547,88 @@ Patches are loaded from patches/<version>/index.json
 `);
 }
 
+/**
+ * Get workspace artifact info (version, size, modification date)
+ * @param {string} type - "bare" or "native"
+ * @returns {{ original: object|null, pretty: object|null }}
+ */
+function getArtifactInfo(type) {
+  const result = { original: null, pretty: null };
+
+  for (const suffix of ['original', 'pretty']) {
+    const filePath = path.join(SCRIPT_DIR, `cli.js.${type}.${suffix}`);
+    const stats = safeStats(filePath);
+    if (!stats.exists) continue;
+
+    const info = {
+      path: filePath,
+      size: stats.size,
+      mtime: stats.mtime.toISOString().split('T')[0],
+      version: null,
+    };
+
+    // Extract version from content (read first 4K — VERSION is near the top)
+    try {
+      const fd = fs.openSync(filePath, 'r');
+      const buf = Buffer.alloc(4096);
+      fs.readSync(fd, buf, 0, 4096, 0);
+      fs.closeSync(fd);
+      const head = buf.toString('utf8');
+      info.version = extractVersion(head);
+    } catch { /* ignore */ }
+
+    // If not found in first 4K (e.g. prettified files), try a broader search
+    if (!info.version) {
+      try {
+        const content = fs.readFileSync(filePath, 'utf8');
+        info.version = extractVersion(content);
+      } catch { /* ignore */ }
+    }
+
+    result[suffix] = info;
+  }
+
+  return result;
+}
+
 function printStatus(installs) {
   // JSON mode: output structured object
   if (jsonMode) {
-    const status = { type: 'status', installs: {} };
+    const status = { type: 'status', installs: {}, artifacts: {} };
 
-    if (installs.bare) {
-      const bareInfo = {
-        version: installs.bare.version,
-        path: installs.bare.path,
+    for (const type of ['bare', 'native']) {
+      const install = installs[type];
+      if (!install) continue;
+
+      const info = {
+        version: install.version,
+        path: install.path,
         patches: null,
         appliedAt: null,
       };
-      try {
-        const content = fs.readFileSync(installs.bare.path, 'utf8');
-        const meta = readPatchMetadata(content);
-        if (meta) {
-          bareInfo.patches = meta.patches.map(p => p.id);
-          bareInfo.appliedAt = meta.appliedAt;
-        }
-      } catch (err) {
-        bareInfo.error = 'unable to read';
-      }
-      status.installs.bare = bareInfo;
-    }
 
-    if (installs.native) {
-      const nativeInfo = {
-        version: installs.native.version,
-        path: installs.native.path,
-        patches: null,
-        appliedAt: null,
-      };
       try {
-        const extracted = extractJsFromBinaryToTemp(installs.native.path);
-        const content = fs.readFileSync(extracted.tempPath, 'utf8');
+        let content;
+        if (type === 'native') {
+          const extracted = extractJsFromBinaryToTemp(install.path);
+          content = fs.readFileSync(extracted.tempPath, 'utf8');
+          fs.unlinkSync(extracted.tempPath);
+        } else {
+          content = fs.readFileSync(install.path, 'utf8');
+        }
         const meta = readPatchMetadata(content);
-        fs.unlinkSync(extracted.tempPath);
         if (meta) {
-          nativeInfo.patches = meta.patches.map(p => p.id);
-          nativeInfo.appliedAt = meta.appliedAt;
+          info.patches = meta.patches.map(p => p.id);
+          info.appliedAt = meta.appliedAt;
         }
       } catch (err) {
-        nativeInfo.error = err.message && err.message.includes('node-lief')
+        info.error = err.message?.includes('node-lief')
           ? 'node-lief not installed'
           : 'unable to read';
       }
-      status.installs.native = nativeInfo;
+
+      status.installs[type] = info;
+      status.artifacts[type] = getArtifactInfo(type);
     }
 
     emitJson(status);
@@ -571,14 +646,25 @@ function printStatus(installs) {
     return;
   }
 
-  if (installs.bare) {
-    console.log(`  bare (pnpm/npm):`);
-    console.log(`    Version: ${installs.bare.version}`);
-    console.log(`    Path: ${installs.bare.path}`);
+  for (const type of ['bare', 'native']) {
+    const install = installs[type];
+    if (!install) continue;
+
+    const label = type === 'bare' ? 'bare (pnpm/npm)' : 'native (Bun binary)';
+    console.log(`  ${label}:`);
+    console.log(`    Version: ${install.version}`);
+    console.log(`    Path: ${install.path}`);
 
     // Check for patch metadata
     try {
-      const content = fs.readFileSync(installs.bare.path, 'utf8');
+      let content;
+      if (type === 'native') {
+        const extracted = extractJsFromBinaryToTemp(install.path);
+        content = fs.readFileSync(extracted.tempPath, 'utf8');
+        fs.unlinkSync(extracted.tempPath);
+      } else {
+        content = fs.readFileSync(install.path, 'utf8');
+      }
       const meta = readPatchMetadata(content);
       if (meta) {
         console.log(`    Patches: ${meta.patches.map(p => p.id).join(', ')}`);
@@ -587,36 +673,28 @@ function printStatus(installs) {
         console.log(`    Patches: (none)`);
       }
     } catch (err) {
-      console.log(`    Patches: (unable to read)`);
-    }
-    console.log();
-  }
-
-  if (installs.native) {
-    console.log(`  native (Bun binary):`);
-    console.log(`    Version: ${installs.native.version}`);
-    console.log(`    Path: ${installs.native.path}`);
-
-    // Extract JS to check for patch metadata
-    try {
-      const extracted = extractJsFromBinaryToTemp(installs.native.path);
-      const content = fs.readFileSync(extracted.tempPath, 'utf8');
-      const meta = readPatchMetadata(content);
-      fs.unlinkSync(extracted.tempPath);
-
-      if (meta) {
-        console.log(`    Patches: ${meta.patches.map(p => p.id).join(', ')}`);
-        console.log(`    Applied: ${meta.appliedAt}`);
-      } else {
-        console.log(`    Patches: (none)`);
-      }
-    } catch (err) {
-      if (err.message && err.message.includes('node-lief')) {
-        console.log(`    Patches: (requires node-lief — run npm install to inspect native binary)`);
+      if (err.message?.includes('node-lief')) {
+        console.log(`    Patches: (requires node-lief — run npm install)`);
       } else {
         console.log(`    Patches: (unable to read)`);
       }
     }
+
+    // Workspace artifacts
+    const artifacts = getArtifactInfo(type);
+    if (artifacts.original || artifacts.pretty) {
+      console.log(`    Artifacts:`);
+      for (const [suffix, info] of Object.entries(artifacts)) {
+        if (!info) continue;
+        const versionStr = info.version || '?';
+        const stale = info.version && info.version !== install.version;
+        const tag = stale ? ' ← STALE' : '';
+        console.log(`      ${suffix}: v${versionStr} (${formatBytes(info.size)}, ${info.mtime})${tag}`);
+      }
+    } else {
+      console.log(`    Artifacts: (none — run --setup)`);
+    }
+
     console.log();
   }
 }
@@ -634,6 +712,7 @@ const wantSetup = args.includes('--setup');
 const wantInit = args.includes('--init');
 const wantCheck = args.includes('--check');
 const wantApply = args.includes('--apply');
+const wantRestore = args.includes('--restore');
 const wantBare = args.includes('--bare');
 const wantNative = args.includes('--native');
 
@@ -654,9 +733,9 @@ if (wantBare && wantNative) {
   process.exit(1);
 }
 
-const actionCount = [wantStatus, wantSetup, wantInit, wantCheck, wantApply].filter(Boolean).length;
+const actionCount = [wantStatus, wantSetup, wantInit, wantCheck, wantApply, wantRestore].filter(Boolean).length;
 if (actionCount === 0) {
-  console.error('Error: No action specified. Use --status, --setup, --init, --check, or --apply');
+  console.error('Error: No action specified. Use --status, --setup, --init, --check, --apply, or --restore');
   console.error('Run with --help for usage information.');
   process.exit(1);
 }
@@ -743,6 +822,91 @@ if (wantInit) {
   log(`\nNext steps:`);
   log(`  node claude-patching.js --check    # verify patches still match`);
   emitJson({ type: 'result', status: 'success', version: targetVersion, copiedFrom: sourceVersion });
+  process.exit(0);
+}
+
+// Handle --restore
+if (wantRestore) {
+  // Resolve target (same logic as --check/--apply)
+  let restoreTarget = null;
+
+  if (wantBare) {
+    if (!installs.bare) {
+      console.error('Error: No bare (pnpm/npm) installation detected');
+      process.exit(1);
+    }
+    restoreTarget = installs.bare;
+  } else if (wantNative) {
+    if (!installs.native) {
+      console.error('Error: No native (Bun binary) installation detected');
+      process.exit(1);
+    }
+    restoreTarget = installs.native;
+  } else {
+    const available = [installs.bare, installs.native].filter(Boolean);
+    if (available.length === 0) {
+      console.error('Error: No Claude Code installation detected');
+      process.exit(1);
+    }
+    if (available.length > 1) {
+      console.error('Error: Multiple installations detected. Specify --bare or --native');
+      process.exit(1);
+    }
+    restoreTarget = available[0];
+    log(`Auto-selected: ${restoreTarget.type} install`);
+  }
+
+  const bakPath = restoreTarget.path + '.bak';
+
+  if (!fs.existsSync(bakPath)) {
+    logError(`No backup found at ${bakPath}`);
+    logError('A .bak file is created by --apply before patching. No restore possible without it.');
+    emitJson({ type: 'result', status: 'failure', message: 'No .bak backup found' });
+    process.exit(1);
+  }
+
+  // Verify .bak is clean
+  try {
+    let bakContent;
+    if (restoreTarget.type === 'native') {
+      // For native, we can't easily read the JS from the .bak binary without extraction,
+      // so just check that the .bak file exists and is a reasonable size
+      const bakStats = fs.statSync(bakPath);
+      const liveStats = fs.statSync(restoreTarget.path);
+      log(`\nRestore: ${restoreTarget.type} install`);
+      log(`  Source: ${bakPath} (${formatBytes(bakStats.size)})`);
+      log(`  Target: ${restoreTarget.path} (${formatBytes(liveStats.size)})`);
+    } else {
+      bakContent = fs.readFileSync(bakPath, 'utf8');
+      if (isPatched(bakContent)) {
+        logError(`Backup at ${bakPath} is itself patched — cannot restore a clean state from it.`);
+        logError('Reinstall Claude Code to get a clean binary.');
+        emitJson({ type: 'result', status: 'failure', message: '.bak is also patched' });
+        process.exit(1);
+      }
+      const bakStats = fs.statSync(bakPath);
+      const liveStats = fs.statSync(restoreTarget.path);
+      log(`\nRestore: ${restoreTarget.type} install`);
+      log(`  Source: ${bakPath} (${formatBytes(bakStats.size)})`);
+      log(`  Target: ${restoreTarget.path} (${formatBytes(liveStats.size)})`);
+    }
+  } catch (err) {
+    logError(`Failed to read backup: ${err.message}`);
+    process.exit(1);
+  }
+
+  // Perform the restore
+  try {
+    fs.copyFileSync(bakPath, restoreTarget.path);
+    log(`\n✓ Restored ${restoreTarget.type} install from .bak`);
+    log('  Restart Claude Code to use the unpatched version.');
+    emitJson({ type: 'result', status: 'success', message: `Restored ${restoreTarget.type} from .bak` });
+  } catch (err) {
+    logError(`Restore failed: ${err.message}`);
+    emitJson({ type: 'result', status: 'failure', message: err.message });
+    process.exit(1);
+  }
+
   process.exit(0);
 }
 

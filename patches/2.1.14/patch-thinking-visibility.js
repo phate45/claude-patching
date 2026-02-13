@@ -85,17 +85,7 @@ if (dryRun) {
 // Apply the patch
 const patchedContent = content.slice(0, match.index) + replacement + content.slice(match.index + match[0].length);
 
-// Backup the original
-const backupPath = targetPath + '.bak';
-try {
-  if (!fs.existsSync(backupPath)) {
-    fs.copyFileSync(targetPath, backupPath);
-    console.log();
-    console.log(`✓ Backed up original to ${backupPath}`);
-  }
-} catch (err) {
-  console.error(`Warning: Could not create backup: ${err.message}`);
-}
+// Individual patches should not create their own backups — the orchestrator handles it
 
 // Write the patched file
 try {
