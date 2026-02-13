@@ -21,6 +21,10 @@
       {
         "id": "quiet-notifications",
         "file": "2.1.41/patch-quiet-notifications.js"
+      },
+      {
+        "id": "read-summary",
+        "file": "2.1.41/patch-read-summary.js"
       }
     ],
     "bare": [

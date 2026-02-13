@@ -12,7 +12,7 @@ Use at your own peril.
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
 **Current status (2.1.41):**
-- 7 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory, no-collapse-reads, quiet-notifications) for both installations
+- 8 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory, no-collapse-reads, quiet-notifications, read-summary) for both installations
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
 
 **Runtime:** Node.js 22+ or [Bun](https://bun.sh). Bun handles the TypeScript sources natively without additional flags. If using Node < 25, you may need `--experimental-strip-types`.
@@ -198,6 +198,20 @@ When a background agent completes, its notification is enqueued via polling *bef
 - If `TaskOutput` reads the output → notification is silently suppressed
 - If `TaskOutput` is never called → notification fires normally
 - If `TaskOutput` returns `not_ready` (agent still running) → no flag set, notification fires normally
+
+### read-summary
+
+Shows offset/limit information in the Read tool's compact display.
+
+**What it does:**
+1. Finds the verbose-mode gate in `renderToolUseMessage` for the Read tool
+2. Removes the verbose flag from the condition so offset/limit info always displays
+
+**Before:** `Read(claude-patching.js)`
+**After:** `Read(claude-patching.js · lines 200-229)`
+
+**Why it's needed:**
+When reading a section of a file with offset/limit, the compact tool display only shows the filename — you can't tell which part of the file was read without expanding to verbose mode. This patch surfaces the line range in the compact view, using the same `· lines X-Y` format that verbose mode already provides.
 
 ## Patch Metadata
 

@@ -347,8 +347,8 @@ function applyPatches(install, dryRun, patchVersionOverride) {
 
   // Create backup BEFORE patching — bare patches write directly to install.path,
   // so the file must be backed up while it's still in its pre-patch state.
+  const backupPath = install.path + '.bak';
   if (!dryRun) {
-    const backupPath = install.path + '.bak';
     if (!fs.existsSync(backupPath)) {
       const preApplyContent = isNative
         ? extractClaudeJs(install.path).toString('utf8')
