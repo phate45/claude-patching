@@ -11,7 +11,7 @@ Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
-**Current status (2.1.39):**
+**Current status (2.1.41):**
 - 6 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory, no-collapse-reads) for both installations
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
 

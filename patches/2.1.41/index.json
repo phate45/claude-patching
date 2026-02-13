@@ -1,0 +1,47 @@
+{
+  "version": "2.1.41",
+  "patches": {
+    "common": [
+      {
+        "id": "ghostty-term",
+        "file": "2.1.14/patch-ghostty-term.js"
+      },
+      {
+        "id": "system-reminders",
+        "file": "2.1.20/bare/patch-system-reminders.js"
+      },
+      {
+        "id": "auto-memory",
+        "file": "2.1.39/patch-auto-memory.js"
+      },
+      {
+        "id": "no-collapse-reads",
+        "file": "2.1.39/patch-no-collapse-reads.js"
+      }
+    ],
+    "bare": [
+      {
+        "id": "thinking-visibility",
+        "file": "2.1.31/bare/patch-thinking-visibility.js"
+      },
+      {
+        "id": "spinner",
+        "file": "2.1.31/bare/patch-spinner.js"
+      }
+    ],
+    "native": [
+      {
+        "id": "thinking-visibility",
+        "file": "2.1.31/native/patch-thinking-visibility.js"
+      },
+      {
+        "id": "spinner",
+        "file": "2.1.19/patch-spinner.js"
+      }
+    ]
+  },
+  "notes": {
+    "thinking-style": "Dim styling is now native in 2.1.31 - no patch needed",
+    "auto-memory": "Feature flag gate restructured in 2.1.39 - new patch targets just the tengu_oboe fallback"
+  }
+}
