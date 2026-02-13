@@ -113,6 +113,33 @@ Chalk styling might be overridden by:
 2. Ink component props (`dimColor` on Text)
 3. Theme colors overriding defaults
 
+### 7. Recovering a Pristine cli.js from npm
+
+If both the installed `cli.js` and `.bak` are tainted (patched without metadata, stale from a previous version, etc.), download the original package directly from the npm registry:
+
+```bash
+# Download the exact version as a tarball
+npm pack @anthropic-ai/claude-code@2.1.41 --pack-destination /tmp
+
+# Extract the pristine cli.js
+mkdir -p /tmp/cc-pristine
+tar xzf /tmp/anthropic-ai-claude-code-2.1.41.tgz -C /tmp/cc-pristine
+
+# Compare against your backup to check for contamination
+node -e '
+const fs = require("fs");
+const pristine = fs.readFileSync("/tmp/cc-pristine/package/cli.js", "utf8");
+const backup = fs.readFileSync("/path/to/cli.js.bak", "utf8");
+console.log("Match:", pristine === backup);
+'
+
+# Restore both backup and live file from pristine source
+cp /tmp/cc-pristine/package/cli.js /path/to/cli.js.bak
+cp /tmp/cc-pristine/package/cli.js /path/to/cli.js
+```
+
+This bypasses any local state entirely. Useful when `--check` reports all patterns failing on a version that should work — the file under test may already be patched.
+
 ## Debugging Techniques
 
 ### 1. Extract and Format Code Sections
