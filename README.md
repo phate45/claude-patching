@@ -11,8 +11,8 @@ Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
-**Current status (2.1.41):**
-- 8 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory, no-collapse-reads, quiet-notifications, read-summary) for both installations
+**Current status (2.1.42):**
+- 9 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory, no-collapse-reads, quiet-notifications, read-summary, prompt-slim) for both installations
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
 
 **Runtime:** Node.js 22+ or [Bun](https://bun.sh). Bun handles the TypeScript sources natively without additional flags. If using Node < 25, you may need `--experimental-strip-types`.
@@ -213,6 +213,24 @@ Shows offset/limit information in the Read tool's compact display.
 **Why it's needed:**
 When reading a section of a file with offset/limit, the compact tool display only shows the filename — you can't tell which part of the file was read without expanding to verbose mode. This patch surfaces the line range in the compact view, using the same `· lines X-Y` format that verbose mode already provides.
 
+### prompt-slim
+
+Reduces system prompt token overhead by applying 63 find/replace patches from the [claude-code-tips](https://github.com/ykdojo/claude-code-tips) project.
+
+**What it does:**
+1. Reads patch pairs (`.find.txt` / `.replace.txt`) from the prompt-patching repo
+2. Uses a regex engine with placeholder support (`${varName}`, `__NAME__`) to match patterns across minified variable names
+3. Applies all patches sequentially, handling both plain string matches and native unicode escapes
+
+**Effect:**
+- ~43KB of verbose system prompt text replaced with concise equivalents (~81% reduction on targeted sections)
+- Verbose tool descriptions, multi-paragraph examples, and redundant instructions condensed to essential information
+- Tool parameter schemas and core behavioral rules remain intact
+
+**Requires:** Run `--setup` first to clone the prompt-patching repo to `/tmp/prompt-patching`.
+
+**Upstream tracking:** The patch checks a logic hash of the upstream `createRegexPatch()` engine at runtime. If the upstream engine changes between CC versions, a warning is emitted so the adapted copy can be reviewed.
+
 ## Patch Metadata
 
 The patching script tracks applied patches via a JSON comment embedded in the JS:
@@ -269,7 +287,10 @@ pnpm store prune
 # 3. Reinstall fresh (--force ensures fresh download)
 pnpm install -g @anthropic-ai/claude-code --force
 
-# 4. Verify installation
+# 4. Run setup to prepare for patching
+node claude-patching.js --setup
+
+# 5. Verify installation
 claude --version
 ```
 

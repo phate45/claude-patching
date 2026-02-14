@@ -1,0 +1,76 @@
+### find: changes from 2.1.39 → 2.1.41
+--- /home/phate/Projects/claude-patching/patches/2.1.39/baseline-find.txt	2026-02-14 10:04:26.988146631 +0100
++++ /home/phate/Projects/claude-patching/patches/2.1.41/baseline-find.txt	2026-02-14 10:04:26.970147548 +0100
+@@ -763,7 +763,7 @@
+ ## agent-explore
+ ## Slim Explore agent (~350 → 120 chars)
+ ======================================================================
+-whenToUse:'Fast agent specialized for exploring codebases. Use this when you need to quickly find files by patterns (eg. "src/components/**/*.tsx"), search code for keywords (eg. "API endpoints"), or answer questions about the codebase (eg. "how do API endpoints work?"). When calling this agent, specify the desired thoroughness level: "quick" for basic searches, "medium" for moderate exploration, or "very thorough" for comprehensive analysis across multiple locations and naming conventions.'
++'Fast agent specialized for exploring codebases. Use this when you need to quickly find files by patterns (eg. "src/components/**/*.tsx"), search code for keywords (eg. "API endpoints"), or answer questions about the codebase (eg. "how do API endpoints work?"). When calling this agent, specify the desired thoroughness level: "quick" for basic searches, "medium" for moderate exploration, or "very thorough" for comprehensive analysis across multiple locations and naming conventions.'
+ 
+ ======================================================================
+ ## security-warning
+@@ -857,14 +857,14 @@
+ ## tool-usage-examples
+ ## Remove tool usage policy examples (~400 chars)
+ ======================================================================
+-- ${`VERY IMPORTANT: When exploring the codebase to gather context or to answer a question that is not a needle query for a specific file/class/function, it is CRITICAL that you use the ${__VAR1__} tool with subagent_type=${__VAR2__.agentType} instead of running search commands directly.`} 
++- For broader codebase exploration and deep research, use the ${ZK} tool with subagent_type=${KE.agentType}. This is slower than calling ${_Y} or ${h5} directly so use this only when a simple, directed search proves to be insufficient or when your task will clearly require more than ${s_q(K)} queries.
+ <example>
+ user: Where are errors from the client handled?
+-assistant: [Uses the ${__VAR1__} tool with subagent_type=${__VAR2__.agentType} to find the files that handle client errors instead of using ${__VAR3__} or ${__VAR4__} directly]
++assistant: [Uses the ${ZK} tool with subagent_type=${KE.agentType} to find the files that handle client errors instead of using ${_Y} or ${h5} directly]
+ </example>
+ <example>
+ user: What is the codebase structure?
+-assistant: [Uses the ${__VAR1__} tool with subagent_type=${__VAR2__.agentType}]
++assistant: [Uses the ${ZK} tool with subagent_type=${KE.agentType}]
+ </example>
+ 
+ ======================================================================
+@@ -967,7 +967,7 @@
+ ## explore-instruction
+ ## Slim explore instruction (~275 → 105 chars)
+ ======================================================================
+-VERY IMPORTANT: When exploring the codebase to gather context or to answer a question that is not a needle query for a specific file/class/function, it is CRITICAL that you use the ${n3} tool with subagent_type=${LL.agentType} instead of running search commands directly.
++- For broader codebase exploration and deep research, use the ${ZK} tool with subagent_type=${KE.agentType}. This is slower than calling ${_Y} or ${h5} directly so use this only when a simple, directed search proves to be insufficient or when your task will clearly require more than ${s_q(K)} queries.
+ 
+ ======================================================================
+ ## propose-changes
+
+### replace: changes from 2.1.39 → 2.1.41
+--- /home/phate/Projects/claude-patching/patches/2.1.39/baseline-replace.txt	2026-02-14 10:04:26.988146631 +0100
++++ /home/phate/Projects/claude-patching/patches/2.1.41/baseline-replace.txt	2026-02-14 10:04:26.970147548 +0100
+@@ -286,7 +286,7 @@
+ ## agent-explore
+ ## Slim Explore agent (~350 → 120 chars)
+ ======================================================================
+-whenToUse:'Fast codebase exploration. Find files by pattern, search code, answer codebase questions. Specify thoroughness: "quick", "medium", or "very thorough".'
++'Fast codebase exploration. Find files by pattern, search code, answer codebase questions. Specify thoroughness: "quick", "medium", or "very thorough".'
+ 
+ ======================================================================
+ ## security-warning
+@@ -352,7 +352,7 @@
+ ## tool-usage-examples
+ ## Remove tool usage policy examples (~400 chars)
+ ======================================================================
+-- ${`VERY IMPORTANT: When exploring the codebase to gather context or to answer a question that is not a needle query for a specific file/class/function, it is CRITICAL that you use the ${__VAR1__} tool with subagent_type=${__VAR2__.agentType} instead of running search commands directly.`}
++- For broader codebase exploration and deep research, use the ${ZK} tool with subagent_type=${KE.agentType}. This is slower than calling ${_Y} or ${h5} directly so use this only when a simple, directed search proves to be insufficient or when your task will clearly require more than ${s_q(K)} queries.
+ 
+ ======================================================================
+ ## planning-timelines
+@@ -454,7 +454,7 @@
+ ## explore-instruction
+ ## Slim explore instruction (~275 → 105 chars)
+ ======================================================================
+-For broad codebase exploration (not specific file/class lookups), use ${n3} with subagent_type=${LL.agentType}.
++- For broad codebase exploration (not specific file/class lookups), use the ${ZK} tool with subagent_type=${KE.agentType}.
+ 
+ ======================================================================
+ ## propose-changes
+
+
+### Patch list: identical
+
+### ⚠ Logic changed: ba6aa8078a503b91819b293999d8eeb2 → 6fa91149dddcf76b56c39159aeb75692
+  Review createRegexPatch() and application loop for breaking changes.

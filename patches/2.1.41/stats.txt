@@ -1,0 +1,75 @@
+# Prompt Patch Baseline — v2.1.41
+# Generated: 2026-02-14T09:04:26.975Z
+# Logic hash: 6fa91149dddcf76b56c39159aeb75692
+# Patches: 63
+# Original size (find): 53,512 chars
+# Replaced size:        10,395 chars
+# Total savings:        43,117 chars (81%)
+
+Patch ID                               Find   Replace   Savings
+---------------------------------------------------------------
+todowrite-examples                    6,413       437     5,976
+task-usage-notes                      4,117        68     4,049
+git-commit                            3,901       592     3,309
+bash-tool                             3,741       877     2,864
+pr-creation                           1,952       489     1,463
+enterplanmode-when-to-use             1,720       247     1,473
+todowrite-states                      1,760       350     1,410
+skill-tool                            1,227        83     1,144
+todowrite-when-to-use                 1,176       230       946
+over-engineering                      1,073       229       844
+lsp-tool                              1,039       163       876
+edit-tool                               971       206       765
+enterplanmode-examples                  928       178       750
+enterplanmode-whathappens               363       143       220
+exitplanmode                          1,848       226     1,622
+professional-objectivity                762       126       636
+webfetch-usage                          766       136       630
+specialized-tools                       605       125       480
+grep-tool                               887       415       472
+todowrite-examples-v2                   437         0       437
+agent-claude-code-guide                 547       126       421
+notebookedit                            513       101       412
+task-management-examples                558       147       411
+write-tool                              481       100       381
+websearch-critical                      485       106       379
+bashoutput                              364       118       246
+code-references                         362         3       359
+git-commit-v2                           592       239       353
+agent-explore                           486       152       334
+security-warning                        459       181       278
+pr-creation-v2                          489       188       301
+glob-tool                               371       111       260
+parallel-calls-duplicate                259         0       259
+askuserquestion                         451       193       258
+bash-description-param                  159        45       114
+hooks-instruction                       361       118       243
+grep-params-context                     523       280       243
+killshell                               202        35       167
+tool-usage-examples                     651       302       349
+planning-timelines                      459        78       381
+glob-path-param                         268        53       215
+task-tool-intro                         405       106       299
+task-tool-whennot                       513       610       -97
+grep-params-output_mode                 338       133       205
+grep-params-head_limit                  277        78       199
+doing-tasks-intro                       223        31       192
+cli-format-instruction                  232        44       188
+read-tool                               298       122       176
+read-capabilities                       689       118       571
+system-reminder-instruction             271       100       171
+output-text-instruction                 243        74       169
+agent-general-purpose                   291       128       163
+explore-instruction                     302       122       180
+propose-changes                         172        33       139
+url-warning                             215        77       138
+security-vulnerabilities                203        66       137
+agent-plan                              238       103       135
+read-tool-offset                        165        52       113
+grep-params-offset                      153        45       108
+grep-params-type                        175        69       106
+todos-mark-complete                     149        49       100
+taskupdate                            2,284       149     2,135
+tasklist                                950        90       860
+---------------------------------------------------------------
+TOTAL                                53,512    10,395    43,117

@@ -819,6 +819,43 @@ if (wantInit) {
   fs.writeFileSync(targetIndex, JSON.stringify(newIndex, null, 2) + '\n');
 
   log(`\nCreated patches/${targetVersion}/index.json (copied from ${sourceVersion})`);
+
+  // Generate prompt baseline + diff if the prompt-patching repo has this version
+  try {
+    const { generateBaseline, generateDiff, previousVersion, listVersions, PROMPT_REPO } = require('./lib/prompt-baseline');
+    const promptVersionDir = path.join(PROMPT_REPO, targetVersion);
+
+    if (fs.existsSync(promptVersionDir)) {
+      log(`\nGenerating prompt baseline for v${targetVersion}...`);
+      const baseline = generateBaseline(targetVersion);
+      log(`  ${baseline.patches.length} prompt patches, ~${(baseline.totalFindChars - baseline.totalReplaceChars).toLocaleString()} chars savings`);
+
+      const prevVersion = previousVersion(targetVersion);
+      if (prevVersion) {
+        // Ensure previous baseline exists
+        const prevBaselinePath = path.join(PATCHES_DIR, prevVersion, 'baseline-find.txt');
+        if (!fs.existsSync(prevBaselinePath)) {
+          log(`  Generating baseline for diff target v${prevVersion}...`);
+          generateBaseline(prevVersion);
+        }
+
+        const diff = generateDiff(prevVersion, targetVersion);
+        log(`  Diff: ${diff.diffPath}`);
+        if (diff.added.length) log(`  New patches: ${diff.added.map(p => p.file).join(', ')}`);
+        if (diff.removed.length) log(`  Removed patches: ${diff.removed.map(p => p.file).join(', ')}`);
+        if (diff.logicChanged) {
+          log(`  WARNING: upstream patch-cli.js logic changed (${diff.oldHash} → ${diff.newHash})`);
+        } else {
+          log(`  Logic: unchanged (${diff.newHash})`);
+        }
+      }
+    } else {
+      log(`\nNo prompt patches available for v${targetVersion} yet`);
+    }
+  } catch (err) {
+    log(`\nPrompt baseline generation failed: ${err.message}`);
+  }
+
   log(`\nNext steps:`);
   log(`  node claude-patching.js --check    # verify patches still match`);
   emitJson({ type: 'result', status: 'success', version: targetVersion, copiedFrom: sourceVersion });
