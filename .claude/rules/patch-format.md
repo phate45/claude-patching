@@ -54,8 +54,8 @@ When a new CC version drops:
 
 1. `node claude-patching.js --init` — copies latest index.json with new version
 2. `node claude-patching.js --check` — shows which patches fail
-3. For failures: search the new cli.js, create updated patch in `patches/<new-version>/`
-4. Update index.json file paths for fixed patches
+3. For failures: create a **new copy** of the patch in `patches/<new-version>/` — do not modify the original, so older versions remain supported as-is
+4. Update index.json file paths for the fixed patches only
 
 ## Patch Development Rules
 
