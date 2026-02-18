@@ -100,13 +100,14 @@ Customizes the spinner animation shown while Claude is working.
 Edit the constants at the top of the patch file:
 
 ```javascript
-const SPINNER_CHARS = ["·","∴","∴","·","∵","∵"];  // default: therefore/because (doubled)
+const SPINNER_CHARS = ["·","·","✧","✦","✧","·"];  // default: thought surfacing
 const LOOP_MODE = true;   // true=continuous loop, false=bounce back-and-forth
 const NO_FREEZE = true;   // true=always animate, false=freeze when disconnected
 ```
 
 **Character sequences:**
-- `["·","∴","∴","·","∵","∵"]` - therefore/because doubled (default, matches "∴ Thinking")
+- `["·","·","✧","✦","✧","·"]` - thought surfacing (default)
+- `["·","∴","∴","·","∵","∵"]` - therefore/because doubled (matches "∴ Thinking")
 - `["◐","◓","◑","◒"]` - rotating half-moon
 - `["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"]` - braille spinner
 - `["○","◔","◑","◕","●","◕","◑","◔"]` - filling circle

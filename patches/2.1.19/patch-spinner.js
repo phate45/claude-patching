@@ -33,8 +33,9 @@ const output = require('../../lib/output');
 //   ["◢","◣","◤","◥"]           - rotating triangle
 //   ["✶","✷","✸","✹","✺"]       - star burst
 //   ["·","✦","✧","✦"]           - twinkling star
+//   ["·","·","✧","✦","✧","·"]  - thought surfacing
 //
-const SPINNER_CHARS = ["·","∴","∴","·","∵","∵"];
+const SPINNER_CHARS = ["·","·","✧","✦","✧","·"];
 
 // Animation mode:
 //   false = mirror (default): cycles forward then backward (0,1,2,3,2,1,0,...)
