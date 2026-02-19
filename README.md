@@ -11,7 +11,7 @@ Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
-**Current status (2.1.45):**
+**Current status (2.1.47):**
 - 9 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory, no-collapse-reads, quiet-notifications, read-summary, prompt-slim) for both installations
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
 
@@ -101,8 +101,9 @@ Edit the constants at the top of the patch file:
 
 ```javascript
 const SPINNER_CHARS = ["·","·","✧","✦","✧","·"];  // default: thought surfacing
-const LOOP_MODE = true;   // true=continuous loop, false=bounce back-and-forth
-const NO_FREEZE = true;   // true=always animate, false=freeze when disconnected
+const LOOP_MODE = true;           // true=continuous loop, false=bounce back-and-forth
+const NO_FREEZE = true;           // true=always animate, false=freeze when disconnected
+const SPINNER_ROW_PADDING = 1;    // left padding (chars) for the spinner + status row
 ```
 
 **Character sequences:**
@@ -189,7 +190,7 @@ Suppresses duplicate background agent notifications when `TaskOutput` has alread
 
 **What it does:**
 1. Flags task IDs in a `globalThis` Set when `TaskOutput` successfully retrieves output
-2. Intercepts the hD1 queue consumer (React useEffect path) — skips notification if flagged
+2. Intercepts the queue dispatch function (dequeue path) — skips notification if flagged
 3. Intercepts the main loop consumer (streaming fallback path) — skips with `continue` if flagged
 
 **Why it's needed:**

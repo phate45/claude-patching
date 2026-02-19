@@ -53,6 +53,13 @@ const LOOP_MODE = true;
 //
 const NO_FREEZE = true;
 
+// Left padding for the spinner row:
+//   Adds paddingLeft to the flex row containing the spinner + status text.
+//   Pushes the spinner away from the terminal edge.
+//   0 = disabled (default CC behavior)
+//
+const SPINNER_ROW_PADDING = 1;
+
 // ============================================================
 // PATCH IMPLEMENTATION
 // ============================================================
@@ -206,6 +213,29 @@ if (NO_FREEZE && !isRepatch) {
   }
 }
 
+// Find spinner row Boxes if SPINNER_ROW_PADDING is set
+// The spinner + status text sit in a flex row with a unique prop signature.
+// Pattern: {flexDirection:"row",flexWrap:"wrap",marginTop:1,width:"100%"}
+// Appears twice: idle text row and active spinner row (same component).
+let spinnerRowTarget = null;
+if (SPINNER_ROW_PADDING > 0) {
+  const rowProps = 'flexDirection:"row",flexWrap:"wrap",marginTop:1,width:"100%"';
+  const rowCount = content.split(rowProps).length - 1;
+
+  if (rowCount > 0) {
+    spinnerRowTarget = rowProps;
+    output.discovery('spinner row props', `${rowCount} found`);
+    const padded = `flexDirection:"row",flexWrap:"wrap",marginTop:1,paddingLeft:${SPINNER_ROW_PADDING},width:"100%"`;
+    output.modification('spinner row padding', rowProps, padded);
+  } else {
+    output.error('Could not find spinner row props', [
+      'Expected: {flexDirection:"row",flexWrap:"wrap",marginTop:1,width:"100%"}',
+      'The status bar layout may have changed'
+    ]);
+    process.exit(1);
+  }
+}
+
 if (dryRun) {
   output.result('dry_run', 'No changes made');
   process.exit(0);
@@ -230,6 +260,14 @@ if (NO_FREEZE) {
       ''
     );
     patchedContent = patchedContent.replace(fm.full, noFreezeReplacement);
+  }
+}
+
+// Apply spinner row padding if SPINNER_ROW_PADDING
+if (SPINNER_ROW_PADDING > 0 && spinnerRowTarget) {
+  const padded = `flexDirection:"row",flexWrap:"wrap",marginTop:1,paddingLeft:${SPINNER_ROW_PADDING},width:"100%"`;
+  while (patchedContent.includes(spinnerRowTarget)) {
+    patchedContent = patchedContent.replace(spinnerRowTarget, padded);
   }
 }
 
