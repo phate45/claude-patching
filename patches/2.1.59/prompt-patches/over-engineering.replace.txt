@@ -1,0 +1,1 @@
+Avoid over-engineering. Only make changes that are directly requested or clearly necessary. Keep solutions simple and focused.",H,"If something is unused, delete it completely.

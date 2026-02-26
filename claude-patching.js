@@ -820,19 +820,30 @@ if (wantInit) {
 
   log(`\nCreated patches/${targetVersion}/index.json (copied from ${sourceVersion})`);
 
-  // Generate prompt baseline + diff if the prompt-patching repo has this version
+  // Import prompt patches locally
   try {
-    const { generateBaseline, generateDiff, previousVersion, listVersions, PROMPT_REPO } = require('./lib/prompt-baseline');
-    const promptVersionDir = path.join(PROMPT_REPO, targetVersion);
+    const {
+      importPromptPatches, generateBaseline, generateDiff,
+      previousVersion, hasLocalPromptPatches,
+    } = require('./lib/prompt-baseline');
 
-    if (fs.existsSync(promptVersionDir)) {
+    log('');
+    const importResult = importPromptPatches(targetVersion);
+    if (importResult) {
+      log(`Imported ${importResult.count} prompt patches from ${importResult.source}`);
+      log(`  → ${importResult.targetDir}/`);
+    } else {
+      log('No prompt patches available to import (run --setup to fetch upstream repo)');
+    }
+
+    // Generate baseline + diff from the now-local patches
+    if (hasLocalPromptPatches(targetVersion)) {
       log(`\nGenerating prompt baseline for v${targetVersion}...`);
       const baseline = generateBaseline(targetVersion);
       log(`  ${baseline.patches.length} prompt patches, ~${(baseline.totalFindChars - baseline.totalReplaceChars).toLocaleString()} chars savings`);
 
       const prevVersion = previousVersion(targetVersion);
       if (prevVersion) {
-        // Ensure previous baseline exists
         const prevBaselinePath = path.join(PATCHES_DIR, prevVersion, 'baseline-find.txt');
         if (!fs.existsSync(prevBaselinePath)) {
           log(`  Generating baseline for diff target v${prevVersion}...`);
@@ -849,11 +860,9 @@ if (wantInit) {
           log(`  Logic: unchanged (${diff.newHash})`);
         }
       }
-    } else {
-      log(`\nNo prompt patches available for v${targetVersion} yet`);
     }
   } catch (err) {
-    log(`\nPrompt baseline generation failed: ${err.message}`);
+    log(`\nPrompt patch import/baseline failed: ${err.message}`);
   }
 
   log(`\nNext steps:`);
