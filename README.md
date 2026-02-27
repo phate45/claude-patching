@@ -11,9 +11,11 @@ Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
-**Current status (2.1.50):**
-- 9 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, auto-memory, no-collapse-reads, quiet-notifications, read-summary, prompt-slim) for both installations
+**Current status (2.1.59):**
+- 8 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, no-collapse-reads, quiet-notifications, read-summary, prompt-slim) for both installations
+- auto-memory patch retired — Anthropic removed the `tengu_oboe` feature flag in 2.1.59 (the feature is now always on)
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
+- Prompt patches now use **local-first storage** (`patches/<version>/prompt-patches/`), surviving container restarts without depending on `/tmp`
 
 **Runtime:** Node.js 22+ or [Bun](https://bun.sh). Bun handles the TypeScript sources natively without additional flags. If using Node < 25, you may need `--experimental-strip-types`.
 
@@ -54,8 +56,8 @@ node claude-patching.js --status
 # Test patches (patterns may have changed between versions)
 node claude-patching.js --check
 
-# Create index.json for the new version (copies from latest existing)
-# Great if the above check returns that all the patches can be applied without changes.
+# Create index.json + import prompt patches locally
+# (finds best source: upstream exact match → highest version from local or upstream)
 node claude-patching.js --init
 
 # If so, re-apply patches
@@ -65,7 +67,7 @@ node claude-patching.js --apply
 node claude-patching.js --setup
 ```
 
-`--init` detects the installed version(s) and creates a new `patches/<version>/index.json` from the most recent existing index. If bare and native are on different versions, it picks the newer one.
+`--init` detects the installed version(s) and creates a new `patches/<version>/index.json` from the most recent existing index. It also imports prompt patches into `patches/<version>/prompt-patches/` using best-of-both resolution: upstream exact match wins, otherwise it compares the highest local and upstream candidates and picks whichever version is newer. If bare and native are on different versions, it picks the newer one.
 
 ## Patches
 
@@ -130,22 +132,9 @@ Adds truecolor (16M colors) support for Ghostty terminal.
 **Why it's needed:**
 Ghostty uses `TERM=xterm-ghostty` and supports truecolor, but Claude Code only recognizes `xterm-kitty` for truecolor detection. Without this patch, Ghostty only gets basic 16 colors because it matches `/^xterm/` but not `/-256(color)?$/`.
 
-### auto-memory
+### auto-memory *(retired)*
 
-Enables the `tengu_oboe` feature-flagged auto memory system.
-
-**What it does:**
-1. Finds the GrowthBook feature flag check for `tengu_oboe`
-2. Replaces the server-side flag lookup with a hard `true`
-3. Preserves the `CLAUDE_CODE_DISABLE_AUTO_MEMORY` env var kill switch
-
-**Effect when enabled:**
-- `MEMORY.md` is loaded into the system prompt from `~/.claude/projects/<project>/memory/`
-- First 200 lines are injected; longer files are truncated with a warning
-- Custom agents gain memory scopes (`user`, `project`, `local`) via frontmatter
-- Memory directories get automatic read/write permission bypasses
-
-**Disable at runtime:** `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 claude`
+Enabled the `tengu_oboe` feature-flagged auto memory system. **Retired in 2.1.59** — Anthropic removed the feature flag entirely, making auto-memory always on. The patch file is preserved in `patches/2.1.42/` for reference but is no longer included in the active index.
 
 ### no-collapse-reads
 
@@ -217,19 +206,20 @@ When reading a section of a file with offset/limit, the compact tool display onl
 
 ### prompt-slim
 
-Reduces system prompt token overhead by applying 63 find/replace patches from the [claude-code-tips](https://github.com/ykdojo/claude-code-tips) project.
+Reduces system prompt token overhead by applying 58 find/replace patches adapted from the [claude-code-tips](https://github.com/ykdojo/claude-code-tips) project.
 
 **What it does:**
-1. Reads patch pairs (`.find.txt` / `.replace.txt`) from the prompt-patching repo
+1. Reads patch pairs (`.find.txt` / `.replace.txt`) with **local-first resolution**: checks `patches/<version>/prompt-patches/` first, falls back to `/tmp/prompt-patching/` upstream repo
 2. Uses a regex engine with placeholder support (`${varName}`, `__NAME__`) to match patterns across minified variable names
 3. Applies all patches sequentially, handling both plain string matches and native unicode escapes
+4. Built-in diagnostics classify failures as `chained`, `diverged`, or `not found` with context snippets
 
 **Effect:**
-- ~43KB of verbose system prompt text replaced with concise equivalents (~81% reduction on targeted sections)
+- ~38KB of verbose system prompt text replaced with concise equivalents
 - Verbose tool descriptions, multi-paragraph examples, and redundant instructions condensed to essential information
 - Tool parameter schemas and core behavioral rules remain intact
 
-**Requires:** Run `--setup` first to clone the prompt-patching repo to `/tmp/prompt-patching`.
+**Local storage:** `--init` imports prompt patches into `patches/<version>/prompt-patches/` so they survive container restarts and don't depend on the upstream repo being cloned in `/tmp`. Run `--setup` first only if you need to pull new upstream patches.
 
 **Upstream tracking:** The patch checks a logic hash of the upstream `createRegexPatch()` engine at runtime. If the upstream engine changes between CC versions, a warning is emitted so the adapted copy can be reviewed.
 

@@ -145,6 +145,28 @@ Native (Bun) builds store unicode characters as escape sequences (`\u2014` inste
 
 Patch text often contains JS template literal backticks. If you write a Node fix script using template literals, those backticks cause syntax errors. Use `Array.join('\n')`, string concatenation, or `fs.readFileSync` + `.replace()` on the existing file instead.
 
+### Cross-Delimiter String Merges
+
+Some patches merge adjacent array elements by removing the boundary between them (e.g., removing `",'` that separates two strings). **This is dangerous when the elements use different quote delimiters.** If the first string uses `"` and the second uses `'`, merging them produces a `"`-delimited string containing unescaped `"` characters from the second string's content:
+
+```js
+// Original: two separate elements, different delimiters
+"When referencing code locations.",'Do not use "Let me read"...'
+//                                 ^^^ safe — inside single quotes
+
+// BAD replacement: removes boundary, merges into double-quoted string
+"Do not use "Let me read"...'
+//           ^ JS parser sees this as end of string → SyntaxError
+
+// GOOD replacement: close first string, preserve second string's delimiter
+",'Do not use "Let me read"...'
+// Creates empty "" element, keeps inner " safe in single quotes
+```
+
+**Detection:** Bun reports `TypeError: Expected CommonJS module to have a function wrapper` — misleading, but always means a JS syntax error. Run `node --check <extracted-js>` to find the actual error location.
+
+**Prevention:** When a patch spans a `",'` or `','` boundary, verify the replacement preserves or correctly transitions between delimiters. An empty string element (`""`) in an array is harmless when the array is joined.
+
 ## Debugging Runtime Crashes
 
 If patches apply but Claude crashes or shows `[object Object]`:
