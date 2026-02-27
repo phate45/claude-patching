@@ -12,10 +12,11 @@ Use at your own peril.
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
 **Current status (2.1.62):**
-- 8 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, no-collapse-reads, quiet-notifications, read-summary, prompt-slim) for both installations
-- auto-memory patch retired — Anthropic removed the `tengu_oboe` feature flag in 2.1.59 (the feature is now always on)
+- 9 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, no-collapse-reads, quiet-notifications, read-summary, prompt-slim, feature-flag-toggles) for both installations
+- 60 prompt patches (58 upstream optimizations + 2 custom expression patches)
+- auto-memory patch retired — evolved into feature-flag-toggles (see below)
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
-- Prompt patches now use **local-first storage** (`patches/<version>/prompt-patches/`), surviving container restarts without depending on `/tmp`
+- Prompt patches now use **local-first storage** (`patches/<version>/prompt-patches/`), with upstream comparison on `--init`
 
 **Runtime:** Node.js 22+ or [Bun](https://bun.sh). Bun handles the TypeScript sources natively without additional flags. If using Node < 25, you may need `--experimental-strip-types`.
 
@@ -132,9 +133,17 @@ Adds truecolor (16M colors) support for Ghostty terminal.
 **Why it's needed:**
 Ghostty uses `TERM=xterm-ghostty` and supports truecolor, but Claude Code only recognizes `xterm-kitty` for truecolor detection. Without this patch, Ghostty only gets basic 16 colors because it matches `/^xterm/` but not `/-256(color)?$/`.
 
-### auto-memory *(retired)*
+### feature-flag-toggles
 
-Enabled the `tengu_oboe` feature-flagged auto memory system. **Retired in 2.1.59** — Anthropic removed the feature flag entirely, making auto-memory always on. The patch file is preserved in `patches/2.1.42/` for reference but is no longer included in the active index.
+Enables hidden feature flags that improve memory and compaction behavior.
+
+**Flags enabled:**
+- `tengu_mulberry_fog` — Richer memory management prompt with MUST directives, frontmatter format, and cross-session knowledge building instructions
+- `tengu_session_memory` + `tengu_sm_compact` — Structured session memory compaction: maintains a living `summary.md` per session instead of throw-away summaries during context compaction
+
+**Kill switch:** `DISABLE_CLAUDE_CODE_SM_COMPACT=1` disables session memory compaction.
+
+**History:** Replaces the retired auto-memory patch (`tengu_oboe`, removed in 2.1.59 when auto-memory graduated to always-on).
 
 ### no-collapse-reads
 
@@ -206,22 +215,23 @@ When reading a section of a file with offset/limit, the compact tool display onl
 
 ### prompt-slim
 
-Reduces system prompt token overhead by applying 58 find/replace patches adapted from the [claude-code-tips](https://github.com/ykdojo/claude-code-tips) project.
+Reduces system prompt token overhead and adjusts behavioral instructions via 60 find/replace patches. 58 are optimization patches adapted from [claude-code-tips](https://github.com/ykdojo/claude-code-tips), plus 2 custom expression patches.
 
 **What it does:**
-1. Reads patch pairs (`.find.txt` / `.replace.txt`) with **local-first resolution**: checks `patches/<version>/prompt-patches/` first, falls back to `/tmp/prompt-patching/` upstream repo
+1. Reads patch pairs (`.find.txt` / `.replace.txt`) from `patches/<version>/prompt-patches/` (our baseline), with fallback to the upstream repo
 2. Uses a regex engine with placeholder support (`${varName}`, `__NAME__`) to match patterns across minified variable names
 3. Applies all patches sequentially, handling both plain string matches and native unicode escapes
 4. Built-in diagnostics classify failures as `chained`, `diverged`, or `not found` with context snippets
 
 **Effect:**
 - ~38KB of verbose system prompt text replaced with concise equivalents
-- Verbose tool descriptions, multi-paragraph examples, and redundant instructions condensed to essential information
-- Tool parameter schemas and core behavioral rules remain intact
+- Tool descriptions, multi-paragraph examples, and redundant instructions condensed
+- `expressive-tone` — replaces "Your responses should be short and concise" with natural expression guidance
+- `natural-emojis` — replaces the blanket emoji ban with "Use emojis naturally to enhance communication"
 
-**Local storage:** `--init` imports prompt patches into `patches/<version>/prompt-patches/` so they survive container restarts and don't depend on the upstream repo being cloned in `/tmp`. Run `--setup` first only if you need to pull new upstream patches.
+**Local storage:** `--init` imports prompt patches locally so they survive container restarts. It also generates an upstream comparison report (`upstream-comparison.txt`) showing new patches, content differences, and patches unique to our set.
 
-**Upstream tracking:** The patch checks a logic hash of the upstream `createRegexPatch()` engine at runtime. If the upstream engine changes between CC versions, a warning is emitted so the adapted copy can be reviewed.
+**Upstream tracking:** The patch checks a logic hash of the upstream `createRegexPatch()` engine at runtime. If the engine changes between CC versions, a warning is emitted.
 
 ## Patch Metadata
 

@@ -25,6 +25,10 @@
       {
         "id": "prompt-slim",
         "file": "2.1.59/patch-prompt-slim.js"
+      },
+      {
+        "id": "feature-flag-toggles",
+        "file": "2.1.62/patch-feature-flag-toggles.js"
       }
     ],
     "bare": [
@@ -50,7 +54,8 @@
   },
   "notes": {
     "thinking-style": "Dim styling is now native in 2.1.31 - no patch needed",
-    "auto-memory": "tengu_oboe feature flag removed in 2.1.59 - auto memory is on by default now",
+    "auto-memory": "tengu_oboe removed in 2.1.59. Replaced by feature-flag-toggles patch.",
+    "feature-flag-toggles": "Enables: mulberry_fog (rich memory), session_memory + sm_compact (structured compaction)",
     "prompt-slim": "Updated to 2.1.59 with local-first patch resolution and built-in diagnostics"
   }
 }

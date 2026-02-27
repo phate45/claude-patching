@@ -32,10 +32,30 @@ Scoped rules in `.claude/rules/` provide context-sensitive reference:
 | `code-exploration.md` | Global | Search tools, cli.js patterns, TUI architecture |
 | `reference-repos.md` | Global | tweakcc and prompt-patching repo details |
 
+## Prompt Patches
+
+System prompt patches live in `patches/<version>/prompt-patches/` as `.find.txt`/`.replace.txt` pairs, listed in `patches.json`. Our local set is the **baseline** — it includes optimizations ported from the upstream [prompt-patching](https://github.com/ykdojo/claude-code-tips) repo plus our own custom patches.
+
+**Custom patches** (behavioral, not optimization):
+- `expressive-tone` — replaces blunt brevity directive with natural expression guidance
+- `natural-emojis` — replaces emoji ban with natural usage permission
+
+**Upstream** (`/tmp/prompt-patching/`, cloned by `--setup`) is a reference for new optimizations, not a dependency. `--init` generates `upstream-comparison.txt` in the version directory showing what upstream has that we don't, and where shared patches differ.
+
+When porting to a new CC version, use the `upgrade-prompt-patches` skill.
+
+## Feature Flag Toggles
+
+`patch-feature-flag-toggles.js` replaces `IL("flag_name",!1)` calls with `!0` for selected flags. Currently enables:
+- `tengu_mulberry_fog` — richer memory management prompt
+- `tengu_session_memory` + `tengu_sm_compact` — structured session memory compaction
+
+See `feature-flags-2.1.62.md` in the vault for the full flag map.
+
 ## Development Workflow
 
 1. `--setup` — Clones/updates repos (tweakcc, prompt-patching), creates backups, prettifies
-2. `--init` — Creates new version's index.json, generates prompt baselines + diffs
+2. `--init` — Creates new version's index.json, imports prompt patches, generates upstream comparison
 3. Explore cli.js with `rg` / `ast-grep` (see `code-exploration.md` rule)
 4. Write patch (see `patch-format.md` rule for the contract)
 5. `--check` — Dry run to verify

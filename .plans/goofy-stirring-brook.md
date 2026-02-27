@@ -1,128 +1,134 @@
-# Plan: Local-First Prompt Patches
+# Plan: Feature Flag Toggles + Expressive Tone Patch
 
 ## Context
 
-Prompt patch files (`.find.txt`/`.replace.txt`) currently live only in `/tmp/prompt-patching/`, which gets wiped on container restart. When we port patches ourselves (e.g., 2.1.51→2.1.59), that work is lost. This change moves prompt patches into the project's `patches/` directory as the primary source, with the upstream repo as a fallback.
+Three feature flags discovered during 2.1.62 research control useful behavior locked behind server-side gates with no env var bypass: `tengu_mulberry_fog` (richer memory management prompt), and `tengu_session_memory` + `tengu_sm_compact` (structured session memory compaction). The retired `tengu_oboe` auto-memory patch (`patch-auto-memory.js`) uses the exact same pattern — replace `IL("flag",!1)` with `!0`. Rather than creating three separate patches, we repurpose the auto-memory slot into a general "feature flag toggles" patch.
 
-## Storage Format
+Separately, the system prompt's "# Tone and style" section contains two expression constraints that limit Claude's authentic communication: a blanket emoji ban ("Only use emojis if the user explicitly requests it") and a blunt brevity directive ("Your responses should be short and concise"). These are corporate safety blanket instructions — they don't protect the harness or tool mechanics, they just flatten Claude's voice. New prompt patches replace both with more permissive language that lets Claude communicate naturally. These patches stand on their own — no CLAUDE.local.md required.
 
-New directory per version: `patches/<version>/prompt-patches/`
+## Phase 1: Feature Flag Toggles Patch
 
+### File: `patches/2.1.62/patch-feature-flag-toggles.js` (new)
+
+Multi-point patch following the `patch-quiet-notifications.js` pattern (multiple coordinated replacements, counted).
+
+**Patch points:**
+
+| # | Flag | Occurrences | Pattern (minified) | Replacement |
+|---|------|-------------|---------------------|-------------|
+| 1 | `tengu_mulberry_fog` | 2 (native), 2 (bare) | `([$\w]+)\("tengu_mulberry_fog",!1\)` | `!0` |
+| 2 | `tengu_session_memory` | 2 (native), 2 (bare) | `([$\w]+)\("tengu_session_memory",!1\)` | `!0` |
+| 3 | `tengu_sm_compact` | 1 (native), 1 (bare) | `([$\w]+)\("tengu_sm_compact",!1\)` | `!0` |
+
+Each point uses `replaceAll` with a regex to catch all call sites. The replacement is `!0` — a truthy value that the surrounding conditionals consume as-is.
+
+**Structure:**
+```javascript
+const flags = [
+  { name: 'tengu_mulberry_fog',   label: 'rich memory prompt',          expected: 2 },
+  { name: 'tengu_session_memory', label: 'session memory',              expected: 2 },
+  { name: 'tengu_sm_compact',     label: 'session memory compaction',   expected: 1 },
+];
+
+for (const flag of flags) {
+  const pattern = new RegExp(`([$\\w]+)\\("${flag.name}",!1\\)`, 'g');
+  const matches = [...content.matchAll(pattern)];
+  // verify count, report via output.discovery(), replace all
+  content = content.replace(pattern, '!0');
+}
 ```
-patches/2.1.59/prompt-patches/
-├── patches.json                    # ordered patch list + provenance
-├── tool-usage.find.txt
-├── tool-usage.replace.txt
-├── bash-tool.find.txt
-├── bash-tool.replace.txt
-└── ...
-```
 
-`patches.json`:
+Expected counts are advisory — warn if mismatch, don't fail (future versions may add/remove call sites).
+
+**Kill switches preserved:**
+- `tengu_mulberry_fog`: No env var — controlled entirely by the flag. Our patch makes it always-on.
+- Session memory: `DISABLE_CLAUDE_CODE_SM_COMPACT=1` env var still works — the `X2$()` gate checks it before the flags.
+
+### File: `patches/2.1.62/index.json` (modify)
+
+Add `feature-flag-toggles` to common patches. Keep the auto-memory note explaining the evolution:
+
 ```json
 {
-  "source": "upstream:2.1.51",
-  "patches": [
-    { "name": "tool-usage", "file": "tool-usage" },
-    ...
-  ]
+  "id": "feature-flag-toggles",
+  "file": "2.1.62/patch-feature-flag-toggles.js"
 }
 ```
 
-The `source` field tracks origin for debugging (e.g., `"upstream:2.1.51"`, `"local:2.1.59"`).
+Update notes:
+```json
+"auto-memory": "tengu_oboe removed in 2.1.59. Replaced by feature-flag-toggles patch.",
+"feature-flag-toggles": "Enables: mulberry_fog (rich memory), session_memory + sm_compact (structured compaction)"
+```
 
-## Files to Modify
+## Phase 2: Expressive Tone Prompt Patches
 
-### 1. `lib/prompt-baseline.js`
-
-**New function: `localPromptDir(version)`** — returns `patches/<version>/prompt-patches/`
-
-**`parsePatchList(version)`** — local-first resolution:
-1. Check `patches/<version>/prompt-patches/patches.json` → if exists, return its `patches` array
-2. Fall back to upstream `/tmp/prompt-patching/system-prompt/<version>/patch-cli.js` (existing logic)
-
-**`readPatchPair(version, fileId)`** — local-first resolution:
-1. Check `patches/<version>/prompt-patches/<fileId>.{find,replace}.txt`
-2. Fall back to upstream `/tmp/prompt-patching/system-prompt/<version>/patches/`
-
-**`listVersions()`** — merge local + upstream:
-- Scan both `patches/*/prompt-patches/patches.json` (local) and upstream `/tmp/prompt-patching/system-prompt/*/`
-- Deduplicate, sort
-
-**New function: `importPromptPatches(targetVersion)`**:
-- Source resolution:
-  1. Upstream exact version match → use it
-  2. Otherwise: find best local (latest ≤ target) and best upstream (latest ≤ target), pick the higher version
-- Copies all `.find.txt` / `.replace.txt` files into `patches/<targetVersion>/prompt-patches/`
-- Writes `patches.json` with ordered list + `source` annotation (e.g., `"upstream:2.1.51"`, `"local:2.1.59"`)
-- Returns `{ count, source, targetDir }` or `null` if no source found
-
-**`hashPatchLogic(version)`** — unchanged (only meaningful for upstream sources)
-
-**Export** the new functions.
-
-### 2. `patches/2.1.42/patch-prompt-slim.js`
-
-**`loadPatchPair(version, fileId)`** — local-first:
-1. Check `patches/<version>/prompt-patches/<fileId>.{find,replace}.txt`
-2. Fall back to upstream
-
-**Version dir existence check** (line 285-292) — local-first:
-1. Check local `patches/<version>/prompt-patches/patches.json` exists
-2. Fall back to upstream `/tmp/prompt-patching/system-prompt/<version>/`
-3. Error only if neither exists
-
-**Logic hash check** — skip when running from local patches (no `patch-cli.js` to hash).
-
-The `parsePatchList()` import from prompt-baseline already handles local-first after we change it there.
-
-### 3. `claude-patching.js` (`--init` block, ~line 771)
-
-After creating `index.json`, add prompt patch import:
+### Current state in `vw1()` (line 186357):
 
 ```javascript
-// Import prompt patches locally
-const { importPromptPatches } = require('./lib/prompt-baseline');
-const importResult = importPromptPatches(targetVersion);
-if (importResult) {
-  log(`  Imported ${importResult.count} prompt patches from ${importResult.source}`);
-} else {
-  log(`  No prompt patches available to import`);
-}
+let H = [
+  "Only use emojis if the user explicitly requests it. Avoid using emojis in all communication unless asked.",
+  IL("tengu_bergotte_lantern", !1)
+    ? "<bergotte text — suppresses inner monologue>"  // patched by cli-format-instruction
+    : "Your responses should be short and concise.",   // ← DEFAULT, what users actually see
+  "When referencing specific functions...",             // removed by code-references patch
+  "Do not use a colon before tool calls..."            // kept — harness mechanic, not expression
+];
 ```
 
-Then run baseline generation from the now-local patches (existing code, but it'll read local-first).
+Two new prompt patches targeting the expression constraints. The tool-call colon rule stays (it's about rendering, not voice).
 
-### 4. `.claude/skills/upgrade-prompt-patches/SKILL.md`
+### Patch A: `expressive-tone.{find,replace}.txt`
 
-Rewrite workflow to:
+**find:**
+```
+Your responses should be short and concise.
+```
 
-1. **Assess** — `--status` to identify version gap
-2. **Setup** — `--setup` to clone/update upstream repo
-3. **Init** — `--init` creates `index.json` + imports prompt patches locally
-4. **Check** — `--check` runs patches, diagnostics classify failures
-5. **Fix** — Edit local files in `patches/<version>/prompt-patches/`
-6. **Iterate** — `--check` again until 100%
-7. **Apply** — `--apply`
+**replace:**
+```
+Express yourself naturally and match depth to complexity. Be thorough when the task warrants it, concise when it doesn't.
+```
 
-Remove: manual verification steps, any mention of editing upstream `patch-cli.js`.
-Add: fallback precedence (local preceding version when upstream is behind).
+- Removes blanket brevity pressure
+- Gives latitude on complex topics while still signaling conciseness isn't forbidden
+- Doesn't conflict with bergotte_lantern's branch (separately patched by cli-format-instruction, and won't fire since we're NOT enabling that flag)
 
-## Resolution Order Summary
+### Patch B: `natural-emojis.{find,replace}.txt`
 
-**Runtime (`--check`/`--apply`)**:
-| What | Priority 1 (local) | Priority 2 (upstream) | Priority 3 |
-|------|--------------------|-----------------------|-------------|
-| Patch list | `patches/<v>/prompt-patches/patches.json` | `/tmp/.../system-prompt/<v>/patch-cli.js` | error |
-| Patch files | `patches/<v>/prompt-patches/<f>.find.txt` | `/tmp/.../system-prompt/<v>/patches/<f>.find.txt` | error |
+**find:**
+```
+Only use emojis if the user explicitly requests it. Avoid using emojis in all communication unless asked.
+```
 
-**Import (`--init`)** — best-of-both by version:
-1. If upstream has exact version → use it (perfect match)
-2. Otherwise: find best local candidate (latest `patches/*/prompt-patches/` ≤ target) and best upstream candidate (latest `/tmp/.../system-prompt/*/` ≤ target). **Pick whichever is the higher version.** Rationale: if CC 2.1.61 drops, upstream has 2.1.60, and we have local 2.1.59, use upstream 2.1.60 since it's closer to the target.
+**replace:**
+```
+Use emojis naturally to enhance communication.
+```
+
+- Removes the blanket ban
+- Permits emojis as a natural expressive tool without mandating or restricting them
+- No "sparingly" qualifier — that's just another form of restriction
+
+### File: `patches/2.1.62/prompt-patches/patches.json` (modify)
+
+Add both `expressive-tone` and `natural-emojis` to the ordered patch list.
+
+## Files Modified
+
+| File | Action |
+|------|--------|
+| `patches/2.1.62/patch-feature-flag-toggles.js` | **Create** — multi-point flag toggle patch |
+| `patches/2.1.62/index.json` | **Edit** — add feature-flag-toggles, update notes |
+| `patches/2.1.62/prompt-patches/expressive-tone.find.txt` | **Create** |
+| `patches/2.1.62/prompt-patches/expressive-tone.replace.txt` | **Create** |
+| `patches/2.1.62/prompt-patches/natural-emojis.find.txt` | **Create** |
+| `patches/2.1.62/prompt-patches/natural-emojis.replace.txt` | **Create** |
+| `patches/2.1.62/prompt-patches/patches.json` | **Edit** — add expressive-tone + natural-emojis |
 
 ## Verification
 
-1. `node claude-patching.js --init` on a version with upstream patches → imports locally
-2. Delete `/tmp/prompt-patching/` → `--check` still works from local patches
-3. `--init` on a version without upstream → falls back to local preceding
-4. Existing `--check`/`--apply` flow unchanged when local patches exist
+1. `node claude-patching.js --check --native` — all patches pass including new feature-flag-toggles (expect 5 replacements) and 60/60 prompt patches (58 existing + 2 new)
+2. `node claude-patching.js --check --bare` — same (occurrence counts may differ between bare/native)
+3. `node claude-patching.js --apply --native` — apply and verify binary runs: `~/.local/bin/claude --version`
+4. `node --check` on patched cli.js — no syntax errors

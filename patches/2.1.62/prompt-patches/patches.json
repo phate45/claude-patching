@@ -232,6 +232,14 @@
     {
       "name": "Slim TaskList description (~1.2KB → 90 chars)",
       "file": "tasklist"
+    },
+    {
+      "name": "Replace brevity constraint with natural expression",
+      "file": "expressive-tone"
+    },
+    {
+      "name": "Replace emoji ban with natural usage",
+      "file": "natural-emojis"
     }
   ]
 }

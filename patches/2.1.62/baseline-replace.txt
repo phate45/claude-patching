@@ -55,7 +55,7 @@ git commit -m "$(cat <<'EOF'
 ## bash-tool
 ## Slim Bash tool description (3.7KB → 0.6KB)
 ======================================================================
-Executes bash commands in a persistent shell session. For terminal operations (git, npm, docker), NOT file operations - use specialized tools instead.","","Usage:","- Quote file paths with spaces","- Output may be truncated","",...Id(H),"","# Instructions",...Id(D)
+Executes bash commands in a persistent shell session. For terminal operations (git, npm, docker), NOT file operations - use specialized tools instead.","","Usage:","- Quote file paths with spaces","- Output may be truncated","",...Dd(H),"","# Instructions",...Dd(D)
 
 ======================================================================
 ## pr-creation
@@ -470,4 +470,16 @@ Update task status/details. Only mark completed when FULLY done (no failing test
 ## Slim TaskList description (~1.2KB → 90 chars)
 ======================================================================
 List all tasks. Shows id, subject, status, owner, blockedBy. Use TaskGet for full details.
+
+======================================================================
+## expressive-tone
+## Replace brevity constraint with natural expression
+======================================================================
+Express yourself naturally and match depth to complexity. Be thorough when the task warrants it, concise when it doesn't.
+
+======================================================================
+## natural-emojis
+## Replace emoji ban with natural usage
+======================================================================
+Use emojis naturally to enhance communication.
 

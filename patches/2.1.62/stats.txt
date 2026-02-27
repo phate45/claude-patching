@@ -1,10 +1,10 @@
 # Prompt Patch Baseline — v2.1.62
-# Generated: 2026-02-27T07:20:50.965Z
+# Generated: 2026-02-27T09:13:09.785Z
 # Logic hash: null
-# Patches: 58
-# Original size (find): 47,781 chars
-# Replaced size:        9,456 chars
-# Total savings:        38,325 chars (80%)
+# Patches: 60
+# Original size (find): 47,929 chars
+# Replaced size:        9,623 chars
+# Total savings:        38,306 chars (80%)
 
 Patch ID                               Find   Replace   Savings
 ---------------------------------------------------------------
@@ -66,5 +66,7 @@ grep-params-type                        175        69       106
 todos-mark-complete                     131        49        82
 taskupdate                            2,284       149     2,135
 tasklist                                950        90       860
+expressive-tone                          43       121       -78
+natural-emojis                          105        46        59
 ---------------------------------------------------------------
-TOTAL                                47,781     9,456    38,325
+TOTAL                                47,929     9,623    38,306

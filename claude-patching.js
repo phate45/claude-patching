@@ -824,7 +824,7 @@ if (wantInit) {
   try {
     const {
       importPromptPatches, generateBaseline, generateDiff,
-      previousVersion, hasLocalPromptPatches,
+      previousVersion, hasLocalPromptPatches, compareWithUpstream,
     } = require('./lib/prompt-baseline');
 
     log('');
@@ -836,29 +836,51 @@ if (wantInit) {
       log('No prompt patches available to import (run --setup to fetch upstream repo)');
     }
 
-    // Generate baseline + diff from the now-local patches
+    // Generate baseline from our local patches
     if (hasLocalPromptPatches(targetVersion)) {
-      log(`\nGenerating prompt baseline for v${targetVersion}...`);
+      log(`\nOur patch set for v${targetVersion}:`);
       const baseline = generateBaseline(targetVersion);
-      log(`  ${baseline.patches.length} prompt patches, ~${(baseline.totalFindChars - baseline.totalReplaceChars).toLocaleString()} chars savings`);
+      log(`  ${baseline.patches.length} patches, ~${(baseline.totalFindChars - baseline.totalReplaceChars).toLocaleString()} chars savings`);
 
-      const prevVersion = previousVersion(targetVersion);
-      if (prevVersion) {
-        const prevBaselinePath = path.join(PATCHES_DIR, prevVersion, 'baseline-find.txt');
-        if (!fs.existsSync(prevBaselinePath)) {
-          log(`  Generating baseline for diff target v${prevVersion}...`);
-          generateBaseline(prevVersion);
+      // Compare against upstream and save report
+      const comparison = compareWithUpstream(targetVersion);
+      const reportLines = [];
+
+      if (comparison) {
+        reportLines.push(`Upstream comparison for v${targetVersion} (vs upstream ${comparison.upstreamVersion})`);
+        reportLines.push(`Generated: ${new Date().toISOString()}`);
+        reportLines.push('');
+        reportLines.push(`Shared: ${comparison.shared.length} patches`);
+        if (comparison.onlyLocal.length) {
+          reportLines.push(`Only in ours: ${comparison.onlyLocal.join(', ')}`);
+        }
+        if (comparison.onlyUpstream.length) {
+          reportLines.push(`New in upstream: ${comparison.onlyUpstream.join(', ')}`);
+        }
+        if (comparison.changed.length) {
+          reportLines.push('Content differs:');
+          for (const c of comparison.changed) {
+            const parts = [];
+            if (c.findDiff) parts.push('find');
+            if (c.replaceDiff) parts.push('replace');
+            reportLines.push(`  ${c.file} (${parts.join(' + ')})`);
+          }
+        }
+        if (!comparison.onlyUpstream.length && !comparison.changed.length) {
+          reportLines.push('No new patches or changes from upstream.');
         }
 
-        const diff = generateDiff(prevVersion, targetVersion);
-        log(`  Diff: ${diff.diffPath}`);
-        if (diff.added.length) log(`  New patches: ${diff.added.map(p => p.file).join(', ')}`);
-        if (diff.removed.length) log(`  Removed patches: ${diff.removed.map(p => p.file).join(', ')}`);
-        if (diff.logicChanged) {
-          log(`  WARNING: upstream patch-cli.js logic changed (${diff.oldHash} → ${diff.newHash})`);
-        } else {
-          log(`  Logic: unchanged (${diff.newHash})`);
+        const reportPath = path.join(PATCHES_DIR, targetVersion, 'upstream-comparison.txt');
+        fs.writeFileSync(reportPath, reportLines.join('\n') + '\n');
+
+        // Also print to stdout
+        log(`\nUpstream comparison (vs ${comparison.upstreamVersion}):`);
+        for (const line of reportLines.slice(2)) { // skip header + timestamp
+          if (line) log(`  ${line}`);
         }
+        log(`  Saved: ${reportPath}`);
+      } else {
+        log(`\n  No upstream patches available for comparison.`);
       }
     }
   } catch (err) {

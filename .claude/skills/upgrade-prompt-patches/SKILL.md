@@ -7,7 +7,7 @@ description: Port system prompt patches to a new Claude Code version. Use when C
 
 ## When to Use
 
-The `patch-prompt-slim.js` patch applies find/replace pairs from `patches/<version>/prompt-patches/` to trim the system prompt. When a new CC version ships, some patches may fail because Anthropic changed the text content. This skill guides you through fixing them.
+The `patch-prompt-slim.js` patch applies find/replace pairs from `patches/<version>/prompt-patches/` to optimize the system prompt. When a new CC version ships, some patches may fail because Anthropic changed the text. This skill guides you through porting and merging.
 
 ## Why Most Patches Port Unchanged
 
@@ -20,19 +20,16 @@ The regex engine uses placeholder-based matching:
 
 Variable names change every build, but the regex auto-adapts. **You only fix patches where Anthropic changed the actual text content.**
 
-## Local-First Architecture
+## Patch Ownership
 
-Prompt patches live in **two places**, checked in priority order:
+Our local patches are the **baseline**. They include both optimizations ported from the upstream `prompt-patching` repo and our own custom patches (e.g., `expressive-tone`, `natural-emojis`).
 
-1. **Local** (persistent): `patches/<version>/prompt-patches/`
-   - `patches.json` — ordered patch list + provenance (`source` field)
-   - `<name>.find.txt` / `<name>.replace.txt` — patch pairs
-2. **Upstream** (fallback): `/tmp/prompt-patching/system-prompt/<version>/`
-   - Cloned by `--setup`, may be wiped on container restart
+| Location | Role | Content |
+|----------|------|---------|
+| `patches/<version>/prompt-patches/` | **Baseline** (authoritative) | All active patches — upstream-originated + custom |
+| `/tmp/prompt-patching/system-prompt/<version>/` | **Upstream reference** | Optimization patches from the prompt-patching community |
 
-`--init` imports patches locally using best-of-both resolution:
-1. Upstream exact version match → import from there
-2. Otherwise: compare best local (latest ≤ target) vs best upstream (latest ≤ target), pick whichever is the higher version
+The upstream repo is a source of new ideas, not a dependency. We own what ships.
 
 ## Porting Workflow
 
@@ -43,7 +40,7 @@ node claude-patching.js --status           # What CC version is installed?
 node lib/prompt-baseline.js --list         # What versions have patches (local + upstream)?
 ```
 
-Identify: `NEW_VERSION` (installed CC) and available patch sources.
+Identify: `NEW_VERSION` (installed CC) and the latest local patch set.
 
 ### Step 2: Setup and Init
 
@@ -52,7 +49,11 @@ node claude-patching.js --setup            # Clone/update upstream repo
 node claude-patching.js --init             # Create index.json + import prompt patches locally
 ```
 
-`--init` automatically finds the best source for prompt patches and copies them into `patches/<NEW_VERSION>/prompt-patches/`. If the upstream repo has the exact version, it uses that. Otherwise it picks the closest preceding version from either local or upstream — whichever is newer.
+`--init` copies our latest local patch set into `patches/<NEW_VERSION>/prompt-patches/`. If upstream has an exact version match, it imports from there instead (since they've already done the text-alignment work). Either way, the result is a local patch set we own.
+
+After import, `--init` outputs:
+- **Our patch set** — count and total savings
+- **Upstream comparison** — shared patches, patches only we have, new patches upstream has, and content differences between shared patches
 
 ### Step 3: Check
 
@@ -62,9 +63,9 @@ node claude-patching.js --bare --check     # or explicit
 node claude-patching.js --native --check   # native
 ```
 
-If all patches pass, you're done — the text didn't change, only variable names did.
+If all patches pass, the text didn't change — move to **Step 5** (upstream comparison).
 
-### Step 4: Read the Diagnostic Output
+### Step 4: Fix Failures
 
 `patch-prompt-slim.js` has **built-in diagnostics** for failures. The `--check` output classifies each skipped patch:
 
@@ -81,11 +82,7 @@ doing-tasks-intro: diverged (16% match, line 1/1)
 professional-objectivity: not found — Section may be removed or heavily rewritten
 ```
 
-The "diverged" cases give you everything you need to write the fix. The "not found" cases need manual investigation — search the bundle for key phrases to decide whether to update or delete the patch.
-
-### Step 5: Fix the Patch Files
-
-Edit the files in `patches/<NEW_VERSION>/prompt-patches/`:
+**Fix the patch files** in `patches/<NEW_VERSION>/prompt-patches/`:
 
 - **Reworded**: Update `.find.txt` to match the new bundle text. Update `.replace.txt` only if it references the changed portion. Preserve all `${varName}` and `__NAME__` placeholders.
 - **Removed by Anthropic**: Delete both `.find.txt` and `.replace.txt`, and remove the entry from the `patches` array in `patches.json`.
@@ -93,20 +90,31 @@ Edit the files in `patches/<NEW_VERSION>/prompt-patches/`:
 
 **Write all fixes in a single Node script** rather than editing files one at a time. Use `fs.writeFileSync` for updates and `fs.unlinkSync` for deletions. Avoid template literals for patch content that contains backticks — use string concatenation or `Array.join('\n')` instead.
 
-### Step 6: Recheck and Iterate
-
+Recheck and iterate until all patches apply:
 ```bash
 node claude-patching.js --check   # should show more patches passing now
 ```
 
-Also run `patch-prompt-slim.js` directly for faster feedback:
+### Step 5: Compare with Upstream
+
+Once all existing patches pass, check if the upstream repo has new patches we don't have:
+
 ```bash
-node patches/2.1.42/patch-prompt-slim.js --check <cli.js path>
+# List upstream patches for this version (or closest)
+ls /tmp/prompt-patching/system-prompt/<NEW_VERSION>/patches/ 2>/dev/null || \
+  ls /tmp/prompt-patching/system-prompt/$(ls /tmp/prompt-patching/system-prompt/ | sort -V | tail -1)/patches/
 ```
 
-Repeat steps 4-6 until all patches apply.
+Compare their patch list against our `patches.json`. Look for:
+- **New patches** upstream has that we don't — evaluate for inclusion
+- **Updated replacements** for patches we share — check if their version is better
+- **Patches they dropped** that we still carry — investigate if the text was removed from the prompt
 
-### Step 7: Apply
+For new upstream patches worth merging: copy the `.find.txt`/`.replace.txt` files into our local dir, add entries to `patches.json`, and run `--check` to verify they apply.
+
+**Do not blindly import.** Our custom patches (`expressive-tone`, `natural-emojis`, and any future behavioral patches) take priority. If an upstream patch conflicts with our customizations, skip it or adapt it.
+
+### Step 6: Apply
 
 ```bash
 node claude-patching.js --apply
