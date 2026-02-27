@@ -11,7 +11,7 @@ Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
-**Current status (2.1.59):**
+**Current status (2.1.62):**
 - 8 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, no-collapse-reads, quiet-notifications, read-summary, prompt-slim) for both installations
 - auto-memory patch retired — Anthropic removed the `tengu_oboe` feature flag in 2.1.59 (the feature is now always on)
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for

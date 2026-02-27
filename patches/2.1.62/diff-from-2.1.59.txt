@@ -1,0 +1,9 @@
+### find: no changes
+
+### replace: no changes
+
+
+### Patch list: identical
+
+### ⚠ Logic changed: 6fa91149dddcf76b56c39159aeb75692 → null
+  Review createRegexPatch() and application loop for breaking changes.

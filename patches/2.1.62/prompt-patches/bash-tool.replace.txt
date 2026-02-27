@@ -1,0 +1,1 @@
+Executes bash commands in a persistent shell session. For terminal operations (git, npm, docker), NOT file operations - use specialized tools instead.","","Usage:","- Quote file paths with spaces","- Output may be truncated","",...Dd(H),"","# Instructions",...Dd(D)
