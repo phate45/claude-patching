@@ -11,12 +11,13 @@ Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
-**Current status (2.1.62):**
+**Current status (2.1.63):**
 - 9 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, no-collapse-reads, quiet-notifications, read-summary, prompt-slim, feature-flag-toggles) for both installations
 - 60 prompt patches (58 upstream optimizations + 2 custom expression patches)
 - auto-memory patch retired — evolved into feature-flag-toggles (see below)
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
 - Prompt patches now use **local-first storage** (`patches/<version>/prompt-patches/`), with upstream comparison on `--init`
+- Regex engine fix: `__NAME__` placeholders now correctly interleave with `${__VAR__}` placeholders regardless of text position
 
 **Runtime:** Node.js 22+ or [Bun](https://bun.sh). Bun handles the TypeScript sources natively without additional flags. If using Node < 25, you may need `--experimental-strip-types`.
 

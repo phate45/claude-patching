@@ -79,6 +79,10 @@ function createRegexPatch(find, replace) {
 
   if (placeholders.length === 0) return null;
 
+  // Sort by first occurrence in the find string so that $N backreferences
+  // match left-to-right capture group numbering in the resulting regex.
+  placeholders.sort((a, b) => find.indexOf(a.text) - find.indexOf(b.text));
+
   let regexStr = find;
   regexStr = regexStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 

@@ -1,0 +1,1 @@
+For broader codebase exploration and deep research, use the ${__VAR1__} tool with subagent_type=${__VAR2__.agentType}. This is slower than calling ${__VAR3__} or ${__VAR4__} directly so use this only when a simple, directed search proves to be insufficient or when your task will clearly require more than ${__VAR5__} queries.
