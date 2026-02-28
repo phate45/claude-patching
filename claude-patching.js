@@ -275,17 +275,24 @@ function runPatch(patchFile, targetPath, dryRun) {
  * @param {object} install - Installation info
  * @param {boolean} dryRun - If true, only check without applying
  * @param {string} [patchVersionOverride] - Override which version's patches to use (for cross-version testing)
+ * @param {object} [options] - Additional options
+ * @param {boolean} [options.quiet] - Suppress verbose output
+ * @returns {{ success: boolean, passed: Array, failed: Array, skipped: Array, total: number, version: string, patchVersion: string, error?: string }}
  */
-function applyPatches(install, dryRun, patchVersionOverride) {
+function applyPatches(install, dryRun, patchVersionOverride, options = {}) {
   const isNative = install.type === 'native';
   let targetPath = install.path;
   let tempPath = null;
   let existingMeta = null;
 
   const patchVersion = patchVersionOverride || install.version;
+  const quiet = options.quiet ?? false;
+  const qlog = quiet ? () => {} : log;
+  const qemit = quiet ? () => {} : emitJson;
+  const resultCollector = { passed: [], failed: [], skipped: [] };
 
   // Emit start event in JSON mode
-  emitJson({
+  qemit({
     type: 'start',
     mode: dryRun ? 'check' : 'apply',
     target: install.type,
@@ -293,12 +300,12 @@ function applyPatches(install, dryRun, patchVersionOverride) {
     patchVersion,
   });
 
-  log(`\nTarget: ${install.type} install`);
-  log(`Version: ${install.version}`);
-  log(`Path: ${install.path}`);
+  qlog(`\nTarget: ${install.type} install`);
+  qlog(`Version: ${install.version}`);
+  qlog(`Path: ${install.path}`);
 
   if (patchVersionOverride) {
-    log(`\nTesting patches from: ${patchVersionOverride}`);
+    qlog(`\nTesting patches from: ${patchVersionOverride}`);
   }
 
   // Load patch index for this version and install type
@@ -313,26 +320,26 @@ function applyPatches(install, dryRun, patchVersionOverride) {
         console.error(`   No patch versions found in ${PATCHES_DIR}`);
       }
     }
-    emitJson({ type: 'summary', applied: 0, skipped: 0, failed: 1, success: false });
-    return false;
+    qemit({ type: 'summary', applied: 0, skipped: 0, failed: 1, success: false });
+    return { success: false, passed: [], failed: [], skipped: [], total: 0, version: install.version, patchVersion, error: `No patches for ${patchVersion}` };
   }
 
   const patches = patchIndex.patches;
-  log(`Patches: ${patches.map(p => p.id).join(', ')}`);
+  qlog(`Patches: ${patches.map(p => p.id).join(', ')}`);
 
   // For native: extract JS first
   if (isNative) {
-    log(`\nExtracting JS from Bun binary...`);
+    qlog(`\nExtracting JS from Bun binary...`);
     try {
       const extracted = extractJsFromBinaryToTemp(install.path);
       tempPath = extracted.tempPath;
       targetPath = tempPath;
-      log(`Extracted to: ${tempPath}`);
-      log(`JS size: ${extracted.originalJsSize.toLocaleString()} bytes`);
+      qlog(`Extracted to: ${tempPath}`);
+      qlog(`JS size: ${extracted.originalJsSize.toLocaleString()} bytes`);
     } catch (err) {
       logError(`Extraction failed: ${err.message}`);
-      emitJson({ type: 'summary', applied: 0, skipped: 0, failed: 1, success: false });
-      return false;
+      qemit({ type: 'summary', applied: 0, skipped: 0, failed: 1, success: false });
+      return { success: false, passed: [], failed: [], skipped: [], total: 0, version: install.version, patchVersion, error: 'Extraction failed' };
     }
   }
 
@@ -341,8 +348,8 @@ function applyPatches(install, dryRun, patchVersionOverride) {
   const content = fs.readFileSync(metaSourcePath, 'utf8');
   existingMeta = readPatchMetadata(content);
   if (existingMeta) {
-    log(`\nExisting patches: ${existingMeta.patches.map(p => p.id).join(', ')}`);
-    log(`Applied: ${existingMeta.appliedAt}`);
+    qlog(`\nExisting patches: ${existingMeta.patches.map(p => p.id).join(', ')}`);
+    qlog(`Applied: ${existingMeta.appliedAt}`);
   }
 
   // Create backup BEFORE patching — bare patches write directly to install.path,
@@ -354,12 +361,12 @@ function applyPatches(install, dryRun, patchVersionOverride) {
         ? extractClaudeJs(install.path).toString('utf8')
         : fs.readFileSync(install.path, 'utf8');
       if (isPatched(preApplyContent)) {
-        log(`\n⚠ Skipped backup: source already has patch marker. Restore a clean source first.`);
-        emitJson({ type: 'warning', message: 'Skipped .bak creation: source already patched' });
+        qlog(`\n⚠ Skipped backup: source already has patch marker. Restore a clean source first.`);
+        qemit({ type: 'warning', message: 'Skipped .bak creation: source already patched' });
       } else {
         fs.copyFileSync(install.path, backupPath);
-        log(`\n✓ Backed up to ${backupPath}`);
-        emitJson({ type: 'info', message: `Backup created: ${backupPath}` });
+        qlog(`\n✓ Backed up to ${backupPath}`);
+        qemit({ type: 'info', message: `Backup created: ${backupPath}` });
       }
     }
   }
@@ -370,7 +377,7 @@ function applyPatches(install, dryRun, patchVersionOverride) {
   );
 
   // Run patches
-  log(`\n${dryRun ? 'Checking' : 'Applying'} patches:\n`);
+  qlog(`\n${dryRun ? 'Checking' : 'Applying'} patches:\n`);
 
   let successCount = 0;
   let notFoundCount = 0;
@@ -381,46 +388,52 @@ function applyPatches(install, dryRun, patchVersionOverride) {
   for (const patch of patches) {
     // Skip patches already recorded in metadata
     if (alreadyApplied.has(patch.id)) {
-      emitJson({ type: 'patch_skipped', id: patch.id, reason: 'already_applied' });
-      log(`→ ${patch.id}`);
-      log(`  ✓ Already applied (per metadata)`);
-      log('');
+      qemit({ type: 'patch_skipped', id: patch.id, reason: 'already_applied' });
+      qlog(`→ ${patch.id}`);
+      qlog(`  ✓ Already applied (per metadata)`);
+      qlog('');
       skipMetaCount++;
+      resultCollector.skipped.push({ id: patch.id, reason: 'already_applied' });
       continue;
     }
 
     // Emit patch start event in JSON mode
-    emitJson({ type: 'patch_start', id: patch.id, file: patch.file });
-    log(`→ ${patch.id}`);
+    qemit({ type: 'patch_start', id: patch.id, file: patch.file });
+    qlog(`→ ${patch.id}`);
 
     const result = runPatch(patch.file, targetPath, dryRun);
 
     if (result.success) {
-      if (jsonMode) {
-        // Pass through JSONL output directly (each line is already valid JSON)
-        for (const line of result.output.split('\n').filter(l => l.trim())) {
-          console.log(line);
+      if (!quiet) {
+        if (jsonMode) {
+          // Pass through JSONL output directly (each line is already valid JSON)
+          for (const line of result.output.split('\n').filter(l => l.trim())) {
+            console.log(line);
+          }
+        } else {
+          const lines = result.output.split('\n').map(l => '  ' + l).join('\n');
+          console.log(lines);
         }
-      } else {
-        const lines = result.output.split('\n').map(l => '  ' + l).join('\n');
-        console.log(lines);
       }
       successCount++;
       appliedPatches.push({ id: patch.id, file: patch.file });
+      resultCollector.passed.push({ id: patch.id, output: result.output });
     } else if (result.notFound) {
-      emitJson({ type: 'patch_skipped', id: patch.id, reason: 'pattern_not_found', output: result.output || undefined });
-      log(`  ✗ Pattern not found (incompatible version or already applied)`);
+      qemit({ type: 'patch_skipped', id: patch.id, reason: 'pattern_not_found', output: result.output || undefined });
+      qlog(`  ✗ Pattern not found (incompatible version or already applied)`);
       if (result.output) {
         const lines = result.output.split('\n').map(l => '    ' + l).join('\n');
-        log(lines);
+        qlog(lines);
       }
       notFoundCount++;
+      resultCollector.failed.push({ id: patch.id, reason: 'pattern not found', output: result.output || '' });
     } else {
-      emitJson({ type: 'patch_failed', id: patch.id, error: result.output || result.error });
-      log(`  ✗ Failed: ${result.output || result.error}`);
+      qemit({ type: 'patch_failed', id: patch.id, error: result.output || result.error });
+      qlog(`  ✗ Failed: ${result.output || result.error}`);
       failCount++;
+      resultCollector.failed.push({ id: patch.id, reason: result.output || result.error, output: result.output || '' });
     }
-    log('');
+    qlog('');
   }
 
   // Summary
@@ -428,19 +441,19 @@ function applyPatches(install, dryRun, patchVersionOverride) {
   const summaryParts = [`${successCount} applied`, `${skipTotal} skipped`];
   if (skipMetaCount > 0) summaryParts[1] += ` (${skipMetaCount} already applied)`;
   if (failCount > 0) summaryParts.push(`${failCount} failed`);
-  log(`Results: ${summaryParts.join(', ')}`);
-  emitJson({ type: 'summary', applied: successCount, skipped: notFoundCount, skippedMeta: skipMetaCount, failed: failCount, success: failCount === 0 });
+  qlog(`Results: ${summaryParts.join(', ')}`);
+  qemit({ type: 'summary', applied: successCount, skipped: notFoundCount, skippedMeta: skipMetaCount, failed: failCount, success: failCount === 0 });
 
   if (dryRun) {
     if (tempPath) fs.unlinkSync(tempPath);
-    log(`\n✓ Dry run complete`);
-    return failCount === 0;
+    qlog(`\n✓ Dry run complete`);
+    return { success: failCount === 0, ...resultCollector, total: patches.length, version: install.version, patchVersion };
   }
 
   if (successCount === 0) {
     if (tempPath) fs.unlinkSync(tempPath);
-    log(`\nNo patches were applied.`);
-    return notFoundCount === patches.length;
+    qlog(`\nNo patches were applied.`);
+    return { success: notFoundCount === patches.length, ...resultCollector, total: patches.length, version: install.version, patchVersion };
   }
 
   // Update metadata in the patched JS
@@ -461,15 +474,44 @@ function applyPatches(install, dryRun, patchVersionOverride) {
     fs.writeFileSync(patchedPath, updatedContent);
   }
 
+  // Syntax-check the patched JS before finalising
+  {
+    const checkPath = isNative ? tempPath : install.path;
+    try {
+      execSync(`node --check "${checkPath}"`, { stdio: 'pipe' });
+      qlog(`\n✓ Syntax check passed`);
+      qemit({ type: 'info', message: 'Syntax check passed' });
+    } catch (err) {
+      const stderr = err.stderr?.toString().trim() || err.message;
+      logError(`\nPatched JS has syntax errors:\n${stderr}`);
+      emitJson({ type: 'result', status: 'failure', message: `Syntax error in patched JS: ${stderr}` });
+
+      if (isNative) {
+        // Binary hasn't been touched yet — just clean up the temp file
+        if (tempPath && fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+        qlog(`Binary untouched (validation failed before reassembly)`);
+      } else {
+        // Bare cli.js is already modified — restore from backup
+        if (fs.existsSync(backupPath)) {
+          fs.copyFileSync(backupPath, install.path);
+          qlog(`Restored from backup: ${backupPath}`);
+        } else {
+          logError(`No backup available at ${backupPath} — manual recovery needed`);
+        }
+      }
+      return { success: false, ...resultCollector, total: patches.length, version: install.version, patchVersion, error: 'Syntax check failed' };
+    }
+  }
+
   // For native: reassemble binary
   if (isNative) {
     try {
       const result = reassembleBinaryFromTemp(tempPath, install.path, install.path);
-      log(`\n✓ Reassembled binary`);
-      log(`  Original: ${result.originalSize.toLocaleString()} bytes`);
-      log(`  Patched: ${result.newSize.toLocaleString()} bytes`);
-      log(`  Delta: ${(result.newSize - result.originalSize).toLocaleString()} bytes`);
-      emitJson({
+      qlog(`\n✓ Reassembled binary`);
+      qlog(`  Original: ${result.originalSize.toLocaleString()} bytes`);
+      qlog(`  Patched: ${result.newSize.toLocaleString()} bytes`);
+      qlog(`  Delta: ${(result.newSize - result.originalSize).toLocaleString()} bytes`);
+      qemit({
         type: 'info',
         message: `Binary reassembled: ${result.originalSize} -> ${result.newSize} bytes`,
       });
@@ -477,21 +519,320 @@ function applyPatches(install, dryRun, patchVersionOverride) {
       logError(`Reassembly failed: ${err.message}`);
       if (fs.existsSync(backupPath)) {
         fs.copyFileSync(backupPath, install.path);
-        log('Restored from backup');
+        qlog('Restored from backup');
       }
-      return false;
+      return { success: false, ...resultCollector, total: patches.length, version: install.version, patchVersion, error: 'Reassembly failed' };
     } finally {
       if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
     }
   }
 
   if (appliedPatches.length > 0) {
-    log(`\n✓ Metadata updated`);
+    qlog(`\n✓ Metadata updated`);
   }
 
-  log(`\n✓ Done! Restart Claude Code to see changes.`);
-  emitJson({ type: 'result', status: 'success', message: 'Patches applied successfully' });
-  return true;
+  qlog(`\n✓ Done! Restart Claude Code to see changes.`);
+  qemit({ type: 'result', status: 'success', message: 'Patches applied successfully' });
+  return { success: true, ...resultCollector, total: patches.length, version: install.version, patchVersion };
+}
+
+// ============ Init ============
+
+/**
+ * Initialize patches for a new CC version.
+ * @param {{ bare: object|null, native: object|null }} installs
+ * @param {{ quiet?: boolean, skipExisting?: boolean }} options
+ * @returns {{
+ *   success: boolean,
+ *   version?: string,
+ *   copiedFrom?: string,
+ *   alreadyExists?: boolean,
+ *   promptImport?: { count: number, source: string, targetDir: string },
+ *   upstream?: { upstreamVersion: string, onlyUpstream: string[], changed: Array<{file: string}>, reportPath: string },
+ *   baseline?: { patchCount: number, charsSaved: number },
+ *   error?: string
+ * }}
+ */
+function doInit(installs, options = {}) {
+  const quiet = options.quiet ?? false;
+  const qlog = quiet ? () => {} : log;
+
+  // Collect detected versions
+  const versions = [];
+  if (installs.bare) versions.push(installs.bare.version);
+  if (installs.native) versions.push(installs.native.version);
+
+  if (versions.length === 0) {
+    return { success: false, error: 'No Claude Code installations detected' };
+  }
+
+  // Pick the newer version if they differ
+  const targetVersion = versions.reduce((a, b) => compareVersions(a, b) >= 0 ? a : b);
+
+  if (versions.length === 2 && versions[0] !== versions[1]) {
+    qlog(`Detected versions: bare=${installs.bare.version}, native=${installs.native.version}`);
+    qlog(`Picking newer version: ${targetVersion}`);
+  } else {
+    qlog(`Detected version: ${targetVersion}`);
+  }
+
+  // Check if index already exists for this version
+  const targetDir = path.join(PATCHES_DIR, targetVersion);
+  const targetIndex = path.join(targetDir, 'index.json');
+
+  if (fs.existsSync(targetIndex)) {
+    if (options.skipExisting) {
+      return { success: true, alreadyExists: true, version: targetVersion };
+    }
+    return { success: false, error: `patches/${targetVersion}/index.json already exists` };
+  }
+
+  // Find the most recent existing index to copy from
+  const available = listAvailableVersions();
+  if (available.length === 0) {
+    return { success: false, error: 'No existing patch versions to copy from' };
+  }
+
+  const sourceVersion = available[available.length - 1]; // sorted, last is latest
+  const sourceIndex = path.join(PATCHES_DIR, sourceVersion, 'index.json');
+  const sourceContent = JSON.parse(fs.readFileSync(sourceIndex, 'utf8'));
+
+  // Create the new index with updated version
+  const newIndex = { ...sourceContent, version: targetVersion };
+
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
+
+  fs.writeFileSync(targetIndex, JSON.stringify(newIndex, null, 2) + '\n');
+
+  qlog(`\nCreated patches/${targetVersion}/index.json (copied from ${sourceVersion})`);
+
+  const result = { success: true, version: targetVersion, copiedFrom: sourceVersion };
+
+  // Import prompt patches locally
+  try {
+    const {
+      importPromptPatches, generateBaseline, generateDiff,
+      previousVersion, hasLocalPromptPatches, compareWithUpstream,
+    } = require('./lib/prompt-baseline');
+
+    qlog('');
+    const importResult = importPromptPatches(targetVersion);
+    if (importResult) {
+      qlog(`Imported ${importResult.count} prompt patches from ${importResult.source}`);
+      qlog(`  → ${importResult.targetDir}/`);
+      result.promptImport = importResult;
+    } else {
+      qlog('No prompt patches available to import (run --setup to fetch upstream repo)');
+    }
+
+    // Generate baseline from our local patches
+    if (hasLocalPromptPatches(targetVersion)) {
+      qlog(`\nOur patch set for v${targetVersion}:`);
+      const baseline = generateBaseline(targetVersion);
+      qlog(`  ${baseline.patches.length} patches, ~${(baseline.totalFindChars - baseline.totalReplaceChars).toLocaleString()} chars savings`);
+      result.baseline = { patchCount: baseline.patches.length, charsSaved: baseline.totalFindChars - baseline.totalReplaceChars };
+
+      // Compare against upstream and save report
+      const comparison = compareWithUpstream(targetVersion);
+      const reportLines = [];
+
+      if (comparison) {
+        reportLines.push(`Upstream comparison for v${targetVersion} (vs upstream ${comparison.upstreamVersion})`);
+        reportLines.push(`Generated: ${new Date().toISOString()}`);
+        reportLines.push('');
+        reportLines.push(`Shared: ${comparison.shared.length} patches`);
+        if (comparison.onlyLocal.length) {
+          reportLines.push(`Only in ours: ${comparison.onlyLocal.join(', ')}`);
+        }
+        if (comparison.onlyUpstream.length) {
+          reportLines.push(`New in upstream: ${comparison.onlyUpstream.join(', ')}`);
+        }
+        if (comparison.changed.length) {
+          reportLines.push('Content differs:');
+          for (const c of comparison.changed) {
+            const parts = [];
+            if (c.findDiff) parts.push('find');
+            if (c.replaceDiff) parts.push('replace');
+            reportLines.push(`  ${c.file} (${parts.join(' + ')})`);
+          }
+        }
+        if (!comparison.onlyUpstream.length && !comparison.changed.length) {
+          reportLines.push('No new patches or changes from upstream.');
+        }
+
+        const reportPath = path.join(PATCHES_DIR, targetVersion, 'upstream-comparison.txt');
+        fs.writeFileSync(reportPath, reportLines.join('\n') + '\n');
+
+        // Also print to stdout
+        qlog(`\nUpstream comparison (vs ${comparison.upstreamVersion}):`);
+        for (const line of reportLines.slice(2)) { // skip header + timestamp
+          if (line) qlog(`  ${line}`);
+        }
+        qlog(`  Saved: ${reportPath}`);
+
+        result.upstream = {
+          upstreamVersion: comparison.upstreamVersion,
+          onlyUpstream: comparison.onlyUpstream,
+          changed: comparison.changed,
+          reportPath,
+        };
+      } else {
+        qlog(`\n  No upstream patches available for comparison.`);
+      }
+    }
+  } catch (err) {
+    qlog(`\nPrompt patch import/baseline failed: ${err.message}`);
+  }
+
+  return result;
+}
+
+// ============ Port Pipeline ============
+
+/**
+ * Format setup results in condensed form (human mode only)
+ */
+function formatSetupCondensed(status, targetType) {
+  log(`Setup: ${status.errors.length === 0 ? '✓' : '✗'}`);
+  const b = status.backups[targetType];
+  if (b) log(`  ${targetType} backup: ${b.details}`);
+  const p = status.prettified[targetType];
+  if (p) log(`  ${targetType} pretty: ${p.details}`);
+  if (status.tweakcc) log(`  tweakcc: ${status.tweakcc.details}`);
+  if (status.promptPatching) log(`  prompt-patching: ${status.promptPatching.details}`);
+  if (status.warnings.length > 0) {
+    for (const w of status.warnings) log(`  ⚠ ${w}`);
+  }
+  log('');
+}
+
+/**
+ * Format init results in condensed form (human mode only)
+ */
+function formatInitCondensed(result) {
+  if (!result.success) {
+    log(`Init: ✗ ${result.error}`);
+  } else if (result.alreadyExists) {
+    log(`Init: ✓ patches/${result.version}/ (already exists)`);
+  } else {
+    log(`Init: ✓ patches/${result.version}/index.json (from ${result.copiedFrom})`);
+    if (result.promptImport) {
+      log(`  ${result.promptImport.count} prompt patches imported from ${result.promptImport.source}`);
+    }
+    if (result.baseline) {
+      log(`  ~${result.baseline.charsSaved.toLocaleString()} chars savings across ${result.baseline.patchCount} patches`);
+    }
+    if (result.upstream) {
+      const parts = [];
+      if (result.upstream.onlyUpstream.length) parts.push(`${result.upstream.onlyUpstream.length} new upstream`);
+      if (result.upstream.changed.length) parts.push(`${result.upstream.changed.length} changed`);
+      if (parts.length) {
+        log(`  Upstream: ${parts.join(', ')} (see upstream-comparison.txt)`);
+      } else {
+        log(`  Upstream: in sync`);
+      }
+    }
+  }
+  log('');
+}
+
+/**
+ * Format check results in condensed form (human mode only)
+ */
+function formatCheckCondensed(result) {
+  if (result.error) {
+    log(`Check: ✗ ${result.error}`);
+    return;
+  }
+
+  const passCount = result.passed.length;
+  const failCount = result.failed.length;
+  const skipCount = result.skipped.length;
+  log(`Check: ${passCount}/${result.total} patches passed`);
+
+  if (passCount > 0) {
+    log(`  ✓ ${result.passed.map(p => p.id).join(', ')}`);
+  }
+  if (skipCount > 0) {
+    log(`  ⊘ ${result.skipped.map(s => s.id).join(', ')} (already applied)`);
+  }
+
+  for (const fail of result.failed) {
+    // prompt-slim has structured sub-patch info in its output — parse it
+    if (fail.id === 'prompt-slim' && fail.output) {
+      const scoreMatch = fail.output.match(/(\d+)\/(\d+) patches/);
+      if (scoreMatch) {
+        log(`  ✗ prompt-slim — ${scoreMatch[1]}/${scoreMatch[2]} prompt patches`);
+        // Extract diagnostic lines for failures
+        const diagLines = fail.output.split('\n').filter(l =>
+          l.includes('diverged') || l.includes('chained') || l.includes('not found')
+        );
+        for (const d of diagLines.slice(0, 8)) {
+          log(`    ${d.trim()}`);
+        }
+        continue;
+      }
+    }
+    log(`  ✗ ${fail.id} — ${fail.reason}`);
+    // Show first few lines of output for context
+    if (fail.output) {
+      const lines = fail.output.split('\n').filter(l => l.trim()).slice(0, 3);
+      for (const l of lines) {
+        log(`    ${l.trim()}`);
+      }
+    }
+  }
+  log('');
+}
+
+/**
+ * Full porting pipeline: setup + init + check
+ * @param {{ bare: object|null, native: object|null }} installs - Detected installations
+ * @param {object} target - The target installation to check against
+ * @returns {{ success: boolean, setup: object, init: object, check: object }}
+ */
+function runPort(installs, target) {
+  const latestPatched = listAvailableVersions().pop() || '(none)';
+  const toVersion = target.version;
+
+  log(`Port: ${latestPatched} → ${toVersion} (${target.type})\n`);
+  emitJson({ type: 'port_start', from: latestPatched, to: toVersion, target: target.type });
+
+  // Phase 1: Setup (quiet — we format our own summary)
+  const { runSetup } = require('./lib/setup');
+  const setupStatus = runSetup({ quiet: true });
+  formatSetupCondensed(setupStatus, target.type);
+  emitJson({ type: 'port_setup', ...setupStatus.toJSON() });
+
+  if (setupStatus.errors.length > 0) {
+    log(`\nSetup failed. Fix errors before porting.`);
+    return { success: false, setup: setupStatus, init: null, check: null };
+  }
+
+  // Phase 2: Init (quiet, skip if already exists)
+  const initResult = doInit(installs, { quiet: true, skipExisting: true });
+  formatInitCondensed(initResult);
+  emitJson({ type: 'port_init', ...initResult });
+
+  if (!initResult.success) {
+    log(`\nInit failed: ${initResult.error}`);
+    return { success: false, setup: setupStatus, init: initResult, check: null };
+  }
+
+  // Phase 3: Check (dry run, quiet — we format condensed output)
+  const checkResult = applyPatches(target, true, null, { quiet: true });
+  formatCheckCondensed(checkResult);
+  emitJson({
+    type: 'port_check',
+    passed: checkResult.passed.map(p => p.id),
+    failed: checkResult.failed.map(f => ({ id: f.id, reason: f.reason })),
+    skipped: checkResult.skipped.map(s => s.id),
+    total: checkResult.total,
+  });
+
+  return { success: checkResult.success, setup: setupStatus, init: initResult, check: checkResult };
 }
 
 // ============ CLI ============
@@ -514,8 +855,9 @@ TARGETS (optional if only one install detected)
 
 ACTIONS
   --status     Show detected installations and workspace artifact versions
-  --setup      Prepare patching environment (backups, prettify, tweakcc)
+  --setup      Prepare patching environment (backups, prettify, repos)
   --init       Create index.json for installed version from latest existing index
+  --port       Full porting pipeline: setup + init + check (condensed output)
   --check      Dry run - verify patch patterns match
   --apply      Apply patches
   --restore    Restore from .bak backup (undo patches)
@@ -533,6 +875,7 @@ AUTO-FALLBACK (--check only)
 EXAMPLES
   node claude-patching.js --status              # Show all detected installs
   node claude-patching.js --init                # Create index for installed version
+  node claude-patching.js --native --port       # Full port pipeline for native
   node claude-patching.js --check               # Check patches (auto-select)
   node claude-patching.js --native --apply      # Apply to native install
   node claude-patching.js --bare --check        # Check bare install
@@ -713,6 +1056,7 @@ const wantInit = args.includes('--init');
 const wantCheck = args.includes('--check');
 const wantApply = args.includes('--apply');
 const wantRestore = args.includes('--restore');
+const wantPort = args.includes('--port');
 const wantBare = args.includes('--bare');
 const wantNative = args.includes('--native');
 
@@ -733,9 +1077,9 @@ if (wantBare && wantNative) {
   process.exit(1);
 }
 
-const actionCount = [wantStatus, wantSetup, wantInit, wantCheck, wantApply, wantRestore].filter(Boolean).length;
+const actionCount = [wantStatus, wantSetup, wantInit, wantCheck, wantApply, wantRestore, wantPort].filter(Boolean).length;
 if (actionCount === 0) {
-  console.error('Error: No action specified. Use --status, --setup, --init, --check, --apply, or --restore');
+  console.error('Error: No action specified. Use --status, --setup, --init, --port, --check, --apply, or --restore');
   console.error('Run with --help for usage information.');
   process.exit(1);
 }
@@ -762,134 +1106,25 @@ if (wantStatus) {
 // Handle --setup
 if (wantSetup) {
   const { runSetup } = require('./lib/setup');
-  const report = runSetup();
-  console.log(report);
-  process.exit(0);
+  const status = runSetup();
+  console.log(jsonMode ? JSON.stringify(status.toJSON(), null, 2) : status.toReport());
+  process.exit(status.errors.length === 0 ? 0 : 1);
 }
 
 // Handle --init
 if (wantInit) {
-  // Collect detected versions
-  const versions = [];
-  if (installs.bare) versions.push(installs.bare.version);
-  if (installs.native) versions.push(installs.native.version);
-
-  if (versions.length === 0) {
-    console.error('Error: No Claude Code installations detected');
+  const result = doInit(installs);
+  if (!result.success) {
+    logError(result.error);
     process.exit(1);
   }
-
-  // Pick the newer version if they differ
-  const targetVersion = versions.reduce((a, b) => compareVersions(a, b) >= 0 ? a : b);
-
-  if (versions.length === 2 && versions[0] !== versions[1]) {
-    log(`Detected versions: bare=${installs.bare.version}, native=${installs.native.version}`);
-    log(`Picking newer version: ${targetVersion}`);
-  } else {
-    log(`Detected version: ${targetVersion}`);
-  }
-
-  // Check if index already exists for this version
-  const targetDir = path.join(PATCHES_DIR, targetVersion);
-  const targetIndex = path.join(targetDir, 'index.json');
-
-  if (fs.existsSync(targetIndex)) {
-    logError(`patches/${targetVersion}/index.json already exists`);
+  if (result.alreadyExists) {
+    logError(`patches/${result.version}/index.json already exists`);
     process.exit(1);
   }
-
-  // Find the most recent existing index to copy from
-  const available = listAvailableVersions();
-  if (available.length === 0) {
-    logError('No existing patch versions to copy from');
-    process.exit(1);
-  }
-
-  const sourceVersion = available[available.length - 1]; // sorted, last is latest
-  const sourceIndex = path.join(PATCHES_DIR, sourceVersion, 'index.json');
-  const sourceContent = JSON.parse(fs.readFileSync(sourceIndex, 'utf8'));
-
-  // Create the new index with updated version
-  const newIndex = { ...sourceContent, version: targetVersion };
-
-  if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true });
-  }
-
-  fs.writeFileSync(targetIndex, JSON.stringify(newIndex, null, 2) + '\n');
-
-  log(`\nCreated patches/${targetVersion}/index.json (copied from ${sourceVersion})`);
-
-  // Import prompt patches locally
-  try {
-    const {
-      importPromptPatches, generateBaseline, generateDiff,
-      previousVersion, hasLocalPromptPatches, compareWithUpstream,
-    } = require('./lib/prompt-baseline');
-
-    log('');
-    const importResult = importPromptPatches(targetVersion);
-    if (importResult) {
-      log(`Imported ${importResult.count} prompt patches from ${importResult.source}`);
-      log(`  → ${importResult.targetDir}/`);
-    } else {
-      log('No prompt patches available to import (run --setup to fetch upstream repo)');
-    }
-
-    // Generate baseline from our local patches
-    if (hasLocalPromptPatches(targetVersion)) {
-      log(`\nOur patch set for v${targetVersion}:`);
-      const baseline = generateBaseline(targetVersion);
-      log(`  ${baseline.patches.length} patches, ~${(baseline.totalFindChars - baseline.totalReplaceChars).toLocaleString()} chars savings`);
-
-      // Compare against upstream and save report
-      const comparison = compareWithUpstream(targetVersion);
-      const reportLines = [];
-
-      if (comparison) {
-        reportLines.push(`Upstream comparison for v${targetVersion} (vs upstream ${comparison.upstreamVersion})`);
-        reportLines.push(`Generated: ${new Date().toISOString()}`);
-        reportLines.push('');
-        reportLines.push(`Shared: ${comparison.shared.length} patches`);
-        if (comparison.onlyLocal.length) {
-          reportLines.push(`Only in ours: ${comparison.onlyLocal.join(', ')}`);
-        }
-        if (comparison.onlyUpstream.length) {
-          reportLines.push(`New in upstream: ${comparison.onlyUpstream.join(', ')}`);
-        }
-        if (comparison.changed.length) {
-          reportLines.push('Content differs:');
-          for (const c of comparison.changed) {
-            const parts = [];
-            if (c.findDiff) parts.push('find');
-            if (c.replaceDiff) parts.push('replace');
-            reportLines.push(`  ${c.file} (${parts.join(' + ')})`);
-          }
-        }
-        if (!comparison.onlyUpstream.length && !comparison.changed.length) {
-          reportLines.push('No new patches or changes from upstream.');
-        }
-
-        const reportPath = path.join(PATCHES_DIR, targetVersion, 'upstream-comparison.txt');
-        fs.writeFileSync(reportPath, reportLines.join('\n') + '\n');
-
-        // Also print to stdout
-        log(`\nUpstream comparison (vs ${comparison.upstreamVersion}):`);
-        for (const line of reportLines.slice(2)) { // skip header + timestamp
-          if (line) log(`  ${line}`);
-        }
-        log(`  Saved: ${reportPath}`);
-      } else {
-        log(`\n  No upstream patches available for comparison.`);
-      }
-    }
-  } catch (err) {
-    log(`\nPrompt patch import/baseline failed: ${err.message}`);
-  }
-
   log(`\nNext steps:`);
   log(`  node claude-patching.js --check    # verify patches still match`);
-  emitJson({ type: 'result', status: 'success', version: targetVersion, copiedFrom: sourceVersion });
+  emitJson({ type: 'result', status: 'success', version: result.version, copiedFrom: result.copiedFrom });
   process.exit(0);
 }
 
@@ -978,6 +1213,42 @@ if (wantRestore) {
   process.exit(0);
 }
 
+// Handle --port
+if (wantPort) {
+  let portTarget = null;
+
+  if (wantBare) {
+    if (!installs.bare) { console.error('Error: No bare installation detected'); process.exit(1); }
+    portTarget = installs.bare;
+  } else if (wantNative) {
+    if (!installs.native) { console.error('Error: No native installation detected'); process.exit(1); }
+    portTarget = installs.native;
+  } else {
+    const available = [installs.bare, installs.native].filter(Boolean);
+    if (available.length === 0) { console.error('Error: No Claude Code installation detected'); process.exit(1); }
+    if (available.length > 1) {
+      console.error('Error: Multiple installations detected. Specify --bare or --native with --port');
+      printStatus(installs);
+      process.exit(1);
+    }
+    portTarget = available[0];
+  }
+
+  const result = runPort(installs, portTarget);
+
+  if (result.check) {
+    const failCount = result.check.failed.length;
+    if (failCount > 0) {
+      log(`Next: Fix ${failCount} failing patch(es), then re-run --check`);
+    } else {
+      log(`All patches passed! Ready to --apply`);
+    }
+  }
+
+  emitJson({ type: 'result', status: result.success ? 'success' : 'needs_work', ...result });
+  process.exit(result.success ? 0 : 1);
+}
+
 // Determine target
 let target = null;
 
@@ -1036,5 +1307,5 @@ if (!effectivePatchVersion && dryRun) {
   }
 }
 
-const success = applyPatches(target, dryRun, effectivePatchVersion);
-process.exit(success ? 0 : 1);
+const result = applyPatches(target, dryRun, effectivePatchVersion);
+process.exit(result.success ? 0 : 1);

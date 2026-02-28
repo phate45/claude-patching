@@ -33,6 +33,9 @@ node claude-patching.js --check
 # Apply all patches
 node claude-patching.js --apply
 
+# Full porting pipeline for a new version
+node claude-patching.js --native --port
+
 # See all options
 node claude-patching.js --help
 ```
@@ -51,25 +54,29 @@ Note: This is automatically set within Claude Code's `Bash` tool executions.
 
 CC updates replace the installation entirely, removing patches and metadata.
 
+**If patches still match the new version** (minor bump, no code changes):
+
 ```bash
-# Check status (will show "Patches: (none)")
-node claude-patching.js --status
-
-# Test patches (patterns may have changed between versions)
-node claude-patching.js --check
-
-# Create index.json + import prompt patches locally
-# (finds best source: upstream exact match → highest version from local or upstream)
-node claude-patching.js --init
-
-# If so, re-apply patches
-node claude-patching.js --apply
-
-# If not, update backups and prettified files, and get ready for some js spelunking
-node claude-patching.js --setup
+node claude-patching.js --check     # verify patterns match
+node claude-patching.js --apply     # re-apply
 ```
 
-`--init` detects the installed version(s) and creates a new `patches/<version>/index.json` from the most recent existing index. It also imports prompt patches into `patches/<version>/prompt-patches/` using best-of-both resolution: upstream exact match wins, otherwise it compares the highest local and upstream candidates and picks whichever version is newer. If bare and native are on different versions, it picks the newer one.
+**If it's a new version that needs porting:**
+
+```bash
+node claude-patching.js --native --port
+```
+
+`--port` runs **setup** → **init** → **check** in one pass with condensed output. It prepares backups, creates `patches/<version>/index.json` from the latest existing set, imports prompt patches, and dry-runs everything — reporting which patches pass, which fail, and diagnostic context for failures.
+
+Typical porting workflow after `--port`:
+
+1. Fix failing patches (search `.pretty` files for new patterns)
+2. `--check` iteratively until everything passes
+3. `--apply` when ready
+4. Verify with `claude --version`
+
+For prompt patch failures specifically, use the `upgrade-prompt-patches` skill in Claude Code — it reads the diagnostic output and walks through each failure.
 
 ## Patches
 
