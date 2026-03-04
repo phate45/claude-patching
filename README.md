@@ -36,7 +36,7 @@ node claude-patching.js --bare --apply
 | Patch | Effect |
 |-------|--------|
 | **prompt-slim** | Condenses ~38KB of verbose system prompt text (tool descriptions, examples, instructions) via 60 find/replace patches. Adapted from [claude-code-tips](https://github.com/ykdojo/claude-code-tips) with custom additions. |
-| **system-reminders** | Removes the malware warning injected after every file read (~70 tokens each) and condenses the task/file-modification reminders. Configurable per-reminder: `remove`, `concise`, or `keep`. |
+| **system-reminders** | Removes the malware warning injected after every file read (~70 tokens each) and condenses the task/file-modification reminders (~500+ → ~25 tokens per event). Configurable per-reminder: `remove`, `concise`, or `keep`. |
 | **quiet-notifications** | Suppresses duplicate background agent notifications when `TaskOutput` has already read the output. Prevents redundant content accumulating in long sessions with heavy agent use. |
 
 ### Display & UX

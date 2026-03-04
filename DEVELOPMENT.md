@@ -193,6 +193,17 @@ const NO_FREEZE = true;           // true=always animate, false=freeze on discon
 const SPINNER_ROW_PADDING = 1;    // left padding (chars) for spinner row
 ```
 
+Preset sequences:
+- `["·","·","✧","✦","✧","·"]` — thought surfacing (default)
+- `["·","∴","∴","·","∵","∵"]` — therefore/because doubled
+- `["◐","◓","◑","◒"]` — rotating half-moon
+- `["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"]` — braille spinner
+- `["○","◔","◑","◕","●","◕","◑","◔"]` — filling circle
+- `["◢","◣","◤","◥"]` — rotating triangle
+- `["✧","·","✦","·"]` — twinkling star
+
+**Tip:** Double up characters (e.g., `["◢","◢","◣","◣",...]`) to slow the animation.
+
 Supports re-patching — edit `SPINNER_CHARS` and re-run without restoring from backup first.
 
 ### ghostty-term
