@@ -1,0 +1,8 @@
+Upstream comparison for v2.1.68 (vs upstream 2.1.66)
+Generated: 2026-03-04T16:31:49.408Z
+
+Shared: 58 patches
+Only in ours: expressive-tone, natural-emojis
+Content differs:
+  bash-tool (find + replace)
+  code-references (find + replace)

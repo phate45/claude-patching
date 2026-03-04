@@ -1,6 +1,5 @@
 {
-  "source": "local:2.1.62",
-  "customPatches": ["expressive-tone", "natural-emojis", "bash-tool", "code-references"],
+  "source": "upstream:2.1.66",
   "patches": [
     {
       "name": "Slim TodoWrite examples (6KB → 0.4KB)",
@@ -139,10 +138,6 @@
       "file": "killshell"
     },
     {
-      "name": "Remove tool usage policy examples (~400 chars)",
-      "file": "tool-usage-examples"
-    },
-    {
       "name": "Slim planning timelines (~290 → 50 chars)",
       "file": "planning-timelines"
     },
@@ -195,6 +190,10 @@
       "file": "agent-general-purpose"
     },
     {
+      "name": "Slim explore instruction (~275 → 105 chars)",
+      "file": "explore-instruction"
+    },
+    {
       "name": "Slim propose changes (~175 → 30 chars)",
       "file": "propose-changes"
     },
@@ -242,5 +241,11 @@
       "name": "Replace emoji ban with natural usage",
       "file": "natural-emojis"
     }
+  ],
+  "customPatches": [
+    "expressive-tone",
+    "natural-emojis",
+    "bash-tool",
+    "code-references"
   ]
 }

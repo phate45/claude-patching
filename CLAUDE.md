@@ -58,7 +58,7 @@ This runs **setup** → **init** → **check** in one pass with condensed output
 |---------|---------|-------------|
 | `--status` | Detects bare/native installs, shows versions, applied patches, workspace artifact freshness | Yes |
 | `--setup` | Clones/updates tweakcc + prompt-patching repos, creates `.original` backups from clean sources, generates `.pretty` files via js-beautify. Won't overwrite a clean backup if the source is already patched. | Yes |
-| `--init` | Creates `patches/<version>/index.json` from latest existing index, imports prompt patches locally (best-of-both: upstream exact match wins, otherwise newest), generates `upstream-comparison.txt` | No — errors if index already exists |
+| `--init` | Creates `patches/<version>/index.json` from latest existing index, imports prompt patches (upstream base + local customizations merged), generates `upstream-comparison.txt` | No — errors if index already exists |
 | `--port` | Composes setup + init + check with condensed output. Init skips silently if index exists. | Yes (when index exists) |
 | `--check` | Dry-runs all patches against target. Auto-falls back to latest patch version if none exists for the target version. | Yes |
 | `--apply` | Applies patches, writes metadata comment, runs syntax check, reassembles binary (native). Creates `.bak` before patching. | No |
@@ -80,11 +80,16 @@ Scoped rules in `.claude/rules/` provide context-sensitive reference:
 
 System prompt patches live in `patches/<version>/prompt-patches/` as `.find.txt`/`.replace.txt` pairs, listed in `patches.json`. Our local set is the **baseline** — it includes optimizations ported from the upstream [prompt-patching](https://github.com/ykdojo/claude-code-tips) repo plus our own custom patches.
 
-**Custom patches** (behavioral, not optimization):
-- `expressive-tone` — replaces blunt brevity directive with natural expression guidance
-- `natural-emojis` — replaces emoji ban with natural usage permission
+**Custom patches** are tracked via the `customPatches` field in `patches.json`. These are carried forward automatically when `--init` imports from upstream:
 
-**Upstream** (`/tmp/prompt-patching/`, cloned by `--setup`) is a reference for new optimizations, not a dependency. `--init` generates `upstream-comparison.txt` in the version directory showing what upstream has that we don't, and where shared patches differ.
+| Patch | Type | Effect |
+|-------|------|--------|
+| `expressive-tone` | local-only | Replaces blunt brevity directive with natural expression guidance |
+| `natural-emojis` | local-only | Replaces emoji ban with natural usage permission |
+| `bash-tool` | divergent | Our version rewrites the full description; upstream only trims one line |
+| `code-references` | divergent | Our version removes the adjacent "colon before tool calls" instruction too |
+
+**Upstream** (`/tmp/prompt-patching/`, cloned by `--setup`) is a reference for new optimizations, not a dependency. `--init` uses upstream as the base when it has a newer version than our latest local, then merges our `customPatches` on top. The `upstream-comparison.txt` in each version directory shows what differs.
 
 When porting to a new CC version, use the `upgrade-prompt-patches` skill.
 
