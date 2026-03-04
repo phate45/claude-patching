@@ -11,13 +11,12 @@ Use at your own peril.
 
 For currently supported CC versions, see the contents of the [patches](./patches/) folder.
 
-**Current status (2.1.63):**
+**Current status (2.1.68):**
 - 9 patches working (ghostty-term, thinking-visibility, spinner, system-reminders, no-collapse-reads, quiet-notifications, read-summary, prompt-slim, feature-flag-toggles) for both installations
-- 60 prompt patches (58 upstream optimizations + 2 custom expression patches)
+- 60 prompt patches (58 upstream optimizations + 2 custom expression patches, with 2 divergent replacements)
+- `--init` now merges local customizations when importing from upstream — tracked via `customPatches` in `patches.json`
 - auto-memory patch retired — evolved into feature-flag-toggles (see below)
 - thinking-style patch is currently redundant as the 'default' style is the dim i was patching for
-- Prompt patches now use **local-first storage** (`patches/<version>/prompt-patches/`), with upstream comparison on `--init`
-- Regex engine fix: `__NAME__` placeholders now correctly interleave with `${__VAR__}` placeholders regardless of text position
 
 **Runtime:** Node.js 22+ or [Bun](https://bun.sh). Bun handles the TypeScript sources natively without additional flags. If using Node < 25, you may need `--experimental-strip-types`.
 
@@ -67,7 +66,7 @@ node claude-patching.js --apply     # re-apply
 node claude-patching.js --native --port
 ```
 
-`--port` runs **setup** → **init** → **check** in one pass with condensed output. It prepares backups, creates `patches/<version>/index.json` from the latest existing set, imports prompt patches, and dry-runs everything — reporting which patches pass, which fail, and diagnostic context for failures.
+`--port` runs **setup** → **init** → **check** in one pass with condensed output. It prepares backups, creates `patches/<version>/index.json` from the latest existing set, imports prompt patches (upstream base + local customizations merged via `customPatches`), and dry-runs everything — reporting which patches pass, which fail, and diagnostic context for failures.
 
 Typical porting workflow after `--port`:
 
@@ -223,7 +222,7 @@ When reading a section of a file with offset/limit, the compact tool display onl
 
 ### prompt-slim
 
-Reduces system prompt token overhead and adjusts behavioral instructions via 60 find/replace patches. 58 are optimization patches adapted from [claude-code-tips](https://github.com/ykdojo/claude-code-tips), plus 2 custom expression patches.
+Reduces system prompt token overhead and adjusts behavioral instructions via 60 find/replace patches. 58 are optimization patches adapted from [claude-code-tips](https://github.com/ykdojo/claude-code-tips), plus 4 custom patches (2 local-only, 2 with divergent content from upstream).
 
 **What it does:**
 1. Reads patch pairs (`.find.txt` / `.replace.txt`) from `patches/<version>/prompt-patches/` (our baseline), with fallback to the upstream repo
@@ -236,8 +235,10 @@ Reduces system prompt token overhead and adjusts behavioral instructions via 60 
 - Tool descriptions, multi-paragraph examples, and redundant instructions condensed
 - `expressive-tone` — replaces "Your responses should be short and concise" with natural expression guidance
 - `natural-emojis` — replaces the blanket emoji ban with "Use emojis naturally to enhance communication"
+- `bash-tool` — rewrites the full Bash tool description (upstream only trims one line)
+- `code-references` — removes the adjacent "colon before tool calls" instruction alongside the code references line
 
-**Local storage:** `--init` imports prompt patches locally so they survive container restarts. It also generates an upstream comparison report (`upstream-comparison.txt`) showing new patches, content differences, and patches unique to our set.
+**Local storage and custom tracking:** `--init` imports prompt patches locally. When upstream has a newer version, it uses upstream as the base and merges local customizations on top. Custom patches are tracked explicitly via the `customPatches` field in `patches.json`, preventing stale upstream patches from being resurrected. An upstream comparison report (`upstream-comparison.txt`) documents what differs.
 
 **Upstream tracking:** The patch checks a logic hash of the upstream `createRegexPatch()` engine at runtime. If the engine changes between CC versions, a warning is emitted.
 
