@@ -116,7 +116,9 @@ function isClaudeModule(name: string): boolean {
     name.endsWith('/claude') ||
     name === 'claude' ||
     name.endsWith('/claude.exe') ||
-    name === 'claude.exe'
+    name === 'claude.exe' ||
+    // 2.1.69+ moved to src/entrypoints/cli.js
+    name.endsWith('/src/entrypoints/cli.js')
   );
 }
 
@@ -247,8 +249,8 @@ function extractClaudeJs(binaryPath: string): Buffer {
   if (!claudeContents) {
     throw new Error(
       'Claude module not found in binary.\n' +
-      'Expected module named "/$bunfs/root/claude" or "claude".\n' +
-      `Found modules: ${moduleNames.join(', ')}`
+      'Expected module named "/$bunfs/root/claude", "claude", or "/$bunfs/root/src/entrypoints/cli.js".\n' +
+      `Found ${moduleNames.length} modules: ${moduleNames.filter(n => n.length < 200).join(', ') || '(all names too long to display)'}`
     );
   }
 
