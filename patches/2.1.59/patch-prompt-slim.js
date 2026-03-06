@@ -79,24 +79,58 @@ function createRegexPatch(find, replace) {
 
   if (placeholders.length === 0) return null;
 
-  // Sort by first occurrence in the find string so that $N backreferences
-  // match left-to-right capture group numbering in the resulting regex.
-  placeholders.sort((a, b) => find.indexOf(a.text) - find.indexOf(b.text));
-
-  let regexStr = find;
-  regexStr = regexStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
+  // Build a map from placeholder text → capture group pattern
+  const captureFor = new Map();
   for (const p of placeholders) {
-    const escaped = p.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const capture = p.type === 'var'
+    captureFor.set(p.text, p.type === 'var'
       ? '(\\$\\{[a-zA-Z0-9_.$]+(?:\\([a-zA-Z0-9_.$]*\\)(?:\\/\\d+)?)?\\})'
-      : '([a-zA-Z0-9_$]+)';
-    regexStr = regexStr.split(escaped).join(capture);
+      : '([a-zA-Z0-9_$]+)');
   }
 
+  // Collect ALL occurrences of all placeholders with their positions
+  const occurrences = [];
+  for (const p of placeholders) {
+    let idx = find.indexOf(p.text);
+    while (idx !== -1) {
+      occurrences.push({ pos: idx, end: idx + p.text.length, text: p.text, type: p.type });
+      idx = find.indexOf(p.text, idx + 1);
+    }
+  }
+
+  // Sort left-to-right; on overlap (e.g. __VAR__ inside ${__VAR__}), longer wins
+  occurrences.sort((a, b) => a.pos - b.pos || b.end - a.end);
+
+  // Filter overlapping occurrences (keep first/longest at each position)
+  const filtered = [];
+  let lastEnd = 0;
+  for (const occ of occurrences) {
+    if (occ.pos >= lastEnd) {
+      filtered.push(occ);
+      lastEnd = occ.end;
+    }
+  }
+
+  // Build regex left-to-right, assigning group numbers in positional order
+  const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  let regexStr = '';
+  let groupNum = 0;
+  const firstGroup = new Map(); // placeholder text → first capture group number
+  let prevEnd = 0;
+
+  for (const occ of filtered) {
+    regexStr += escapeRe(find.substring(prevEnd, occ.pos));
+    regexStr += captureFor.get(occ.text);
+    groupNum++;
+    if (!firstGroup.has(occ.text)) {
+      firstGroup.set(occ.text, groupNum);
+    }
+    prevEnd = occ.end;
+  }
+  regexStr += escapeRe(find.substring(prevEnd));
+
   let replaceStr = replace;
-  for (let i = 0; i < placeholders.length; i++) {
-    replaceStr = replaceStr.split(placeholders[i].text).join(`$${i + 1}`);
+  for (const [text, gNum] of firstGroup) {
+    replaceStr = replaceStr.split(text).join(`$${gNum}`);
   }
 
   return { regex: new RegExp(regexStr), replace: replaceStr, varCount: placeholders.length };

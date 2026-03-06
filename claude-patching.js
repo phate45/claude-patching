@@ -709,6 +709,59 @@ function formatSetupCondensed(status, targetType) {
 }
 
 /**
+ * List the most recent .bak files for an install.
+ *
+ * Native: .bak files are siblings in the versions/ directory (e.g. 2.1.69.bak).
+ * Bare: each pnpm version lives in its own @anthropic-ai+claude-code@<ver>/ dir,
+ *   so .bak files are at cli.js.bak inside each version's package directory.
+ *   We glob across version dirs by splitting at the @<version> segment.
+ */
+function listRecentBaks(installType, targetPath, limit = 3) {
+  const path = require('path');
+
+  let bakPaths = [];
+  try {
+    if (installType === 'native') {
+      const dir = path.dirname(targetPath);
+      bakPaths = fs.readdirSync(dir)
+        .filter(f => f.endsWith('.bak'))
+        .map(f => path.join(dir, f));
+    } else {
+      // Bare: targetPath is .../pnpm/.../@anthropic-ai+claude-code@2.1.68/.../cli.js
+      // The .pnpm dir contains @anthropic-ai+claude-code@<ver>/ siblings.
+      // Find the .pnpm dir and scan for cli.js.bak in each version's subtree.
+      const pnpmMatch = targetPath.match(/^(.+\/.pnpm)\/@anthropic-ai\+claude-code@[^/]+\/(.+)$/);
+      if (pnpmMatch) {
+        const pnpmDir = pnpmMatch[1];
+        const relPath = pnpmMatch[2]; // e.g. node_modules/@anthropic-ai/claude-code/cli.js
+        const entries = fs.readdirSync(pnpmDir)
+          .filter(d => d.startsWith('@anthropic-ai+claude-code@'));
+        for (const entry of entries) {
+          const candidate = path.join(pnpmDir, entry, relPath + '.bak');
+          if (fs.existsSync(candidate)) bakPaths.push(candidate);
+        }
+      }
+    }
+
+    return bakPaths
+      .map(full => {
+        const stat = fs.statSync(full);
+        const sizeMB = (stat.size / 1024 / 1024).toFixed(1);
+        let name = path.basename(full);
+        if (installType === 'bare') {
+          const verMatch = full.match(/@anthropic-ai\+claude-code@([^/]+)/);
+          if (verMatch) name = `${verMatch[1]}.bak`;
+        }
+        return { name, mtime: stat.mtime, sizeMB };
+      })
+      .sort((a, b) => b.mtime - a.mtime)
+      .slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Format init results in condensed form (human mode only)
  */
 function formatInitCondensed(result) {
@@ -804,7 +857,12 @@ function runPort(installs, target) {
   const { runSetup } = require('./lib/setup');
   const setupStatus = runSetup({ quiet: true });
   formatSetupCondensed(setupStatus, target.type);
-  emitJson({ type: 'port_setup', ...setupStatus.toJSON() });
+  const baks = listRecentBaks(target.type, target.path);
+  if (baks.length > 0) {
+    log(`  .bak files: ${baks.map(b => `${b.name} (${b.sizeMB} MB)`).join(', ')}`);
+    log('');
+  }
+  emitJson({ type: 'port_setup', ...setupStatus.toJSON(), baks: baks.map(b => b.name) });
 
   if (setupStatus.errors.length > 0) {
     log(`\nSetup failed. Fix errors before porting.`);
@@ -970,6 +1028,7 @@ function printStatus(installs) {
           : 'unable to read';
       }
 
+      info.baks = install ? listRecentBaks(type, install.path).map(b => `${b.name} (${b.sizeMB} MB)`) : [];
       status.installs[type] = info;
       status.artifacts[type] = getArtifactInfo(type);
     }
@@ -1036,6 +1095,12 @@ function printStatus(installs) {
       }
     } else {
       console.log(`    Artifacts: (none — run --setup)`);
+    }
+
+    // .bak files (rollback points)
+    const baks = listRecentBaks(type, install.path);
+    if (baks.length > 0) {
+      console.log(`    Backups: ${baks.map(b => `${b.name} (${b.sizeMB} MB)`).join(', ')}`);
     }
 
     console.log();
