@@ -53,7 +53,7 @@ node claude-patching.js --bare --apply
 
 | Patch | Effect |
 |-------|--------|
-| **feature-flag-toggles** | Enables structured session memory compaction (maintains a living `summary.md` per session instead of throwaway summaries). The rich memory prompt (`tengu_mulberry_fog`) graduated to default-on in 2.1.69. Kill switch: `DISABLE_CLAUDE_CODE_SM_COMPACT=1`. |
+| **feature-flag-toggles** | Enables structured session memory compaction (maintains a living `summary.md` per session instead of throwaway summaries). Also disables `tengu_defer_all_bn4` (new in 2.1.70), which otherwise defers ALL built-in tools behind ToolSearch — restoring immediate access to Read, Edit, Bash, etc. Kill switch: `DISABLE_CLAUDE_CODE_SM_COMPACT=1`. |
 | **expressive-tone** | *(prompt patch)* Replaces the blunt "short and concise" brevity directive with natural expression guidance. |
 | **natural-emojis** | *(prompt patch)* Replaces the blanket emoji ban with "Use emojis naturally to enhance communication." |
 
