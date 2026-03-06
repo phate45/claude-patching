@@ -28,7 +28,7 @@
       },
       {
         "id": "feature-flag-toggles",
-        "file": "2.1.69/patch-feature-flag-toggles.js"
+        "file": "2.1.70/patch-feature-flag-toggles.js"
       }
     ],
     "bare": [
@@ -55,7 +55,7 @@
   "notes": {
     "thinking-style": "Dim styling is now native in 2.1.31 - no patch needed",
     "auto-memory": "tengu_oboe removed in 2.1.59. Replaced by feature-flag-toggles patch.",
-    "feature-flag-toggles": "Enables: session_memory + sm_compact (structured compaction). mulberry_fog promoted to default-on in 2.1.69.",
+    "feature-flag-toggles": "Enables: session_memory + sm_compact. Disables: defer_all_bn4 (restores immediate built-in tool access).",
     "prompt-slim": "Updated to 2.1.59 with local-first patch resolution and built-in diagnostics"
   }
 }
