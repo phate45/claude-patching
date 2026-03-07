@@ -29,6 +29,10 @@
       {
         "id": "feature-flag-toggles",
         "file": "2.1.70/patch-feature-flag-toggles.js"
+      },
+      {
+        "id": "toolsearch-visibility",
+        "file": "2.1.71/patch-toolsearch-visibility.js"
       }
     ],
     "bare": [
