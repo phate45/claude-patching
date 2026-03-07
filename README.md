@@ -47,6 +47,7 @@ node claude-patching.js --bare --apply
 | **no-collapse-reads** | Prevents consecutive Read/Grep/Glob calls from collapsing into a single summary line. Each tool call displays individually. |
 | **read-summary** | Shows offset/limit info in the compact Read display: `Read(file.js · lines 200-229)` instead of just `Read(file.js)`. |
 | **spinner** | Custom spinner animation. Configurable character sequence and animation mode at the top of the patch file. |
+| **toolsearch-visibility** | Makes ToolSearch tool calls visible in the TUI. CC 2.1.71 suppressed all rendering — this restores it: `ToolSearch(select:WebFetch)` / `Loaded 1 tool`. Useful for spotting which deferred tools are being loaded across sessions. |
 | **ghostty-term** | Adds truecolor support for [Ghostty](https://ghostty.org/) terminal (CC only recognizes `xterm-kitty` by default). |
 
 ### Behavioral
