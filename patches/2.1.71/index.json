@@ -37,6 +37,10 @@
       {
         "id": "flag-env-override",
         "file": "2.1.71/patch-flag-env-override.js"
+      },
+      {
+        "id": "cron-visibility",
+        "file": "2.1.71/patch-cron-visibility.js"
       }
     ],
     "bare": [
