@@ -33,6 +33,10 @@
       {
         "id": "toolsearch-visibility",
         "file": "2.1.71/patch-toolsearch-visibility.js"
+      },
+      {
+        "id": "flag-env-override",
+        "file": "2.1.71/patch-flag-env-override.js"
       }
     ],
     "bare": [

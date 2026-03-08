@@ -55,6 +55,7 @@ node claude-patching.js --bare --apply
 | Patch | Effect |
 |-------|--------|
 | **feature-flag-toggles** | Enables structured session memory compaction (maintains a living `summary.md` per session instead of throwaway summaries). Also disables `tengu_defer_all_bn4` (new in 2.1.70), which otherwise defers ALL built-in tools behind ToolSearch — restoring immediate access to Read, Edit, Bash, etc. Kill switch: `DISABLE_CLAUDE_CODE_SM_COMPACT=1`. |
+| **flag-env-override** | Patches the GrowthBook feature flag system to read overrides from `CLAUDE_CODE_FLAG_OVERRIDES` env var. Any flag in the JSON map bypasses server-side evaluation entirely. Example: `CLAUDE_CODE_FLAG_OVERRIDES='{"tengu_kairos_cron":true}' claude` enables the hidden `/loop` scheduling command. |
 | **expressive-tone** | *(prompt patch)* Replaces the blunt "short and concise" brevity directive with natural expression guidance. |
 | **natural-emojis** | *(prompt patch)* Replaces the blanket emoji ban with "Use emojis naturally to enhance communication." |
 
