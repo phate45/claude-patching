@@ -23,6 +23,7 @@ dbg.log
 # Local settings and personal workflows
 .claude/settings.local.json
 .claude/skills/writing-work-logs/
+.claude/scheduled_tasks.lock
 .envrc
 .nvmrc
 
