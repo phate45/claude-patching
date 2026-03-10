@@ -88,6 +88,7 @@ System prompt patches live in `patches/<version>/prompt-patches/` as `.find.txt`
 | `natural-emojis` | local-only | Replaces emoji ban with natural usage permission |
 | `bash-tool` | divergent | Our version rewrites the full description; upstream only trims one line |
 | `code-references` | divergent | Our version removes the adjacent "colon before tool calls" instruction too |
+| `doing-tasks-intro` | divergent | Upstream's find cuts mid-sentence, leaving a garbled fragment; ours consumes the full sentence |
 
 **Upstream** (`/tmp/prompt-patching/`, cloned by `--setup`) is a reference for new optimizations, not a dependency. `--init` uses upstream as the base when it has a newer version than our latest local, then merges our `customPatches` on top. The `upstream-comparison.txt` in each version directory shows what differs.
 

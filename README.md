@@ -59,6 +59,8 @@ node claude-patching.js --bare --apply
 | **flag-env-override** | Patches the GrowthBook feature flag system to read overrides from `CLAUDE_CODE_FLAG_OVERRIDES` env var. Any flag in the JSON map bypasses server-side evaluation entirely. Example: `CLAUDE_CODE_FLAG_OVERRIDES='{"tengu_kairos_cron":true}' claude` enables the hidden `/loop` scheduling command. |
 | **expressive-tone** | *(prompt patch)* Replaces the blunt "short and concise" brevity directive with natural expression guidance. |
 | **natural-emojis** | *(prompt patch)* Replaces the blanket emoji ban with "Use emojis naturally to enhance communication." |
+| **doing-tasks-intro** | *(prompt patch)* Fixes upstream's garbled "For software engineering tasks: software engineering tasks and the current working directory" by extending the find to consume the full sentence. |
+| **task-usage-notes** | *(prompt patch)* Strips ~2KB of Agent tool usage notes and examples, keeping the tool focused on agent type descriptions and the "When NOT to use" summary. |
 
 ### Retired / Dormant
 

@@ -5,7 +5,8 @@
     "natural-emojis",
     "bash-tool",
     "code-references",
-    "task-usage-notes"
+    "task-usage-notes",
+    "doing-tasks-intro"
   ],
   "patches": [
     {
