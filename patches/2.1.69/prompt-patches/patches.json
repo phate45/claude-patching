@@ -241,5 +241,12 @@
       "name": "Replace emoji ban with natural usage",
       "file": "natural-emojis"
     }
+  ],
+  "customPatches": [
+    "expressive-tone",
+    "natural-emojis",
+    "bash-tool",
+    "code-references",
+    "task-usage-notes"
   ]
 }

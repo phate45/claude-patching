@@ -1,13 +1,16 @@
 {
-  "source": "local:2.1.69",
+  "source": "upstream:2.1.72+local:2.1.71",
+  "customPatches": [
+    "expressive-tone",
+    "natural-emojis",
+    "bash-tool",
+    "code-references",
+    "task-usage-notes"
+  ],
   "patches": [
     {
       "name": "Slim TodoWrite examples (6KB → 0.4KB)",
       "file": "todowrite-examples"
-    },
-    {
-      "name": "Remove Task tool Usage notes + examples (~2KB)",
-      "file": "task-usage-notes"
     },
     {
       "name": "Simplify git commit section (~3.4KB)",
@@ -150,6 +153,10 @@
       "file": "task-tool-intro"
     },
     {
+      "name": "Remove Task tool Usage notes + examples (~2KB)",
+      "file": "task-usage-notes"
+    },
+    {
       "name": "Slim Task tool when-not-to-use",
       "file": "task-tool-whennot"
     },
@@ -241,12 +248,5 @@
       "name": "Replace emoji ban with natural usage",
       "file": "natural-emojis"
     }
-  ],
-  "customPatches": [
-    "expressive-tone",
-    "natural-emojis",
-    "bash-tool",
-    "code-references",
-    "task-usage-notes"
   ]
 }
