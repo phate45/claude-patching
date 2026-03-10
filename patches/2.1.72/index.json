@@ -41,6 +41,10 @@
       {
         "id": "cron-visibility",
         "file": "2.1.71/patch-cron-visibility.js"
+      },
+      {
+        "id": "keyword-highlights",
+        "file": "2.1.72/patch-keyword-highlights.js"
       }
     ],
     "bare": [

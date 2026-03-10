@@ -1,0 +1,387 @@
+#!/usr/bin/env node
+/**
+ * Patch to add configurable keyword highlighting in the input box and
+ * message history.
+ *
+ * Stock CC highlights "ultrathink" with a rainbow shimmer. This patch
+ * extends the detection + rendering to support additional words with
+ * configurable styles: hex colors, color subsets, shimmer animation,
+ * and text effects (bold/italic/underline).
+ *
+ * Color values can be:
+ *   - Theme names: "rainbow_indigo", "claude", "warning", etc.
+ *   - Hex codes: "#8B8CC7" (passed through directly to chalk)
+ *   - CSS rgb: "rgb(139,140,199)" (also passed through)
+ *
+ * Touch points:
+ *   1. n41/j9$ (match finder) — expanded regex, returns {word,start,end,style}
+ *   2. Input box highlight builder — branches on style for color assignment
+ *   3. Message history renderer — branches on style for per-char coloring
+ *   4. Notification trigger — filter to only fire for ultrathink matches
+ *   5. Text line renderer — pass bold/italic/underline from highlight spans
+ *
+ * Does NOT touch CuA/WhL (the boolean "has ultrathink?" test) or the
+ * ultrathink_effort system message — only the original keyword triggers that.
+ *
+ * Usage:
+ *   node patch-keyword-highlights.js <cli.js path>
+ *   node patch-keyword-highlights.js --check <cli.js path>
+ */
+
+const fs = require('fs');
+const output = require('../../lib/output');
+
+// ============================================================
+// CONFIGURATION — keyword → style mapping
+//
+// Nord-inspired palette (https://www.nordtheme.com/)
+// ============================================================
+//
+// style types:
+//   "single"   — one color (hex or theme name)
+//   "subset"   — cycles through a custom color array
+//   (ultrathink keeps its stock rainbow behavior via style: null)
+//
+// text effects: bold, italic, underline (optional, default false)
+// shimmer: glimmer sweep animation in the input box (optional)
+
+const KEYWORD_STYLES = {
+  // ═══ POP — shimmer + effects ═══
+  // Shimmer colors need high contrast from base (~+70 on secondary channels)
+  // to be visible as the 3-char glow sweeps across
+  "claude":   { style: "single",  color: "#8B8CC7",  shimmer: true, shimmerColor: "#D1D2FF", bold: true },
+  "yolo":     { style: "subset",  colors: ["#BF616A", "#D08770", "#EBCB8B"], shimmer: true, shimmerColors: ["#FF9CA3", "#FFB89E", "#FFF0C0"] },
+
+  // ═══ ACTION — solid Nord Aurora/Frost ═══
+  "commit":   { style: "single",  color: "#A3BE8C",  bold: true },
+  "ship":     { style: "single",  color: "#88C0D0" },
+  "push":     { style: "single",  color: "#88C0D0" },
+  "deploy":   { style: "single",  color: "#D08770",  bold: true },
+  "nuke":     { style: "single",  color: "#BF616A",  bold: true },
+  "review":   { style: "single",  color: "#B48EAD" },
+  "plan":     { style: "single",  color: "#EBCB8B" },
+  "worktree": { style: "single",  color: "#A3BE8C" },
+
+  // ═══ MUTED — subtle italic tint ═══
+  "debug":    { style: "single",  color: "#81A1C1",  italic: true },
+  "test":     { style: "single",  color: "#D08770",  italic: true },
+  "merge":    { style: "single",  color: "#8FBCBB",  italic: true },
+  "revert":   { style: "single",  color: "#C88B93",  italic: true },
+  "implement":{ style: "single",  color: "#A3BE8C",  italic: true },
+};
+
+// ============================================================
+// PATCH IMPLEMENTATION
+// ============================================================
+
+const args = process.argv.slice(2);
+const dryRun = args[0] === '--check';
+const targetPath = dryRun ? args[1] : args[0];
+
+if (!targetPath) {
+  output.error('Usage: node patch-keyword-highlights.js [--check] <cli.js path>');
+  process.exit(1);
+}
+
+let content;
+try {
+  content = fs.readFileSync(targetPath, 'utf8');
+} catch (err) {
+  output.error(`Failed to read ${targetPath}`, [err.message]);
+  process.exit(1);
+}
+
+// Build the regex alternation from config + "ultrathink"
+const customWords = Object.keys(KEYWORD_STYLES);
+const allWords = ['ultrathink', ...customWords];
+// Sort by length descending so "worktree" matches before "work" would
+const wordPattern = allWords.sort((a, b) => b.length - a.length).join('|');
+
+// Serialize the style config as a compact JSON string for injection
+const stylesJson = JSON.stringify(KEYWORD_STYLES);
+
+// ============================================================
+// Step 1: Replace the match-finder function (n41 / j9$)
+//
+// Original: finds /\bultrathink\b/gi matches, returns [{word,start,end}]
+// Patched:  finds all keywords, returns [{word,start,end,style}]
+//           where style is the entry from KEYWORD_STYLES (or null for ultrathink)
+// ============================================================
+
+const fnPattern = new RegExp(
+  'function ([$\\w]+)\\(([$\\w]+)\\)\\{' +
+  'let ([$\\w]+)=\\[\\],' +
+  '([$\\w]+)=\\2\\.matchAll\\(/\\\\bultrathink\\\\b/gi\\);' +
+  'for\\(let ([$\\w]+) of \\4\\)' +
+  'if\\(\\5\\.index!==void 0\\)\\3\\.push\\(\\{' +
+  'word:\\5\\[0\\],' +
+  'start:\\5\\.index,' +
+  'end:\\5\\.index\\+\\5\\[0\\]\\.length' +
+  '\\}\\);' +
+  'return \\3\\}'
+);
+
+const fnMatch = content.match(fnPattern);
+
+if (!fnMatch) {
+  output.error('Could not find match-finder function pattern', [
+    'Expected: function NAME(ARG){let R=[],M=ARG.matchAll(/\\bultrathink\\b/gi);...}',
+    'The ultrathink detection structure may have changed',
+  ]);
+  process.exit(1);
+}
+
+const [fnOriginal, fnName, argName, resultVar, matchVar, iterVar] = fnMatch;
+
+output.discovery('match-finder function', fnName + '()', {
+  'arg': argName,
+  'result var': resultVar,
+});
+
+const fnReplacement =
+  `function ${fnName}(${argName}){` +
+  `var _HS=${stylesJson};` +
+  `let ${resultVar}=[],` +
+  `${matchVar}=${argName}.matchAll(/\\b(${wordPattern})\\b/gi);` +
+  `for(let ${iterVar} of ${matchVar})` +
+  `if(${iterVar}.index!==void 0)${resultVar}.push({` +
+  `word:${iterVar}[0],` +
+  `start:${iterVar}.index,` +
+  `end:${iterVar}.index+${iterVar}[0].length,` +
+  `style:_HS[${iterVar}[0].toLowerCase()]||null` +
+  `});` +
+  `return ${resultVar}}`;
+
+output.modification('match-finder function', fnOriginal.slice(0, 80) + '...', fnReplacement.slice(0, 80) + '...');
+
+// ============================================================
+// Step 2: Replace the input box highlight builder loop
+//
+// Adds bold/italic/underline to the highlight span so the text
+// line renderer (Step 5) can pass them through to <T>.
+// ============================================================
+
+const inputPattern = new RegExp(
+  'for\\(let ([$\\w]+) of ([$\\w]+)\\)' +
+  'for\\(let ([$\\w]+)=\\1\\.start;\\3<\\1\\.end;\\3\\+\\+\\)' +
+  '([$\\w]+)\\.push\\(\\{' +
+  'start:\\3,' +
+  'end:\\3\\+1,' +
+  'color:([$\\w]+)\\(\\3-\\1\\.start\\),' +
+  'shimmerColor:\\5\\(\\3-\\1\\.start,!0\\),' +
+  'priority:10' +
+  '\\}\\)'
+);
+
+const inputMatch = content.match(inputPattern);
+
+if (!inputMatch) {
+  output.error('Could not find input box highlight loop', [
+    'Expected: for(let X of G)for(let Y=X.start;Y<X.end;Y++)R.push({...color:PH(Y-X.start),...})',
+    'The input highlight builder structure may have changed',
+  ]);
+  process.exit(1);
+}
+
+const [inputOriginal, matchIterVar, matchArrayVar, charIdxVar, pushTarget, colorFn] = inputMatch;
+
+output.discovery('input highlight loop', inputOriginal.slice(0, 60) + '...', {
+  'match iter': matchIterVar,
+  'match array': matchArrayVar,
+  'color fn': colorFn,
+});
+
+const inputReplacement =
+  `for(let ${matchIterVar} of ${matchArrayVar})` +
+  `for(let ${charIdxVar}=${matchIterVar}.start;${charIdxVar}<${matchIterVar}.end;${charIdxVar}++){` +
+  `let _s=${matchIterVar}.style,_o=${charIdxVar}-${matchIterVar}.start;` +
+  `${pushTarget}.push({start:${charIdxVar},end:${charIdxVar}+1,` +
+  `color:_s?_s.style==="subset"?_s.colors[_o%_s.colors.length]:_s.color:${colorFn}(_o),` +
+  `shimmerColor:_s?_s.shimmer?_s.style==="subset"?_s.shimmerColors[_o%_s.shimmerColors.length]:_s.shimmerColor:void 0:${colorFn}(_o,!0),` +
+  `bold:_s?.bold,italic:_s?.italic,underline:_s?.underline,` +
+  `priority:10})}`;
+
+output.modification('input highlight loop',
+  inputOriginal.slice(0, 60) + '...',
+  inputReplacement.slice(0, 60) + '...',
+);
+
+// ============================================================
+// Step 3: Replace the message history rainbow loop
+//
+// Adds bold/italic/underline to the per-char <T> elements.
+// ============================================================
+
+const historyPattern = new RegExp(
+  'for\\(let ([$\\w]+)=([$\\w]+)\\.start;\\1<\\2\\.end;\\1\\+\\+\\)' +
+  '([$\\w]+)\\.push\\(([$\\w]+)\\.createElement\\(([$\\w]+),' +
+  '\\{key:`rb-\\$\\{\\1\\}`,color:([$\\w]+)\\(\\1-\\2\\.start\\)\\},' +
+  '([$\\w]+)\\[\\1\\]\\)\\)'
+);
+
+const historyMatch = content.match(historyPattern);
+
+if (!historyMatch) {
+  output.error('Could not find message history rainbow loop', [
+    'Expected: for(let M=J.start;M<J.end;M++)_.push(R.createElement(T,{key:`rb-${M}`,color:PH(M-J.start)},K[M]))',
+    'The message history renderer structure may have changed',
+  ]);
+  process.exit(1);
+}
+
+const [histOriginal, hCharIdx, hMatchObj, hPushArr, hReact, hTextComp, hColorFn, hTextVar] = historyMatch;
+
+output.discovery('message history loop', histOriginal.slice(0, 60) + '...', {
+  'React var': hReact,
+  'Text component': hTextComp,
+  'color fn': hColorFn,
+  'text var': hTextVar,
+});
+
+const histReplacement =
+  `for(let ${hCharIdx}=${hMatchObj}.start;${hCharIdx}<${hMatchObj}.end;${hCharIdx}++){` +
+  `let _s=${hMatchObj}.style,_o=${hCharIdx}-${hMatchObj}.start;` +
+  `${hPushArr}.push(${hReact}.createElement(${hTextComp},` +
+  `{key:\`rb-\${${hCharIdx}}\`,` +
+  `color:_s?_s.style==="subset"?_s.colors[_o%_s.colors.length]:_s.color:${hColorFn}(_o),` +
+  `bold:_s?.bold,italic:_s?.italic,underline:_s?.underline},` +
+  `${hTextVar}[${hCharIdx}]))}`;
+
+output.modification('message history loop',
+  histOriginal.slice(0, 60) + '...',
+  histReplacement.slice(0, 60) + '...',
+);
+
+// ============================================================
+// Step 4: Filter notification trigger to ultrathink only
+// ============================================================
+
+const notifPattern = new RegExp(
+  'if\\(!([$\\w]+)\\.length\\|\\|!([$\\w]+)\\(\\)\\)return;([$\\w]+)\\(\\{key:"ultrathink-active"'
+);
+
+const notifMatch = content.match(notifPattern);
+
+if (!notifMatch) {
+  output.error('Could not find notification trigger pattern', [
+    'Expected: if(!ARR.length||!GATE())return;NOTIFY({key:"ultrathink-active"',
+    'The notification trigger structure may have changed',
+  ]);
+  process.exit(1);
+}
+
+const [notifOriginal, notifArrayVar, notifGateVar, notifFnVar] = notifMatch;
+
+output.discovery('notification trigger', notifOriginal.slice(0, 60) + '...', {
+  'match array': notifArrayVar,
+  'gate fn': notifGateVar,
+});
+
+const notifReplacement = `if(!${notifArrayVar}.some(m=>!m.style)||!${notifGateVar}())return;${notifFnVar}({key:"ultrathink-active"`;
+
+output.modification('notification trigger',
+  notifOriginal.slice(0, 60) + '...',
+  notifReplacement.slice(0, 60) + '...',
+);
+
+// ============================================================
+// Step 5: Text line renderer — pass bold/italic/underline through
+//
+// The text line renderer has two branches we modify:
+//
+// a) Shimmer path: wraps OQ6 chars in <T key={L}>
+//    → add bold/italic/underline to the wrapper (cascades to children)
+//
+// b) Color path: <T key={L} color={color}>
+//    → add bold/italic/underline props
+//
+// Pattern (both branches, contiguous):
+//   if(V.highlight?.shimmerColor&&V.highlight.color)return R.createElement(T,{key:L},
+//     V.text.split("").map((c,i)=>R.createElement(OQ6,{key:i,char:c,index:V.start+i,
+//     glimmerIndex:W,messageColor:V.highlight.color,shimmerColor:V.highlight.shimmerColor})));
+//   if(V.highlight?.color)return R.createElement(T,{key:L,color:V.highlight.color},
+//     R.createElement(aq,null,V.text))
+// ============================================================
+
+const renderPattern = new RegExp(
+  'if\\(([$\\w]+)\\.highlight\\?\\.shimmerColor&&\\1\\.highlight\\.color\\)' +
+  'return ([$\\w]+)\\.createElement\\(([$\\w]+),\\{key:([$\\w]+)\\},' +
+  '\\1\\.text\\.split\\(""\\)\\.map\\(\\(([$\\w]+),([$\\w]+)\\)=>' +
+  '\\2\\.createElement\\(([$\\w]+),\\{key:\\6,char:\\5,index:\\1\\.start\\+\\6,' +
+  'glimmerIndex:([$\\w]+),messageColor:\\1\\.highlight\\.color,' +
+  'shimmerColor:\\1\\.highlight\\.shimmerColor\\}\\)\\)\\);' +
+  'if\\(\\1\\.highlight\\?\\.color\\)' +
+  'return \\2\\.createElement\\(\\3,\\{key:\\4,color:\\1\\.highlight\\.color\\},' +
+  '\\2\\.createElement\\(([$\\w]+),null,\\1\\.text\\)\\)'
+);
+
+const renderMatch = content.match(renderPattern);
+
+if (!renderMatch) {
+  output.error('Could not find text line renderer pattern', [
+    'Expected: if(V.highlight?.shimmerColor&&...)...if(V.highlight?.color)...',
+    'The text line renderer structure may have changed',
+  ]);
+  process.exit(1);
+}
+
+const [renderOriginal, rSpanVar, rReactVar, rTextComp2, rKeyVar, rCharVar, rIdxVar, rOQ6Comp, rGlimmerVar, rAqComp] = renderMatch;
+
+output.discovery('text line renderer', renderOriginal.slice(0, 60) + '...', {
+  'span var': rSpanVar,
+  'React var': rReactVar,
+  'OQ6 component': rOQ6Comp,
+});
+
+// In the shimmer path, add bold/italic/underline to the outer <T> wrapper.
+// In the color path, add bold/italic/underline to the <T> element.
+// Text styles on the outer <T> cascade to inner children in Ink.
+const h = rSpanVar;  // shorthand
+const renderReplacement =
+  `if(${h}.highlight?.shimmerColor&&${h}.highlight.color)` +
+  `return ${rReactVar}.createElement(${rTextComp2},{key:${rKeyVar},` +
+  `bold:${h}.highlight.bold,italic:${h}.highlight.italic,underline:${h}.highlight.underline},` +
+  `${h}.text.split("").map((${rCharVar},${rIdxVar})=>` +
+  `${rReactVar}.createElement(${rOQ6Comp},{key:${rIdxVar},char:${rCharVar},index:${h}.start+${rIdxVar},` +
+  `glimmerIndex:${rGlimmerVar},messageColor:${h}.highlight.color,` +
+  `shimmerColor:${h}.highlight.shimmerColor})));` +
+  `if(${h}.highlight?.color)` +
+  `return ${rReactVar}.createElement(${rTextComp2},{key:${rKeyVar},color:${h}.highlight.color,` +
+  `bold:${h}.highlight.bold,italic:${h}.highlight.italic,underline:${h}.highlight.underline},` +
+  `${rReactVar}.createElement(${rAqComp},null,${h}.text))`;
+
+output.modification('text line renderer',
+  renderOriginal.slice(0, 60) + '...',
+  renderReplacement.slice(0, 60) + '...',
+);
+
+// ============================================================
+// Apply
+// ============================================================
+
+const totalSteps = 5;
+
+if (dryRun) {
+  output.result('dry_run', `Keyword highlights patch ready (${totalSteps} changes, ${customWords.length} custom words: ${customWords.join(', ')})`);
+  process.exit(0);
+}
+
+let patched = content;
+patched = patched.replace(fnMatch[0], () => fnReplacement);
+patched = patched.replace(inputMatch[0], () => inputReplacement);
+patched = patched.replace(historyMatch[0], () => histReplacement);
+patched = patched.replace(notifMatch[0], () => notifReplacement);
+patched = patched.replace(renderMatch[0], () => renderReplacement);
+
+if (patched === content) {
+  output.error('Patches had no effect');
+  process.exit(1);
+}
+
+try {
+  fs.writeFileSync(targetPath, patched);
+  output.result('success', `Patched keyword highlights in ${targetPath} (${totalSteps} changes, ${customWords.length} custom words)`);
+} catch (err) {
+  output.error('Failed to write patched file', [err.message]);
+  process.exit(1);
+}
