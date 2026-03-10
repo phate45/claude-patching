@@ -172,19 +172,19 @@ output.modification('NQ$ input prefix',
 // children inside the existing <Text color="text">.
 // ============================================================
 
-const renderPattern = /else ([$\w]+)=\$\[(\d+)\];let ([$\w]+)=([$\w]+)\.createElement\(([$\w]+),\{color:"text"\},([$\w]+)\)/;
+const renderPattern = /else ([$\w]+)=([$\w]+)\[(\d+)\];let ([$\w]+)=([$\w]+)\.createElement\(([$\w]+),\{color:"text"\},([$\w]+)\)/;
 const renderMatch = patched.match(renderPattern);
 
 if (!renderMatch) {
   output.error('Could not find bUD text render pattern', [
-    'Expected: else VAR=$[N];let VAR=REACT.createElement(TEXT,{color:"text"},VAR)',
+    'Expected: else VAR=ARR[N];let VAR=REACT.createElement(TEXT,{color:"text"},VAR)',
     'The user message text renderer structure may have changed',
   ]);
   process.exit(1);
 }
 
-const [renderOriginal, ptrVar, cacheIdx, elemVar, reactVar, textComp, textVar] = renderMatch;
-const renderReplacement = `else ${ptrVar}=$[${cacheIdx}];let ${elemVar}=${reactVar}.createElement(${textComp},{color:"text"},${textVar}[0]=="\\u23F0"?[${reactVar}.createElement(${textComp},{bold:!0},${textVar}.slice(0,11)),${textVar}.slice(11)]:${textVar})`;
+const [renderOriginal, ptrVar, cacheArr, cacheIdx, elemVar, reactVar, textComp, textVar] = renderMatch;
+const renderReplacement = `else ${ptrVar}=${cacheArr}[${cacheIdx}];let ${elemVar}=${reactVar}.createElement(${textComp},{color:"text"},${textVar}[0]=="\\u23F0"?[${reactVar}.createElement(${textComp},{bold:!0},${textVar}.slice(0,11)),${textVar}.slice(11)]:${textVar})`;
 
 output.discovery('bUD text renderer', renderOriginal, {
   'React var': reactVar,
