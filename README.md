@@ -50,6 +50,7 @@ node claude-patching.js --bare --apply
 | **toolsearch-visibility** | Makes ToolSearch tool calls visible in the TUI. CC 2.1.71 suppressed all rendering — this restores it: `ToolSearch(select:WebFetch)` / `Loaded 1 tool`. Useful for spotting which deferred tools are being loaded across sessions. |
 | **cron-visibility** | Makes cron/loop-fired prompts visible in the TUI with a bold **⏰ CronJob:** prefix. Without this, scheduled tasks fire silently — the assistant responds but you see no trigger. The prefix also flows through to the API message, giving the model context that the prompt is cron-fired. |
 | **ghostty-term** | Adds truecolor support for [Ghostty](https://ghostty.org/) terminal (CC only recognizes `xterm-kitty` by default). |
+| **keyword-highlights** | Adds keyword based highlighting built on the `ultrathink` shimmer implementation. Purely visual goodness.
 
 ### Behavioral
 
