@@ -223,6 +223,38 @@ function reassembleBinaryFromTemp(tempPath, binaryPath, outputPath) {
 // ============ Patch Application ============
 
 /**
+ * Extract result messages from patch subprocess output.
+ * Handles both JSON mode (CLAUDECODE=1) and human-readable mode.
+ * Returns an array since multi-step patches (e.g. spinner) can emit multiple results.
+ */
+function extractResultMessages(output) {
+  const messages = [];
+  for (const line of output.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // JSON mode: parse {"type":"result","message":"..."}
+    if (trimmed.startsWith('{')) {
+      try {
+        const obj = JSON.parse(trimmed);
+        if (obj.type === 'result' && obj.message) {
+          messages.push(obj.message);
+        }
+      } catch { /* not JSON, skip */ }
+      continue;
+    }
+
+    // Human-readable mode: lines starting with result prefixes
+    const humanMatch = trimmed.match(/^(?:✓|✗|⊘|\(Dry run\))\s+(.+)/);
+    if (humanMatch) {
+      messages.push(humanMatch[1]);
+    }
+  }
+
+  return messages.length > 0 ? messages : ['ok'];
+}
+
+/**
  * Run a single patch script
  * @param {string} patchFile - Path relative to PATCHES_DIR (e.g., "2.1.14/patch-spinner.js")
  */
@@ -276,7 +308,8 @@ function runPatch(patchFile, targetPath, dryRun) {
  * @param {boolean} dryRun - If true, only check without applying
  * @param {string} [patchVersionOverride] - Override which version's patches to use (for cross-version testing)
  * @param {object} [options] - Additional options
- * @param {boolean} [options.quiet] - Suppress verbose output
+ * @param {boolean} [options.quiet] - Suppress all output (used by --port)
+ * @param {boolean} [options.verbose] - Show full patch output (discoveries, modifications)
  * @returns {{ success: boolean, passed: Array, failed: Array, skipped: Array, total: number, version: string, patchVersion: string, error?: string }}
  */
 function applyPatches(install, dryRun, patchVersionOverride, options = {}) {
@@ -287,6 +320,7 @@ function applyPatches(install, dryRun, patchVersionOverride, options = {}) {
 
   const patchVersion = patchVersionOverride || install.version;
   const quiet = options.quiet ?? false;
+  const verbose = options.verbose ?? false;
   const qlog = quiet ? () => {} : log;
   const qemit = quiet ? () => {} : emitJson;
   const resultCollector = { passed: [], failed: [], skipped: [] };
@@ -405,14 +439,28 @@ function applyPatches(install, dryRun, patchVersionOverride, options = {}) {
 
     if (result.success) {
       if (!quiet) {
-        if (jsonMode) {
-          // Pass through JSONL output directly (each line is already valid JSON)
-          for (const line of result.output.split('\n').filter(l => l.trim())) {
-            console.log(line);
+        if (verbose) {
+          // Full output — every discovery, modification, info, result line
+          if (jsonMode) {
+            for (const line of result.output.split('\n').filter(l => l.trim())) {
+              console.log(line);
+            }
+          } else {
+            const lines = result.output.split('\n').map(l => '  ' + l).join('\n');
+            console.log(lines);
           }
         } else {
-          const lines = result.output.split('\n').map(l => '  ' + l).join('\n');
-          console.log(lines);
+          // Condensed — extract result line(s) only
+          const resultMsgs = extractResultMessages(result.output);
+          if (jsonMode) {
+            for (const msg of resultMsgs) {
+              emitJson({ type: 'result', status: dryRun ? 'dry_run' : 'success', message: msg });
+            }
+          } else {
+            for (const msg of resultMsgs) {
+              console.log(`  ✓ ${msg}`);
+            }
+          }
         }
       }
       successCount++;
@@ -922,6 +970,7 @@ ACTIONS
 
 OPTIONS
   --help                     Show this help
+  --verbose, -v              Show full patch output (discoveries, modifications)
   --patches-from <version>   Use patches from a different version (with --check only)
 
 AUTO-FALLBACK (--check only)
@@ -937,6 +986,8 @@ EXAMPLES
   node claude-patching.js --check               # Check patches (auto-select)
   node claude-patching.js --native --apply      # Apply to native install
   node claude-patching.js --bare --check        # Check bare install
+  node claude-patching.js --restore --apply     # Restore from .bak, then re-apply patches
+  node claude-patching.js --check -v            # Check with full diagnostic output
 
   # Test which 2.1.14 patches work on 2.1.19
   node claude-patching.js --native --check --patches-from 2.1.14
@@ -1124,6 +1175,7 @@ const wantRestore = args.includes('--restore');
 const wantPort = args.includes('--port');
 const wantBare = args.includes('--bare');
 const wantNative = args.includes('--native');
+const wantVerbose = args.includes('--verbose') || args.includes('-v');
 
 // Parse --patches-from <version>
 let patchesFromVersion = null;
@@ -1149,8 +1201,10 @@ if (actionCount === 0) {
   process.exit(1);
 }
 
-if (actionCount > 1) {
-  console.error('Error: Cannot combine multiple actions');
+// --restore --apply is a valid combo (restore then re-apply)
+const isRestoreApply = wantRestore && wantApply;
+if (actionCount > 1 && !isRestoreApply) {
+  console.error('Error: Cannot combine multiple actions (except --restore --apply)');
   process.exit(1);
 }
 
@@ -1267,7 +1321,9 @@ if (wantRestore) {
   try {
     fs.copyFileSync(bakPath, restoreTarget.path);
     log(`\n✓ Restored ${restoreTarget.type} install from .bak`);
-    log('  Restart Claude Code to use the unpatched version.');
+    if (!isRestoreApply) {
+      log('  Restart Claude Code to use the unpatched version.');
+    }
     emitJson({ type: 'result', status: 'success', message: `Restored ${restoreTarget.type} from .bak` });
   } catch (err) {
     logError(`Restore failed: ${err.message}`);
@@ -1275,7 +1331,11 @@ if (wantRestore) {
     process.exit(1);
   }
 
-  process.exit(0);
+  if (!isRestoreApply) {
+    process.exit(0);
+  }
+  // Fall through to --apply
+  log('');
 }
 
 // Handle --port
@@ -1372,5 +1432,5 @@ if (!effectivePatchVersion && dryRun) {
   }
 }
 
-const result = applyPatches(target, dryRun, effectivePatchVersion);
+const result = applyPatches(target, dryRun, effectivePatchVersion, { verbose: wantVerbose });
 process.exit(result.success ? 0 : 1);
