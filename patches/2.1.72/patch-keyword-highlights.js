@@ -4,19 +4,22 @@
  * message history.
  *
  * Stock CC highlights "ultrathink" with a rainbow shimmer. This patch
- * extends the detection + rendering to support additional words with
- * configurable styles: hex colors, color subsets, shimmer animation,
- * and text effects (bold/italic/underline).
+ * extends the detection + rendering to support additional keywords with
+ * configurable colors, shimmer animation, and text effects.
  *
- * Color values can be:
- *   - Theme names: "rainbow_indigo", "claude", "warning", etc.
- *   - Hex codes: "#8B8CC7" (passed through directly to chalk)
- *   - CSS rgb: "rgb(139,140,199)" (also passed through)
+ * Color values: hex codes ("#8B8CC7"), CSS rgb ("rgb(...)"), or theme
+ * names ("rainbow_indigo", "claude", etc.) — all passed through to chalk.
+ *
+ * Match modes:
+ *   - (default) prefix: keyword\w* matches all word forms
+ *   - "exact": only the literal keyword
+ *   - ["a","b"]: keyword + listed variants (all exact)
  *
  * Touch points:
- *   1. n41/j9$ (match finder) — expanded regex, returns {word,start,end,style}
- *   2. Input box highlight builder — branches on style for color assignment
- *   3. Message history renderer — branches on style for per-char coloring
+ *   1. Match finder — expanded regex with prefix/exact/array modes,
+ *      returns {word,start,end,style} with two-tier lookup (_HS + _HP)
+ *   2. Input box highlight builder — branches on color/colors for assignment
+ *   3. Message history renderer — branches on color/colors for per-char coloring
  *   4. Notification trigger — filter to only fire for ultrathink matches
  *   5. Text line renderer — pass bold/italic/underline from highlight spans
  *
@@ -37,10 +40,14 @@ const output = require('../../lib/output');
 // Nord-inspired palette (https://www.nordtheme.com/)
 // ============================================================
 //
-// style types:
-//   "single"   — one color (hex or theme name)
-//   "subset"   — cycles through a custom color array
-//   (ultrathink keeps its stock rainbow behavior via style: null)
+// color:  single hex/theme → solid color
+// colors: array of hex/theme → cycles through them per character
+// (ultrathink keeps its stock rainbow behavior — no entry here)
+//
+// match modes (optional):
+//   omitted     — prefix (default): keyword\w* matches all word forms
+//   "exact"     — only the literal keyword
+//   ["a", "b"]  — keyword + listed variants (all exact)
 //
 // text effects: bold, italic, underline (optional, default false)
 // shimmer: glimmer sweep animation in the input box (optional)
@@ -49,25 +56,34 @@ const KEYWORD_STYLES = {
   // ═══ POP — shimmer + effects ═══
   // Shimmer colors need high contrast from base (~+70 on secondary channels)
   // to be visible as the 3-char glow sweeps across
-  "claude":   { style: "single",  color: "#8B8CC7",  shimmer: true, shimmerColor: "#D1D2FF", bold: true },
-  "yolo":     { style: "subset",  colors: ["#BF616A", "#D08770", "#EBCB8B"], shimmer: true, shimmerColors: ["#FF9CA3", "#FFB89E", "#FFF0C0"] },
+  "claude":   { color: "#8B8CC7",  shimmer: true, shimmerColor: "#D1D2FF", bold: true },
+  "yolo":     { colors: ["#BF616A", "#D08770", "#EBCB8B"], shimmer: true, shimmerColors: ["#FF9CA3", "#FFB89E", "#FFF0C0"] },
 
   // ═══ ACTION — solid Nord Aurora/Frost ═══
-  "commit":   { style: "single",  color: "#A3BE8C",  bold: true },
-  "ship":     { style: "single",  color: "#88C0D0" },
-  "push":     { style: "single",  color: "#88C0D0" },
-  "deploy":   { style: "single",  color: "#D08770",  bold: true },
-  "nuke":     { style: "single",  color: "#BF616A",  bold: true },
-  "review":   { style: "single",  color: "#B48EAD" },
-  "plan":     { style: "single",  color: "#EBCB8B" },
-  "worktree": { style: "single",  color: "#A3BE8C" },
+  "commit":   { color: "#A3BE8C",  bold: true },
+  "ship":     { color: "#88C0D0" },
+  "push":     { color: "#88C0D0" },
+  "deploy":   { color: "#D08770",  bold: true },
+  "nuke":     { color: "#BF616A",  bold: true },
+  "review":   { color: "#B48EAD" },
+  "plan":     { color: "#EBCB8B",  match: ["plans", "planned", "planning", "planner"] },
+  "spec":     { color: "#EBCB8B",  match: ["specs"] },
+  "proposal": { color: "#EBCB8B" },
+  "design":   { color: "#B48EAD" },
+  "task":     { color: "#88C0D0" },
+  "vault":    { color: "#8FBCBB" },
+  "worktree": { color: "#A3BE8C" },
+  "work log": { color: "#A3BE8C",  bold: true, match: ["work logs"] },
 
   // ═══ MUTED — subtle italic tint ═══
-  "debug":    { style: "single",  color: "#81A1C1",  italic: true },
-  "test":     { style: "single",  color: "#D08770",  italic: true },
-  "merge":    { style: "single",  color: "#8FBCBB",  italic: true },
-  "revert":   { style: "single",  color: "#C88B93",  italic: true },
-  "implement":{ style: "single",  color: "#A3BE8C",  italic: true },
+  "debug":    { color: "#81A1C1",  italic: true },
+  "test":     { color: "#D08770",  italic: true },
+  "merge":    { color: "#8FBCBB",  italic: true },
+  "revert":   { color: "#C88B93",  italic: true },
+  "implement":{ color: "#A3BE8C",  italic: true },
+  "refactor": { color: "#8FBCBB",  italic: true },
+  "research": { color: "#5E81AC",  italic: true },
+  "document": { color: "#A3BE8C",  italic: true },
 };
 
 // ============================================================
@@ -93,12 +109,40 @@ try {
 
 // Build the regex alternation from config + "ultrathink"
 const customWords = Object.keys(KEYWORD_STYLES);
-const allWords = ['ultrathink', ...customWords];
-// Sort by length descending so "worktree" matches before "work" would
-const wordPattern = allWords.sort((a, b) => b.length - a.length).join('|');
+const allPatterns = ['ultrathink']; // ultrathink is always exact match
 
-// Serialize the style config as a compact JSON string for injection
-const stylesJson = JSON.stringify(KEYWORD_STYLES);
+// Build lookup structures: _HS for exact/array, _HP for prefix
+const hsEntries = {};  // direct word → style (O(1) lookup)
+const hpEntries = {};  // prefix keyword → style (startsWith fallback)
+
+for (const [word, cfg] of Object.entries(KEYWORD_STYLES)) {
+  // Strip match from injected style (build-time metadata only)
+  const style = { ...cfg };
+  delete style.match;
+
+  if (Array.isArray(cfg.match)) {
+    // Array mode: base word + explicit variants, all exact
+    allPatterns.push(word, ...cfg.match);
+    hsEntries[word] = style;
+    for (const v of cfg.match) hsEntries[v] = style;
+  } else if (cfg.match === 'exact') {
+    // Exact mode: literal keyword only
+    allPatterns.push(word);
+    hsEntries[word] = style;
+  } else {
+    // Default: prefix mode — keyword\w* matches all word forms
+    allPatterns.push(word + '\\w*');
+    hpEntries[word] = style;
+  }
+}
+
+// Sort by base length descending (strip \w* suffix for comparison)
+allPatterns.sort((a, b) => b.replace(/\\w\*$/, '').length - a.replace(/\\w\*$/, '').length);
+const wordPattern = allPatterns.join('|');
+
+// Serialize lookup structures for injection
+const hsJson = JSON.stringify(hsEntries);
+const hpJson = JSON.stringify(hpEntries);
 
 // ============================================================
 // Step 1: Replace the match-finder function (n41 / j9$)
@@ -140,7 +184,9 @@ output.discovery('match-finder function', fnName + '()', {
 
 const fnReplacement =
   `function ${fnName}(${argName}){` +
-  `var _HS=${stylesJson};` +
+  `var _HS=${hsJson},` +
+  `_HP=${hpJson};` +
+  `function _HL(w){var s=_HS[w];if(s)return s;for(var k in _HP)if(w.startsWith(k))return _HP[k];return null}` +
   `let ${resultVar}=[],` +
   `${matchVar}=${argName}.matchAll(/\\b(${wordPattern})\\b/gi);` +
   `for(let ${iterVar} of ${matchVar})` +
@@ -148,7 +194,7 @@ const fnReplacement =
   `word:${iterVar}[0],` +
   `start:${iterVar}.index,` +
   `end:${iterVar}.index+${iterVar}[0].length,` +
-  `style:_HS[${iterVar}[0].toLowerCase()]||null` +
+  `style:_HL(${iterVar}[0].toLowerCase())||null` +
   `});` +
   `return ${resultVar}}`;
 
@@ -196,8 +242,8 @@ const inputReplacement =
   `for(let ${charIdxVar}=${matchIterVar}.start;${charIdxVar}<${matchIterVar}.end;${charIdxVar}++){` +
   `let _s=${matchIterVar}.style,_o=${charIdxVar}-${matchIterVar}.start;` +
   `${pushTarget}.push({start:${charIdxVar},end:${charIdxVar}+1,` +
-  `color:_s?_s.style==="subset"?_s.colors[_o%_s.colors.length]:_s.color:${colorFn}(_o),` +
-  `shimmerColor:_s?_s.shimmer?_s.style==="subset"?_s.shimmerColors[_o%_s.shimmerColors.length]:_s.shimmerColor:void 0:${colorFn}(_o,!0),` +
+  `color:_s?_s.colors?_s.colors[_o%_s.colors.length]:_s.color:${colorFn}(_o),` +
+  `shimmerColor:_s?_s.shimmer?_s.colors?_s.shimmerColors[_o%_s.shimmerColors.length]:_s.shimmerColor:void 0:${colorFn}(_o,!0),` +
   `bold:_s?.bold,italic:_s?.italic,underline:_s?.underline,` +
   `priority:10})}`;
 
@@ -243,7 +289,7 @@ const histReplacement =
   `let _s=${hMatchObj}.style,_o=${hCharIdx}-${hMatchObj}.start;` +
   `${hPushArr}.push(${hReact}.createElement(${hTextComp},` +
   `{key:\`rb-\${${hCharIdx}}\`,` +
-  `color:_s?_s.style==="subset"?_s.colors[_o%_s.colors.length]:_s.color:${hColorFn}(_o),` +
+  `color:_s?_s.colors?_s.colors[_o%_s.colors.length]:_s.color:${hColorFn}(_o),` +
   `bold:_s?.bold,italic:_s?.italic,underline:_s?.underline},` +
   `${hTextVar}[${hCharIdx}]))}`;
 
@@ -362,7 +408,7 @@ output.modification('text line renderer',
 const totalSteps = 5;
 
 if (dryRun) {
-  output.result('dry_run', `Keyword highlights patch ready (${totalSteps} changes, ${customWords.length} custom words: ${customWords.join(', ')})`);
+  output.result('dry_run', `Keyword highlights patch ready (${totalSteps} changes, ${customWords.length} custom keywords, ${allPatterns.length} patterns)`);
   process.exit(0);
 }
 
@@ -380,7 +426,7 @@ if (patched === content) {
 
 try {
   fs.writeFileSync(targetPath, patched);
-  output.result('success', `Patched keyword highlights in ${targetPath} (${totalSteps} changes, ${customWords.length} custom words)`);
+  output.result('success', `Patched keyword highlights in ${targetPath} (${totalSteps} changes, ${customWords.length} custom keywords)`);
 } catch (err) {
   output.error('Failed to write patched file', [err.message]);
   process.exit(1);
