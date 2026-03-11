@@ -10,7 +10,7 @@ paths:
 
 Structured output — emits JSON when `CLAUDECODE=1`, human-readable text otherwise.
 
-**Functions:**
+**Semantic helpers** (for patch scripts):
 
 | Function | Signature | Purpose |
 |----------|-----------|---------|
@@ -22,16 +22,28 @@ Structured output — emits JSON when `CLAUDECODE=1`, human-readable text otherw
 | `result` | `(status, message)` | Final outcome. Status: `'success'`\|`'failure'`\|`'skipped'`\|`'dry_run'` |
 | `info` | `(message)` | Informational line |
 
+**Raw primitives** (for orchestrator/command modules):
+
+| Function | Signature | Purpose |
+|----------|-----------|---------|
+| `log` | `(msg)` | Human-only stdout (silent in JSON mode) |
+| `logError` | `(msg)` | Human: stderr. JSON: error event |
+| `emitJson` | `(obj)` | Write raw JSON object to stdout |
+| `isJsonMode` | (boolean) | `true` when `CLAUDECODE=1` |
+
 **Common mistakes:**
 - There is NO `output.success()` — use `output.result('success', msg)`
 - There is NO `output.warn()` — the function is `output.warning()`
 - `result()` takes exactly 2 args `(status, message)` — no details array
+- `log()` is NOT `info()` — `log` is human-only, `info` emits in both modes
 
 ## lib/shared.js
 
 Core detection and utility functions.
 
 **Exports:**
+- `PROJECT_DIR` — absolute path to the project root
+- `PATCHES_DIR` — absolute path to `patches/` directory
 - `PATCH_MARKER` — `'__CLAUDE_PATCHES__'` string used to detect patched files
 - `detectBareInstall()` → `{ type: 'bare', path, version }` or `null`
 - `detectNativeInstall()` → `{ type: 'native', path, version }` or `null`
@@ -40,6 +52,10 @@ Core detection and utility functions.
 - `writePatchMetadata(content, meta)` → content with metadata embedded
 - `isPatched(content)` → `boolean` (checks for PATCH_MARKER)
 - `extractVersion(content)` → `string` or `null` (matches `VERSION:"X.Y.Z"`)
+- `listAvailableVersions()` → sorted `string[]` of patch versions with index.json
+- `compareVersions(a, b)` → `-1` | `0` | `1` (semver-style)
+- `findFallbackVersion(target)` → latest version ≤ target, or `null`
+- `listRecentBaks(installType, targetPath, limit?)` → `[{ name, mtime, sizeMB }]`
 - `formatBytes(n)` → human-readable string
 - `safeStats(path)` → `{ exists, size?, mtime? }`
 
