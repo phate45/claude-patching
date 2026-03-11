@@ -45,6 +45,10 @@
       {
         "id": "keyword-highlights",
         "file": "2.1.72/patch-keyword-highlights.js"
+      },
+      {
+        "id": "tool-defer-whitelist",
+        "file": "2.1.72/patch-tool-defer-whitelist.js"
       }
     ],
     "bare": [
@@ -72,6 +76,7 @@
     "thinking-style": "Dim styling is now native in 2.1.31 - no patch needed",
     "auto-memory": "tengu_oboe removed in 2.1.59. Replaced by feature-flag-toggles patch.",
     "feature-flag-toggles": "Enables: session_memory + sm_compact. Disables: defer_all_bn4 (restores immediate built-in tool access).",
-    "prompt-slim": "Updated to 2.1.59 with local-first patch resolution and built-in diagnostics"
+    "prompt-slim": "Updated to 2.1.59 with local-first patch resolution and built-in diagnostics",
+    "tool-defer-whitelist": "CLAUDE_CODE_IMMEDIATE_TOOLS env var whitelists tools past the deferral gate (including MCP tools)"
   }
 }
