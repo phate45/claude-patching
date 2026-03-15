@@ -1,0 +1,88 @@
+{
+  "version": "2.1.76",
+  "patches": {
+    "common": [
+      {
+        "id": "ghostty-term",
+        "file": "2.1.14/patch-ghostty-term.js"
+      },
+      {
+        "id": "system-reminders",
+        "file": "2.1.41/patch-system-reminders.js"
+      },
+      {
+        "id": "no-collapse-reads",
+        "file": "2.1.39/patch-no-collapse-reads.js"
+      },
+      {
+        "id": "quiet-notifications",
+        "file": "2.1.50/patch-quiet-notifications.js"
+      },
+      {
+        "id": "read-summary",
+        "file": "2.1.41/patch-read-summary.js"
+      },
+      {
+        "id": "prompt-slim",
+        "file": "2.1.59/patch-prompt-slim.js"
+      },
+      {
+        "id": "feature-flag-toggles",
+        "file": "2.1.70/patch-feature-flag-toggles.js"
+      },
+      {
+        "id": "toolsearch-visibility",
+        "file": "2.1.72/patch-toolsearch-visibility.js"
+      },
+      {
+        "id": "flag-env-override",
+        "file": "2.1.71/patch-flag-env-override.js"
+      },
+      {
+        "id": "cron-visibility",
+        "file": "2.1.71/patch-cron-visibility.js"
+      },
+      {
+        "id": "keyword-highlights",
+        "file": "2.1.76/patch-keyword-highlights.js"
+      },
+      {
+        "id": "tool-defer-whitelist",
+        "file": "2.1.72/patch-tool-defer-whitelist.js"
+      },
+      {
+        "id": "code-blocks",
+        "file": "2.1.74/patch-code-blocks.js"
+      }
+    ],
+    "bare": [
+      {
+        "id": "thinking-visibility",
+        "file": "2.1.63/bare/patch-thinking-visibility.js"
+      },
+      {
+        "id": "spinner",
+        "file": "2.1.31/bare/patch-spinner.js"
+      }
+    ],
+    "native": [
+      {
+        "id": "thinking-visibility",
+        "file": "2.1.69/native/patch-thinking-visibility.js"
+      },
+      {
+        "id": "spinner",
+        "file": "2.1.19/patch-spinner.js"
+      }
+    ]
+  },
+  "notes": {
+    "thinking-style": "Dim styling is now native in 2.1.31 - no patch needed",
+    "auto-memory": "tengu_oboe removed in 2.1.59. Replaced by feature-flag-toggles patch.",
+    "feature-flag-toggles": "Enables: session_memory + sm_compact. Disables: defer_all_bn4 (restores immediate built-in tool access).",
+    "prompt-slim": "Updated to 2.1.59 with local-first patch resolution and built-in diagnostics",
+    "tool-defer-whitelist": "CLAUDE_CODE_IMMEDIATE_TOOLS env var whitelists tools past the deferral gate (including MCP tools)",
+    "keyword-highlights": "Extended with inline code spans, markdown formatting (**bold**, *italic*, ~~strikethrough~~), and effect-only render path",
+    "code-blocks": "Renders fenced code blocks in user messages with hljs syntax highlighting via the f9 ANSI component"
+  }
+}

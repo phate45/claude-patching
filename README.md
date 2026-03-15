@@ -50,7 +50,7 @@ node claude-patching.js --bare --apply
 | **toolsearch-visibility** | Makes ToolSearch tool calls visible in the TUI. CC 2.1.71 suppressed all rendering — this restores it: `ToolSearch(select:WebFetch)` / `Loaded 1 tool`. Useful for spotting which deferred tools are being loaded across sessions. |
 | **cron-visibility** | Makes cron/loop-fired prompts visible in the TUI with a bold **⏰ CronJob:** prefix. Without this, scheduled tasks fire silently — the assistant responds but you see no trigger. The prefix also flows through to the API message, giving the model context that the prompt is cron-fired. |
 | **ghostty-term** | Adds truecolor support for [Ghostty](https://ghostty.org/) terminal (CC only recognizes `xterm-kitty` by default). |
-| **keyword-highlights** | Adds keyword-based highlighting built on the `ultrathink` shimmer implementation, plus inline `` `code` `` detection — backtick-wrapped text gets a distinct color with dim delimiters. Keywords overlay code spans (both styles coexist). |
+| **keyword-highlights** | Adds keyword-based highlighting built on the `ultrathink` shimmer implementation, plus inline `` `code` `` spans and markdown formatting (`**bold**`, `*italic*` / `_italic_`, `~~strikethrough~~`). Code spans get a distinct color; markdown gets native text effects. All styles coexist with keywords (keywords take priority, formatting clips around them). Uses alnum-only word boundaries so `snake_case` identifiers don't trigger. |
 | **code-blocks** | Renders fenced code blocks in user messages with hljs syntax highlighting. Explicit language tags (`` ```js ``) use the specified language; untagged blocks get auto-detection. Dim ``` fences frame the highlighted content. |
 
 ### Behavioral
