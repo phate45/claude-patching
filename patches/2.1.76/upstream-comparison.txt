@@ -1,0 +1,10 @@
+Upstream comparison for v2.1.76 (vs upstream 2.1.72)
+Generated: 2026-03-14T08:23:44.126Z
+
+Shared: 57 patches
+Only in ours: task-usage-notes, expressive-tone, natural-emojis
+Content differs:
+  bash-tool (find + replace)
+  over-engineering (find)
+  code-references (find + replace)
+  doing-tasks-intro (find + replace)
