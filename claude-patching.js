@@ -235,54 +235,62 @@ if (wantRestore) {
   const bakPath = restoreTarget.path + '.bak';
 
   if (!fs.existsSync(bakPath)) {
-    logError(`No backup found at ${bakPath}`);
-    logError('A .bak file is created by --apply before patching. No restore possible without it.');
-    emitJson({ type: 'result', status: 'failure', message: 'No .bak backup found' });
-    process.exit(1);
-  }
-
-  // Verify .bak is clean
-  try {
-    let bakContent;
-    if (restoreTarget.type === 'native') {
-      // For native, we can't easily read the JS from the .bak binary without extraction,
-      // so just check that the .bak file exists and is a reasonable size
-      const bakStats = fs.statSync(bakPath);
-      const liveStats = fs.statSync(restoreTarget.path);
-      log(`\nRestore: ${restoreTarget.type} install`);
-      log(`  Source: ${bakPath} (${formatBytes(bakStats.size)})`);
-      log(`  Target: ${restoreTarget.path} (${formatBytes(liveStats.size)})`);
+    if (isRestoreApply) {
+      // No .bak means --apply never ran, so the binary is already clean.
+      // Skip restore and fall through to --apply.
+      log(`\nNo backup at ${bakPath} — binary was never patched, already clean.`);
+      log(`  Skipping restore, proceeding to --apply.`);
+      emitJson({ type: 'restore_skip', message: 'No .bak — binary already clean' });
     } else {
-      bakContent = fs.readFileSync(bakPath, 'utf8');
-      if (isPatched(bakContent)) {
-        logError(`Backup at ${bakPath} is itself patched — cannot restore a clean state from it.`);
-        logError('Reinstall Claude Code to get a clean binary.');
-        emitJson({ type: 'result', status: 'failure', message: '.bak is also patched' });
-        process.exit(1);
+      logError(`No backup found at ${bakPath}`);
+      logError('A .bak file is created by --apply before patching. No restore possible without it.');
+      emitJson({ type: 'result', status: 'failure', message: 'No .bak backup found' });
+      process.exit(1);
+    }
+  } else {
+    // Verify .bak is clean
+    try {
+      let bakContent;
+      if (restoreTarget.type === 'native') {
+        // For native, we can't easily read the JS from the .bak binary without extraction,
+        // so just check that the .bak file exists and is a reasonable size
+        const bakStats = fs.statSync(bakPath);
+        const liveStats = fs.statSync(restoreTarget.path);
+        log(`\nRestore: ${restoreTarget.type} install`);
+        log(`  Source: ${bakPath} (${formatBytes(bakStats.size)})`);
+        log(`  Target: ${restoreTarget.path} (${formatBytes(liveStats.size)})`);
+      } else {
+        bakContent = fs.readFileSync(bakPath, 'utf8');
+        if (isPatched(bakContent)) {
+          logError(`Backup at ${bakPath} is itself patched — cannot restore a clean state from it.`);
+          logError('Reinstall Claude Code to get a clean binary.');
+          emitJson({ type: 'result', status: 'failure', message: '.bak is also patched' });
+          process.exit(1);
+        }
+        const bakStats = fs.statSync(bakPath);
+        const liveStats = fs.statSync(restoreTarget.path);
+        log(`\nRestore: ${restoreTarget.type} install`);
+        log(`  Source: ${bakPath} (${formatBytes(bakStats.size)})`);
+        log(`  Target: ${restoreTarget.path} (${formatBytes(liveStats.size)})`);
       }
-      const bakStats = fs.statSync(bakPath);
-      const liveStats = fs.statSync(restoreTarget.path);
-      log(`\nRestore: ${restoreTarget.type} install`);
-      log(`  Source: ${bakPath} (${formatBytes(bakStats.size)})`);
-      log(`  Target: ${restoreTarget.path} (${formatBytes(liveStats.size)})`);
+    } catch (err) {
+      logError(`Failed to read backup: ${err.message}`);
+      process.exit(1);
     }
-  } catch (err) {
-    logError(`Failed to read backup: ${err.message}`);
-    process.exit(1);
-  }
 
-  // Perform the restore
-  try {
-    fs.copyFileSync(bakPath, restoreTarget.path);
-    log(`\n✓ Restored ${restoreTarget.type} install from .bak`);
-    if (!isRestoreApply) {
-      log('  Restart Claude Code to use the unpatched version.');
+    // Perform the restore
+    try {
+      fs.copyFileSync(bakPath, restoreTarget.path);
+      log(`\n✓ Restored ${restoreTarget.type} install from .bak`);
+      if (!isRestoreApply) {
+        log('  Restart Claude Code to use the unpatched version.');
+      }
+      emitJson({ type: 'result', status: 'success', message: `Restored ${restoreTarget.type} from .bak` });
+    } catch (err) {
+      logError(`Restore failed: ${err.message}`);
+      emitJson({ type: 'result', status: 'failure', message: err.message });
+      process.exit(1);
     }
-    emitJson({ type: 'result', status: 'success', message: `Restored ${restoreTarget.type} from .bak` });
-  } catch (err) {
-    logError(`Restore failed: ${err.message}`);
-    emitJson({ type: 'result', status: 'failure', message: err.message });
-    process.exit(1);
   }
 
   if (!isRestoreApply) {

@@ -65,7 +65,7 @@ const output = require('../../lib/output');
 // _italic_ uses alnum boundaries (won't trigger on snake_case identifiers).
 // Content gets text effects only (no color change). Delimiters get dim styling.
 
-const CODE_STYLE = { color: "#5769F7" };           // assistant "permission" blue
+const CODE_STYLE = { color: "#7ABED9" };           // soft steel cyan (Nord frost neighbor)
 const DELIM_STYLE = { color: "#4C566A" };           // Nord comment gray (subtle)
 
 // Markdown formatting — effect-only styles (no color, just text decoration)
