@@ -1,0 +1,6 @@
+Upstream comparison for v2.1.78 (vs upstream 2.1.78)
+Generated: 2026-03-18T07:19:36.987Z
+
+Shared: 57 patches
+Only in ours: expressive-tone, natural-emojis, fast-mode-info
+No new patches or changes from upstream.
