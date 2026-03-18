@@ -1,4 +1,12 @@
 
 - Other tasks that are not related to the agent descriptions above
 `;return`${q2}
-${P2}${f2}${I2}`
+${P2}
+
+Usage notes:
+- Agent results are not visible to the user. Summarize findings in a text message.
+- **Foreground vs background**: Use foreground when you need results before proceeding. Use background for independent parallel work. You will be notified when background agents complete — do not poll.
+- Tell the agent whether you expect it to write code or just research, since it is not aware of the user's intent.
+- Trust agent outputs. If an agent description says to use it proactively, do so without being asked.
+- If the user wants agents "in parallel", send multiple ${FG6.name} tool use blocks in a single message.
+${f2}${I2}`
