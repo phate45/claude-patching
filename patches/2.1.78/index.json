@@ -53,6 +53,10 @@
       {
         "id": "code-blocks",
         "file": "2.1.78/patch-code-blocks.js"
+      },
+      {
+        "id": "abbreviations",
+        "file": "2.1.78/patch-abbreviations.js"
       }
     ],
     "bare": [
