@@ -9,4 +9,5 @@ Usage notes:
 - Tell the agent whether you expect it to write code or just research, since it is not aware of the user's intent.
 - Trust agent outputs. If an agent description says to use it proactively, do so without being asked.
 - If the user wants agents "in parallel", send multiple ${FG6.name} tool use blocks in a single message.
+- To resume a previously spawned agent, use ${SM1} with the agent's ID or name as the \`to\` field. The agent continues with its full context preserved.
 ${f2}${I2}`
