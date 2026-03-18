@@ -146,6 +146,10 @@
       "file": "task-tool-intro"
     },
     {
+      "name": "Strip Agent tool usage notes and examples (~3.3KB)",
+      "file": "task-usage-notes"
+    },
+    {
       "name": "Slim Task tool when-not-to-use",
       "file": "task-tool-whennot"
     },
@@ -248,6 +252,7 @@
     "bash-tool",
     "code-references",
     "doing-tasks-intro",
-    "fast-mode-info"
+    "fast-mode-info",
+    "task-usage-notes"
   ]
 }
