@@ -1,0 +1,6 @@
+Upstream comparison for v2.1.79 (vs upstream 2.1.79)
+Generated: 2026-03-19T16:31:24.977Z
+
+Shared: 57 patches
+Only in ours: expressive-tone, natural-emojis, fast-mode-info, task-usage-notes
+No new patches or changes from upstream.
