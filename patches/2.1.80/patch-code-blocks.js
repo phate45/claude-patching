@@ -281,10 +281,13 @@ const bgProp = actionsVar
   : `backgroundColor:${briefVar}?void 0:"userMessageBackground"`;
 
 const hyfReplacement =
-  // Trigger lazy hljs load (cacher mode only)
-  hljsInit +
   // useContext call (2.1.80+ only — must precede the guard)
+  // This MUST come first: the regex match starts at the useContext assignment,
+  // and whatever precedes it in the source is an expression context (e.g. ],[$]),)
+  // where an `if` statement would be a syntax error.
   (actionsVar ? `${actionsVar}=${reactVar}.useContext(${hyfMatch[3]});` : '') +
+  // Trigger lazy hljs load (cacher mode only) — safe here, we're in statement context
+  hljsInit +
   `if(!${G})return ${errorFn}(Error("No content found in user prompt message")),null;` +
   // Split code blocks helper (inline IIFE to avoid polluting scope)
   `var _parts=(function(t){` +
