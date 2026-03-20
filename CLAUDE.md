@@ -90,7 +90,9 @@ System prompt patches live in `patches/<version>/prompt-patches/` as `.find.txt`
 | `code-references` | divergent | Our version removes the adjacent "colon before tool calls" instruction too |
 | `doing-tasks-intro` | divergent | Upstream's find cuts mid-sentence, leaving a garbled fragment; ours consumes the full sentence |
 
-**Upstream** (`/tmp/prompt-patching/`, cloned by `--setup`) is a reference for new optimizations, not a dependency. `--init` uses upstream as the base when it has a newer version than our latest local, then merges our `customPatches` on top. The `upstream-comparison.txt` in each version directory shows what differs.
+**Suppressed patches** are tracked via the `suppressedPatches` field in `patches.json` — a map of `{ fileId: "reason" }`. These are upstream patches that were consumed/merged into a custom patch and should not be re-imported. Without this, `--init` would resurrect the upstream original alongside our merged version. Currently suppressed: `task-tool-whennot` (consumed by `task-usage-notes`).
+
+**Upstream** (`/tmp/prompt-patching/`, cloned by `--setup`) is a reference for new optimizations, not a dependency. `--init` uses upstream as the base when it has a newer version than our latest local, then merges our `customPatches` on top (filtering `suppressedPatches`). The `upstream-comparison.txt` in each version directory shows what differs.
 
 When porting to a new CC version, use the `upgrade-prompt-patches` skill.
 

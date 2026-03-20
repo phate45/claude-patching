@@ -1,5 +1,5 @@
 {
-  "source": "upstream:2.1.79",
+  "source": "upstream:2.1.80",
   "patches": [
     {
       "name": "Slim TodoWrite examples (6KB → 0.4KB)",
