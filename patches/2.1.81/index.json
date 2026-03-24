@@ -57,6 +57,10 @@
       {
         "id": "abbreviations",
         "file": "2.1.79/patch-abbreviations.js"
+      },
+      {
+        "id": "worktree-dedup",
+        "file": "2.1.81/patch-worktree-dedup.js"
       }
     ],
     "bare": [
