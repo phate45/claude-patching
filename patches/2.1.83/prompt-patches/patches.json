@@ -234,12 +234,21 @@
       "file": "natural-emojis"
     },
     {
-      "name": "Remove fast_mode_info section from Environment",
-      "file": "fast-mode-info"
-    },
-    {
       "name": "Slim Agent tool when-not + usage notes + examples (~4KB)",
       "file": "task-usage-notes"
+    },
+    {
+      "name": "Strip fast-mode-info sentence (~150 chars)",
+      "file": "fast-mode-info"
     }
+  ],
+  "customPatches": [
+    "expressive-tone",
+    "natural-emojis",
+    "bash-tool",
+    "code-references",
+    "doing-tasks-intro",
+    "fast-mode-info",
+    "task-usage-notes"
   ]
 }
