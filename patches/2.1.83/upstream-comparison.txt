@@ -1,0 +1,6 @@
+Upstream comparison for v2.1.83 (vs upstream 2.1.81)
+Generated: 2026-03-25T06:52:05.630Z
+
+Shared: 56 patches
+Only in ours: expressive-tone, natural-emojis, fast-mode-info, task-usage-notes
+New in upstream: task-tool-whennot

@@ -1,11 +1,11 @@
 /**
  * Bun binary extraction and repacking for native Claude Code installations.
  *
- * Properly handles the Bun binary format:
- * - Uses LIEF to extract ELF overlay (data after ELF sections)
- * - Parses Bun data region to find modules
- * - Recalculates all offsets when JS size changes
- * - Writes back via LIEF preserving ELF structure
+ * Properly handles two Bun binary formats:
+ * - Legacy (≤2.1.81): ELF overlay (data appended after ELF sections)
+ *   Layout: [...ELF...][data][OFFSETS(32)][TRAILER(16)][totalByteCount(8)]
+ * - Section (2.1.83+): Named `.bun` ELF section
+ *   Layout: [totalByteCount(8)][data][OFFSETS(32)][TRAILER(16)]
  *
  * Reference: tweakcc's nativeInstallation.ts
  */
@@ -54,10 +54,13 @@ interface BunModule {
   side: number;
 }
 
+type BunFormat = 'overlay' | 'section';
+
 interface BunData {
   bunData: Buffer;
   bunOffsets: BunOffsets;
   elfBinary: LIEF.ELF.Binary;
+  format: BunFormat;
 }
 
 // ============ Parsing Functions ============
@@ -154,10 +157,11 @@ function mapModules<T>(
 // ============ Extraction ============
 
 /**
- * Extract Bun data from an ELF binary's overlay
+ * Extract Bun data from an ELF binary.
  *
- * ELF overlay layout:
- * [...ELF sections...][Bun data region][OFFSETS (32)][TRAILER (16)][totalByteCount (8)]
+ * Tries two formats:
+ * 1. Legacy overlay: [...ELF...][data][OFFSETS(32)][TRAILER(16)][totalByteCount(8)]
+ * 2. .bun section:  [totalByteCount(8)][data][OFFSETS(32)][TRAILER(16)]
  */
 function extractBunData(binaryPath: string): BunData {
   const elfBinary = LIEF.parse(binaryPath);
@@ -166,17 +170,34 @@ function extractBunData(binaryPath: string): BunData {
     throw new Error(`Failed to parse ELF binary: ${binaryPath}`);
   }
 
-  if (!elfBinary.hasOverlay) {
-    throw new Error('ELF binary has no overlay data');
+  if (elfBinary.hasOverlay) {
+    return extractFromOverlay(elfBinary);
   }
 
+  // Try .bun section (2.1.83+ format)
+  const bunSection = elfBinary.getSection('.bun');
+  if (bunSection && bunSection.content) {
+    return extractFromSection(elfBinary, bunSection);
+  }
+
+  throw new Error(
+    'ELF binary has no overlay data and no .bun section.\n' +
+    'This binary format is not recognized as a Bun standalone.'
+  );
+}
+
+/**
+ * Legacy format: overlay appended after ELF sections.
+ * Layout: [data region][OFFSETS(32)][TRAILER(16)][totalByteCount(8)]
+ */
+function extractFromOverlay(elfBinary: LIEF.ELF.Binary): BunData {
   const overlayData = elfBinary.overlay;
 
   if (overlayData.length < BUN_TRAILER.length + 8 + SIZEOF_OFFSETS) {
     throw new Error(`ELF overlay data too small: ${overlayData.length} bytes`);
   }
 
-  debug(`Overlay size: ${overlayData.length} bytes`);
+  debug(`Overlay format, size: ${overlayData.length} bytes`);
 
   // Read totalByteCount from last 8 bytes
   const totalByteCount = overlayData.readBigUInt64LE(overlayData.length - 8);
@@ -223,6 +244,62 @@ function extractBunData(binaryPath: string): BunData {
     bunOffsets,
     bunData: bunDataBlob,
     elfBinary,
+    format: 'overlay',
+  };
+}
+
+/**
+ * Section format (2.1.83+): data in named `.bun` ELF section.
+ * Layout: [totalByteCount(8)][data region][OFFSETS(32)][TRAILER(16)]
+ */
+function extractFromSection(elfBinary: LIEF.ELF.Binary, bunSection: LIEF.ELF.Section): BunData {
+  const sectionData = Buffer.from(bunSection.content);
+  const sectionSize = sectionData.length;
+
+  if (sectionSize < 8 + SIZEOF_OFFSETS + BUN_TRAILER.length) {
+    throw new Error(`.bun section too small: ${sectionSize} bytes`);
+  }
+
+  debug(`Section format, size: ${sectionSize} bytes`);
+
+  // totalByteCount is the first 8 bytes
+  const totalByteCount = sectionData.readBigUInt64LE(0);
+
+  if (totalByteCount < 4096n || totalByteCount > 2n ** 32n - 1n) {
+    throw new Error(`.bun section total byte count out of range: ${totalByteCount}`);
+  }
+
+  debug(`totalByteCount: ${totalByteCount}`);
+
+  // Verify trailer at the very end (last 16 bytes)
+  const trailerStart = sectionSize - BUN_TRAILER.length;
+  const trailerBytes = sectionData.subarray(trailerStart);
+
+  if (!trailerBytes.equals(BUN_TRAILER)) {
+    throw new Error('BUN trailer not found at end of .bun section');
+  }
+
+  // Parse Offsets at [end - trailer_len - sizeof_offsets : end - trailer_len]
+  const offsetsStart = sectionSize - BUN_TRAILER.length - SIZEOF_OFFSETS;
+  const offsetsBytes = sectionData.subarray(offsetsStart, trailerStart);
+  const bunOffsets = parseOffsets(offsetsBytes);
+
+  debug(`Offsets byteCount: ${bunOffsets.byteCount}`);
+  debug(`Modules ptr: offset=${bunOffsets.modulesPtr.offset}, length=${bunOffsets.modulesPtr.length}`);
+
+  // Data region: bytes 8 through offsetsStart (skip the 8-byte totalByteCount header)
+  const dataRegion = sectionData.subarray(8, offsetsStart);
+
+  debug(`Data region: 8 to ${offsetsStart} (${dataRegion.length} bytes)`);
+
+  // Reconstruct full blob [data][offsets][trailer] for consistent handling
+  const bunDataBlob = Buffer.concat([dataRegion, offsetsBytes, trailerBytes]);
+
+  return {
+    bunOffsets,
+    bunData: bunDataBlob,
+    elfBinary,
+    format: 'section',
   };
 }
 
@@ -347,20 +424,20 @@ function replaceClaudeJsInPlace(
 }
 
 /**
- * Replace JS in a native binary and write to output path
+ * Replace JS in a native binary and write to output path.
  *
- * Instead of using LIEF's write() (which reconstructs the entire ELF and can
- * produce pathologically large output), we splice the binary manually:
- * keep the original ELF bytes verbatim, replace only the overlay.
+ * Handles both formats:
+ * - Overlay: splice ELF bytes + new overlay (avoids LIEF's bloated write)
+ * - Section: direct binary splice at section offset within the file
  */
 function repackWithModifiedJs(
   binaryPath: string,
   modifiedJs: Buffer,
   outputPath: string
 ): void {
-  const { bunData, bunOffsets, elfBinary } = extractBunData(binaryPath);
+  const { bunData, bunOffsets, elfBinary, format } = extractBunData(binaryPath);
 
-  debug(`Original bunData size: ${bunData.length}`);
+  debug(`Original bunData size: ${bunData.length}, format: ${format}`);
 
   // In-place replacement: swap claude JS within the existing data layout.
   // This preserves the Bun format's overlapping string regions.
@@ -368,11 +445,28 @@ function repackWithModifiedJs(
 
   debug(`New bunData size: ${newBunData.length}`);
 
-  // Reconstruct overlay: [bunData (without offsets/trailer)][totalByteCount as u64 LE]
-  // The bunData blob from extractBunData includes [dataRegion][offsets][trailer],
-  // and the file format appends [totalByteCount] after the trailer.
-  // Since we kept the same size, totalByteCount stays the same.
   const originalBinary = fs.readFileSync(binaryPath);
+
+  if (format === 'overlay') {
+    repackOverlay(originalBinary, elfBinary, newBunData, outputPath, binaryPath);
+  } else {
+    repackSection(originalBinary, elfBinary, newBunData, outputPath, binaryPath);
+  }
+
+  // Validate the output
+  validateRepackedBinary(outputPath);
+}
+
+/**
+ * Repack using the legacy overlay format.
+ */
+function repackOverlay(
+  originalBinary: Buffer,
+  elfBinary: LIEF.ELF.Binary,
+  newBunData: Buffer,
+  outputPath: string,
+  binaryPath: string
+): void {
   const originalOverlay = elfBinary.overlay;
   const overlayStart = originalBinary.length - originalOverlay.length;
 
@@ -384,15 +478,77 @@ function repackWithModifiedJs(
   debug(`Original overlay: ${originalOverlay.length} bytes`);
   debug(`New overlay: ${newOverlay.length} bytes`);
 
-  // Splice: original ELF bytes + new overlay
   const elfPortion = originalBinary.subarray(0, overlayStart);
 
-  // Write atomically (temp file + rename)
+  writeAtomically(outputPath, binaryPath, (fd) => {
+    fs.writeSync(fd, elfPortion);
+    fs.writeSync(fd, newOverlay);
+  });
+}
+
+/**
+ * Repack using the .bun section format.
+ *
+ * The section is at a fixed offset in the file. We write the full binary
+ * as a copy, then overwrite just the section's data region in place.
+ * The section size doesn't change (in-place replacement preserves sizes).
+ */
+function repackSection(
+  originalBinary: Buffer,
+  elfBinary: LIEF.ELF.Binary,
+  newBunData: Buffer,
+  outputPath: string,
+  binaryPath: string
+): void {
+  const bunSection = elfBinary.getSection('.bun');
+  if (!bunSection) {
+    throw new Error('.bun section disappeared during repack');
+  }
+
+  const sectionOffset = Number(bunSection.offset);
+  const sectionSize = Number(bunSection.size);
+
+  // Section layout: [totalByteCount(8)][data][OFFSETS(32)][TRAILER(16)]
+  // newBunData is [data][OFFSETS(32)][TRAILER(16)] — need to prepend totalByteCount
+  const totalByteCountBuf = Buffer.alloc(8);
+  // Read original totalByteCount from the section start
+  originalBinary.copy(totalByteCountBuf, 0, sectionOffset, sectionOffset + 8);
+
+  const newSectionContent = Buffer.concat([totalByteCountBuf, newBunData]);
+
+  if (newSectionContent.length !== sectionSize) {
+    throw new Error(
+      `Section size mismatch: expected ${sectionSize}, got ${newSectionContent.length}.\n` +
+      'In-place replacement should preserve section size.'
+    );
+  }
+
+  debug(`Section at offset ${sectionOffset}, size ${sectionSize}`);
+  debug(`Writing modified section content (${newSectionContent.length} bytes)`);
+
+  // Copy full binary, splice in the new section content
+  writeAtomically(outputPath, binaryPath, (fd) => {
+    // Write everything before the section
+    fs.writeSync(fd, originalBinary.subarray(0, sectionOffset));
+    // Write the modified section
+    fs.writeSync(fd, newSectionContent);
+    // Write everything after the section
+    fs.writeSync(fd, originalBinary.subarray(sectionOffset + sectionSize));
+  });
+}
+
+/**
+ * Write to a temp file then atomically rename into place.
+ */
+function writeAtomically(
+  outputPath: string,
+  binaryPath: string,
+  writer: (fd: number) => void
+): void {
   const tempPath = outputPath + '.tmp';
   try {
     const fd = fs.openSync(tempPath, 'w');
-    fs.writeSync(fd, elfPortion);
-    fs.writeSync(fd, newOverlay);
+    writer(fd);
     fs.closeSync(fd);
 
     // Preserve original file permissions
@@ -420,9 +576,6 @@ function repackWithModifiedJs(
     }
     throw err;
   }
-
-  // Validate the output
-  validateRepackedBinary(outputPath);
 }
 
 /**
