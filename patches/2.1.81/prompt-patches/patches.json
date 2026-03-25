@@ -241,5 +241,14 @@
       "name": "Slim Agent tool when-not + usage notes + examples (~4KB)",
       "file": "task-usage-notes"
     }
+  ],
+  "customPatches": [
+    "expressive-tone",
+    "natural-emojis",
+    "bash-tool",
+    "code-references",
+    "doing-tasks-intro",
+    "fast-mode-info",
+    "task-usage-notes"
   ]
 }
