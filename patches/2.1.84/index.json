@@ -61,6 +61,10 @@
       {
         "id": "worktree-dedup",
         "file": "2.1.83/patch-worktree-dedup.js"
+      },
+      {
+        "id": "disable-claude-api-skill",
+        "file": "2.1.84/patch-disable-claude-api-skill.js"
       }
     ],
     "bare": [
@@ -91,6 +95,7 @@
     "prompt-slim": "Updated to 2.1.59 with local-first patch resolution and built-in diagnostics",
     "tool-defer-whitelist": "CLAUDE_CODE_IMMEDIATE_TOOLS env var whitelists tools past the deferral gate (including MCP tools)",
     "keyword-highlights": "Extended with inline code spans, markdown formatting (**bold**, *italic*, ~~strikethrough~~), and effect-only render path",
-    "code-blocks": "Renders fenced code blocks in user messages with hljs syntax highlighting via the f9 ANSI component"
+    "code-blocks": "Renders fenced code blocks in user messages with hljs syntax highlighting via the f9 ANSI component",
+    "disable-claude-api-skill": "Nops the claude-api skill registration — removes SDK docs injection and proactive triggering on anthropic imports"
   }
 }
