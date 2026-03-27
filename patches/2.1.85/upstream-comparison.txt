@@ -1,0 +1,12 @@
+Upstream comparison for v2.1.85 (vs upstream 2.1.83)
+Generated: 2026-03-27T07:04:57.775Z
+
+Shared: 56 patches
+Only in ours: expressive-tone, natural-emojis, task-usage-notes, fast-mode-info
+New in upstream: task-tool-whennot
+Content differs:
+  todowrite-examples (find)
+  git-commit (find)
+  pr-creation (find)
+  task-tool-intro (find + replace)
+  grep-params-head_limit (find)
