@@ -1,0 +1,14 @@
+When NOT to use: For specific file reads use ${__READVAR__}/${__GLOBVAR__}; for specific class search use ${__GREPVAR__}.
+
+`,__XVAR__=!__MVAR__&&__FUNC1__()!=="pro"?`
+- Launch multiple agents concurrently whenever possible, to maximize performance; to do that, use a single message with multiple tool uses`:"";return`${__OVAR__}
+${__JVAR__}
+
+Usage notes:
+- Agent results are not visible to the user. Summarize findings in a text message.
+- **Foreground vs background**: Use foreground when you need results before proceeding. Use background for independent parallel work. You will be notified when background agents complete — do not poll.
+- Tell the agent whether you expect it to write code or just research, since it is not aware of the user's intent.
+- Trust agent outputs. If an agent description says to use it proactively, do so without being asked.
+- If the user wants agents "in parallel", send multiple ${__TOOLNAME__} tool use blocks in a single message.
+- To resume a previously spawned agent, use ${__SENDVAR__} with the agent's ID or name as the \`to\` field. The agent continues with its full context preserved. Always use the ID outside of the "teammate" context. Names are binding only for teammate agents.
+${__FVAR__}${__IVAR__}`
