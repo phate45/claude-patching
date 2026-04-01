@@ -35,7 +35,7 @@ node claude-patching.js --bare --apply
 
 | Patch | Effect |
 |-------|--------|
-| **prompt-slim** | Condenses ~38KB of verbose system prompt text (tool descriptions, examples, instructions) via 60 find/replace patches. Adapted from [claude-code-tips](https://github.com/ykdojo/claude-code-tips) with custom additions. |
+| **prompt-slim** | Condenses verbose system prompt text (tool descriptions, examples, instructions) via 65 find/replace patches. Adapted from [claude-code-tips](https://github.com/ykdojo/claude-code-tips) with custom additions including ant-only content injection. |
 | **system-reminders** | Removes the malware warning injected after every file read (~70 tokens each) and condenses the task/file-modification reminders (~500+ → ~25 tokens per event). Configurable per-reminder: `remove`, `concise`, or `keep`. |
 | **quiet-notifications** | Suppresses duplicate background agent notifications when `TaskOutput` has already read the output. Prevents redundant content accumulating in long sessions with heavy agent use. |
 
@@ -57,16 +57,23 @@ node claude-patching.js --bare --apply
 
 | Patch | Effect |
 |-------|--------|
-| **feature-flag-toggles** | Enables structured session memory compaction (maintains a living `summary.md` per session instead of throwaway summaries). Monitors `tengu_defer_all_bn4` as a sentinel — Anthropic flipped it to default-off in 2.1.84, so the patch now verifies it stays off and alerts if they re-enable it. Kill switch: `DISABLE_CLAUDE_CODE_SM_COMPACT=1`. |
+| **feature-flag-toggles** | Enables structured session memory compaction (maintains a living `summary.md` per session instead of throwaway summaries). Toggles `tengu_session_memory` and `tengu_sm_compact` flags to `true`. Kill switch: `DISABLE_CLAUDE_CODE_SM_COMPACT=1`. |
 | **disable-claude-api-skill** | Nops the bundled `claude-api` skill registration. This skill injects SDK/API documentation into the system prompt and triggers proactively when code imports `anthropic` — noisy for projects that don't use the Anthropic SDK. |
 | **flag-env-override** | Patches the GrowthBook feature flag system to read overrides from `CLAUDE_CODE_FLAG_OVERRIDES` env var. Any flag in the JSON map bypasses server-side evaluation entirely. Example: `CLAUDE_CODE_FLAG_OVERRIDES='{"tengu_kairos_cron":true}' claude` enables the hidden `/loop` scheduling command. |
 | **tool-defer-whitelist** | Injects a whitelist check at the top of `isDeferredTool()`, ahead of all built-in logic including the MCP gate. Tools named in `CLAUDE_CODE_IMMEDIATE_TOOLS` (comma-separated) become immediately available instead of deferred behind ToolSearch. Example: `CLAUDE_CODE_IMMEDIATE_TOOLS='AskUserQuestion,WebFetch' claude`. |
 | **abbreviations** | Fish-style abbreviation expansion for the input line. Two modes: **exact match** splits on the first separator (space, `.`, `,`, `;`) and preserves trailing args (`gs .` → `git status .`); **regex match** uses keys starting with `/` as patterns with `$1` capture group interpolation, appending any text after the match (`rw 22 check auth` → `Review MR 22. check auth`). Config via `CLAUDE_CODE_ABBREVIATIONS` env var (JSON object), parsed once per session. Example: `CLAUDE_CODE_ABBREVIATIONS='{"gs":"git status","/^rw (\\d+)":"Review MR $1."}' claude`. |
+| **resume-cache-fix** | Fixes broken cache prefix alignment on session resume. CC's `isLoggableMessage` filter drops `deferred_tools_delta` and `mcp_instructions_delta` attachments from the session JSONL — when the session resumes, the reconstructed cache prefix diverges from what was originally sent, invalidating the entire cache. This patch adds both types to the allow-list. |
+| **buddy-salt** | Overrides the companion system salt via `CLAUDE_BUDDY_CUSTOM_SALT` env var at patch time, letting you lock in a specific buddy roll. No-op when the env var is unset. Use with [buddy-reroll](https://github.com/phaete/buddy-reroll) to find a salt for your preferred traits. |
 | **worktree-dedup** | Prevents duplicate instruction file injection when Claude reads files inside git worktrees nested under the project root. Without this, `.claude/rules/`, `CLAUDE.md`, etc. from the worktree are loaded alongside the root copies (different absolute paths bypass the built-in dedup). Content-based: hashes instruction files at session start, skips exact matches during traversal. |
 | **expressive-tone** | *(prompt patch)* Replaces the blunt "short and concise" brevity directive with natural expression guidance. |
 | **natural-emojis** | *(prompt patch)* Replaces the blanket emoji ban with "Use emojis naturally to enhance communication." |
 | **doing-tasks-intro** | *(prompt patch)* Fixes upstream's garbled "For software engineering tasks: software engineering tasks and the current working directory" by extending the find to consume the full sentence. |
-| **task-usage-notes** | *(prompt patch)* Compresses the Agent tool's "When NOT to use" block, usage notes, and examples (~4KB → ~0.5KB). Keeps a condensed when-not summary, essential usage guidance, and the SendMessage resume note. |
+| **task-usage-notes** | *(prompt patch)* Compresses the Agent tool's "When NOT to use" block, usage notes, and examples (~4KB → ~0.5KB). Keeps a condensed when-not summary, essential usage guidance, and the SendMessage resume note. Includes explicit guidance against reading background agent output files directly. |
+| **ant-comment-discipline** | *(prompt patch)* Injects Anthropic's internal comment-writing rules: default to no comments, only annotate non-obvious "why", don't explain what code does, don't remove existing comments unless removing the code. |
+| **ant-misconception-callout** | *(prompt patch)* Injects the ant-only misconception/adjacent-bug callout: "If you notice the user's request is based on a misconception, or spot a bug adjacent to what they asked about, say so." |
+| **ant-faithful-outcomes** | *(prompt patch)* Injects ant-only faithful outcome reporting: never claim tests pass when output shows failures, never suppress failing checks, don't hedge confirmed results. |
+| **communicating-with-user** | *(prompt patch)* Replaces the generic "Output efficiency" section with Anthropic's internal "Communicating with the user" guidance — flowing prose, no semantic backtracking, inverted pyramid structure, match depth to reader expertise. |
+| **help-guide-agent** | *(prompt patch)* Appends guidance to dispatch a `claude-code-guide` agent for questions about Claude Code features, capabilities, or configuration. |
 
 ### Retired / Dormant
 
