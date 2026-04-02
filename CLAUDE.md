@@ -16,6 +16,19 @@ node claude-patching.js --bare --apply        # Target bare install explicitly
 node claude-patching.js --restore             # Restore from .bak backup
 ```
 
+**Output format:** All commands emit **NDJSON** (one JSON object per line). The last line is always the summary.
+
+```bash
+# --check / --apply summary (last line)
+... | tail -1 | jq '{applied, failed, success}'
+
+# --port check results
+... | jq -r 'select(.type=="port_check") | "Pass: \(.passed | length)/\(.total)"'
+
+# --status install versions
+... | jq '.installs | to_entries[] | "\(.key): \(.value.version)"'
+```
+
 **Installation types:**
 - `--bare` — pnpm/npm install (standalone cli.js)
 - `--native` — Bun-compiled binary (~/.local/bin/claude)
