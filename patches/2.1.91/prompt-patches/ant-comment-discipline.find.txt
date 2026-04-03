@@ -1,0 +1,1 @@
+Don't create abstractions for one-time operations.`,...[]]

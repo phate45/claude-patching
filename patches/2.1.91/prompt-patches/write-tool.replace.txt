@@ -1,0 +1,1 @@
+Write file (overwrites existing).${vF5()}${$} Use mode:'append' to add to end of file. Prefer editing over creating. No unsolicited docs/READMEs.
