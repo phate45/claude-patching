@@ -57,7 +57,7 @@ node claude-patching.js --bare --apply
 
 | Patch | Effect |
 |-------|--------|
-| **feature-flag-toggles** | Enables structured session memory compaction (maintains a living `summary.md` per session instead of throwaway summaries), minimal Edit anchors (1-3 lines), and Write append mode (`mode:'append'`). Toggles `tengu_session_memory`, `tengu_sm_compact`, `tengu_edit_minimalanchor_jrn`, and `tengu_maple_forge_w8k` to `true`. Kill switch: `DISABLE_CLAUDE_CODE_SM_COMPACT=1`. |
+| **feature-flag-toggles** | Enables session memory, minimal Edit anchors (1-3 lines), and Write append mode (`mode:'append'`). Toggles `tengu_session_memory`, `tengu_edit_minimalanchor_jrn`, and `tengu_maple_forge_w8k` to `true`. Previously also toggled `tengu_sm_compact` (gate removed in 2.1.92 — now internally controlled). |
 | **disable-claude-api-skill** | Nops the bundled `claude-api` skill registration. This skill injects SDK/API documentation into the system prompt and triggers proactively when code imports `anthropic` — noisy for projects that don't use the Anthropic SDK. |
 | **flag-env-override** | Patches the GrowthBook feature flag system to read overrides from `CLAUDE_CODE_FLAG_OVERRIDES` env var. Any flag in the JSON map bypasses server-side evaluation entirely. Example: `CLAUDE_CODE_FLAG_OVERRIDES='{"tengu_kairos_cron":true}' claude` enables the hidden `/loop` scheduling command. |
 | **tool-defer-whitelist** | Injects a whitelist check at the top of `isDeferredTool()`, ahead of all built-in logic including the MCP gate. Tools named in `CLAUDE_CODE_IMMEDIATE_TOOLS` (comma-separated) become immediately available instead of deferred behind ToolSearch. Example: `CLAUDE_CODE_IMMEDIATE_TOOLS='AskUserQuestion,WebFetch' claude`. |
