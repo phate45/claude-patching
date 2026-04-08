@@ -1,0 +1,21 @@
+## When not to use
+
+If the target is already known, use the direct tool: ${__READVAR__} for a known path, ${__GVAR__} for a specific symbol or string. Reserve this tool for open-ended questions that span the codebase, or tasks that match an available agent type.
+`,__XVAR__=!__YVAR__&&__FUNC1__()!=="pro"?`
+- Launch multiple agents concurrently whenever possible, to maximize performance; to do that, use a single message with multiple tool uses`:"";return`${__DVAR__}
+${__PVAR__}
+## Usage notes
+
+- Always include a short description summarizing what the agent will do${__XVAR__}
+- When the agent is done, it will return a single message back to you. The result returned by the agent is not visible to the user. To show the user the result, you should send a text message back to the user with a concise summary of the result.${!__FUNC2__(process.env.CLAUDE_CODE_DISABLE_BACKGROUND_TASKS)&&!__FUNC3__()&&!__TEAMS__?`
+- You can optionally run agents in the background using the run_in_background parameter. When an agent runs in the background, you will be automatically notified when it completes \u2014 do NOT sleep, poll, or proactively check on its progress. Continue with other work or respond to the user instead.
+- **Foreground vs background**: Use foreground (default) when you need the agent's results before you can proceed \u2014 e.g., research agents whose findings inform your next steps. Use background when you have genuinely independent work to do in parallel.`:""}
+- To continue a previously spawned agent, use ${__SENDVAR__} with the agent's ID or name as the \`to\` field \u2014 that resumes it with full context. A new ${__TOOLVAR__} call${__TEAMS__?" with a subagent_type":""} starts a fresh agent with no memory of prior runs, so the prompt must be self-contained.
+- Clearly tell the agent whether you expect it to write code or just to do research (search, file reads, web fetches, etc.)${__TEAMS__?"":", since it is not aware of the user's intent"}
+- If the agent description mentions that it should be used proactively, then you should try your best to use it without the user having to ask for it first.
+- If the user specifies that they want you to run agents "in parallel", you MUST send a single message with multiple ${__TOOLVAR__} tool use content blocks. For example, if you need to launch both a build-validator agent and a test-runner agent in parallel, send a single message with both tool calls.
+- With \`isolation: "worktree"\`, the worktree is automatically cleaned up if the agent makes no changes; otherwise the path and branch are returned in the result.${__FUNC3__()?`
+- The run_in_background, name, team_name, and mode parameters are not available in this context. Only synchronous subagents are supported.`:__FUNC4__()?`
+- The name, team_name, and mode parameters are not available in this context \u2014 teammates cannot spawn other teammates. Omit them to spawn a subagent.`:""}${__FVAR__}${__IVAR__}
+
+${__TEAMS__?__ZVAR__:__OVAR__}`
