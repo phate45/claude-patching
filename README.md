@@ -57,12 +57,11 @@ node claude-patching.js --bare --apply
 
 | Patch | Effect |
 |-------|--------|
-| **feature-flag-toggles** | Enables session memory, minimal Edit anchors (1-3 lines), and Write append mode (`mode:'append'`). Toggles `tengu_session_memory`, `tengu_edit_minimalanchor_jrn`, and `tengu_maple_forge_w8k` to `true`. Previously also toggled `tengu_sm_compact` (gate removed in 2.1.92 — now internally controlled). |
+| **feature-flag-toggles** | Enables session memory and minimal Edit anchors (1-3 lines). Toggles `tengu_session_memory` and `tengu_edit_minimalanchor_jrn` to `true`. Previously also toggled `tengu_maple_forge_w8k` (removed in 2.1.97), `tengu_sm_compact` (gate removed in 2.1.92). |
 | **disable-claude-api-skill** | Nops the bundled `claude-api` skill registration. This skill injects SDK/API documentation into the system prompt and triggers proactively when code imports `anthropic` — noisy for projects that don't use the Anthropic SDK. |
 | **flag-env-override** | Patches the GrowthBook feature flag system to read overrides from `CLAUDE_CODE_FLAG_OVERRIDES` env var. Any flag in the JSON map bypasses server-side evaluation entirely. Example: `CLAUDE_CODE_FLAG_OVERRIDES='{"tengu_kairos_cron":true}' claude` enables the hidden `/loop` scheduling command. |
 | **tool-defer-whitelist** | Injects a whitelist check at the top of `isDeferredTool()`, ahead of all built-in logic including the MCP gate. Tools named in `CLAUDE_CODE_IMMEDIATE_TOOLS` (comma-separated) become immediately available instead of deferred behind ToolSearch. Example: `CLAUDE_CODE_IMMEDIATE_TOOLS='AskUserQuestion,WebFetch' claude`. |
 | **abbreviations** | Fish-style abbreviation expansion for the input line. Two modes: **exact match** splits on the first separator (space, `.`, `,`, `;`) and preserves trailing args (`gs .` → `git status .`); **regex match** uses keys starting with `/` as patterns with `$1` capture group interpolation, appending any text after the match (`rw 22 check auth` → `Review MR 22. check auth`). Config via `CLAUDE_CODE_ABBREVIATIONS` env var (JSON object), parsed once per session. Example: `CLAUDE_CODE_ABBREVIATIONS='{"gs":"git status","/^rw (\\d+)":"Review MR $1."}' claude`. |
-| **buddy-salt** | Overrides the companion system salt via `CLAUDE_BUDDY_CUSTOM_SALT` env var at patch time, letting you lock in a specific buddy roll. No-op when the env var is unset. Use with [buddy-reroll](https://github.com/phaete/buddy-reroll) to find a salt for your preferred traits. |
 | **worktree-dedup** | Prevents duplicate instruction file injection when Claude reads files inside git worktrees nested under the project root. Without this, `.claude/rules/`, `CLAUDE.md`, etc. from the worktree are loaded alongside the root copies (different absolute paths bypass the built-in dedup). Content-based: hashes instruction files at session start, skips exact matches during traversal. |
 | **expressive-tone** | *(prompt patch)* Replaces the blunt "short and concise" brevity directive with natural expression guidance. |
 | **natural-emojis** | *(prompt patch)* Replaces the blanket emoji ban with "Use emojis naturally to enhance communication." |
@@ -81,6 +80,7 @@ node claude-patching.js --bare --apply
 | **thinking-style** | Redundant — CC's default style already matches what this patched for. |
 | **auto-memory** | Retired — evolved into feature-flag-toggles after `tengu_oboe` graduated to always-on in 2.1.59. |
 | **resume-cache-fix** | Retired in 2.1.90 — Anthropic fixed natively (added `deferred_tools_delta`, `mcp_instructions_delta`, `agent_listing_delta`, and `companion_intro` to the `isLoggableMessage` allow-list). |
+| **buddy-salt** | Retired in 2.1.97 — companion system rewritten with crypto-based random name generator for session files, hardcoded salt removed. |
 
 ## After CC Updates
 

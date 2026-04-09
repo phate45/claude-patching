@@ -1,0 +1,1 @@
+`Fast mode for Claude Code uses the same ${__MODEL__} model with faster output. It does NOT switch to a different model. It can be toggled with /fast.`
