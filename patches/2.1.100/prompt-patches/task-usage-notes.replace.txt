@@ -1,0 +1,16 @@
+## When not to use
+
+If the target is already known, use the direct tool: ${__READVAR__} for a known path, ${__GVAR__} for a specific symbol or string.
+`,__XVAR__=!__YVAR__&&__FUNC1__()!=="pro"&&!__WVAR__?`
+- Launch multiple agents concurrently whenever possible, to maximize performance; to do that, use a single message with multiple tool uses`:"";return`${__DVAR__}
+${__PVAR__}
+## Usage notes
+
+- Agent results are not visible to the user. Summarize findings in a text message.
+- **Foreground vs background**: Use foreground when you need results before proceeding. Use background for independent parallel work. You will be notified when background agents complete — do not poll.
+- **Background agent output**: NEVER read a background agent's output file directly. Do not use Read or Bash tail on the output file. When a background agent is running, end your turn and wait — the notification will arrive automatically with the agent's complete answer in the result field. Reading the raw output file wastes context on noisy JSONL logs and bypasses the clean result summary.
+- Tell the agent whether you expect it to write code or just research, since it is not aware of the user's intent.
+- Trust agent outputs. If an agent description says to use it proactively, do so without being asked.
+- If the user wants agents "in parallel", send multiple ${__TOOLVAR__} tool use blocks in a single message.
+- To resume a previously spawned agent, use ${__SENDVAR__} with the agent's ID or name as the \`to\` field. The agent continues with its full context preserved. Always use the ID outside of the "teammate" context. Names are binding only for teammate agents.
+${__FVAR__}${__IVAR__}`
