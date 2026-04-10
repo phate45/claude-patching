@@ -1,1 +1,1 @@
-Don't create abstractions for one-time operations.`,...[]]
+the PR description and rot as the codebase evolves.`]:[]
