@@ -1,0 +1,14 @@
+Upstream comparison for v2.1.107 (vs upstream 2.1.89)
+Generated: 2026-04-14T07:37:13.727Z
+
+Shared: 56 patches
+Only in ours: expressive-tone, natural-emojis, task-usage-notes, fast-mode-info, ant-comment-discipline, ant-misconception-callout, ant-faithful-outcomes, communicating-with-user, help-guide-agent
+New in upstream: task-tool-whennot
+Content differs:
+  todowrite-examples (find)
+  git-commit (find)
+  pr-creation (find)
+  over-engineering (find + replace)
+  edit-tool (find + replace)
+  write-tool (find + replace)
+  task-tool-intro (find + replace)
