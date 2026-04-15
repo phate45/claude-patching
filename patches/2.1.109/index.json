@@ -40,7 +40,7 @@
       },
       {
         "id": "cron-visibility",
-        "file": "2.1.83/patch-cron-visibility.js"
+        "file": "2.1.109/patch-cron-visibility.js"
       },
       {
         "id": "keyword-highlights",
@@ -65,26 +65,22 @@
       {
         "id": "disable-claude-api-skill",
         "file": "2.1.86/patch-disable-claude-api-skill.js"
+      },
+      {
+        "id": "spinner",
+        "file": "2.1.109/patch-spinner.js"
       }
     ],
     "bare": [
       {
         "id": "thinking-visibility",
         "file": "2.1.63/bare/patch-thinking-visibility.js"
-      },
-      {
-        "id": "spinner",
-        "file": "2.1.31/bare/patch-spinner.js"
       }
     ],
     "native": [
       {
         "id": "thinking-visibility",
         "file": "2.1.69/native/patch-thinking-visibility.js"
-      },
-      {
-        "id": "spinner",
-        "file": "2.1.96/patch-spinner.js"
       }
     ]
   },
