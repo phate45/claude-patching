@@ -69,6 +69,10 @@
       {
         "id": "spinner",
         "file": "2.1.109/patch-spinner.js"
+      },
+      {
+        "id": "thinking-display-summarized",
+        "file": "2.1.111/patch-thinking-display-summarized.js"
       }
     ],
     "bare": [
@@ -94,6 +98,7 @@
     "code-blocks": "Renders fenced code blocks in user messages with hljs syntax highlighting via the f9 ANSI component",
     "disable-claude-api-skill": "Nops the claude-api skill registration — removes SDK docs injection and proactive triggering on anthropic imports",
     "resume-cache-fix": "RETIRED in 2.1.90 — Anthropic fixed natively (also added agent_listing_delta + companion_intro to allow-list)",
-    "buddy-salt": "RETIRED in 2.1.97 — companion system rewritten with crypto-based name generator, hardcoded salt removed."
+    "buddy-salt": "RETIRED in 2.1.97 — companion system rewritten with crypto-based name generator, hardcoded salt removed.",
+    "thinking-display-summarized": "Opus 4.7 omits thinking text by default; this injects display:\"summarized\" in the request builder so reasoning comes back populated. No-op on 4.6 (already defaults to summarized)."
   }
 }

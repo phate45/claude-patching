@@ -44,6 +44,7 @@ node claude-patching.js --bare --apply
 | Patch | Effect |
 |-------|--------|
 | **thinking-visibility** | Shows thinking/reasoning blocks inline in the TUI. Normally only visible in transcript mode (Ctrl+O). |
+| **thinking-display-summarized** | Opts back into summarized thinking text on Opus 4.7. Starting with 4.7, the Anthropic API omits `thinking` block content by default — blocks arrive empty unless the caller sends `thinking.display: "summarized"`. CC doesn't wire that field up anywhere, so this patch injects it as the request-builder default. No-op on 4.6 and older (already summarized by default). Without this, the `thinking-visibility` patch renders empty blocks on 4.7. |
 | **no-collapse-reads** | Prevents consecutive Read/Grep/Glob calls from collapsing into a single summary line. Each tool call displays individually. |
 | **read-summary** | Shows offset/limit info in the compact Read display: `Read(file.js · lines 200-229)` instead of just `Read(file.js)`. |
 | **spinner** | Custom spinner animation. Configurable character sequence and animation mode at the top of the patch file. |
