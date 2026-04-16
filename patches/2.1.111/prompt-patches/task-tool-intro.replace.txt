@@ -1,0 +1,3 @@
+Launch agents for complex, multi-step tasks. Specify subagent_type parameter.
+
+${__PVAR__}

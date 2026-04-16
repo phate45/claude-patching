@@ -1,0 +1,77 @@
+# Prompt Patch Baseline — v2.1.111
+# Generated: 2026-04-16T16:17:30.881Z
+# Logic hash: null
+# Patches: 65
+# Original size (find): 46,661 chars
+# Replaced size:        14,383 chars
+# Total savings:        32,278 chars (69%)
+
+Patch ID                               Find   Replace   Savings
+---------------------------------------------------------------
+todowrite-examples                    5,834       437     5,397
+git-commit                            4,182       592     3,590
+bash-tool                               265        76       189
+pr-creation                           1,927       489     1,438
+enterplanmode-when-to-use             1,720       247     1,473
+todowrite-states                      1,760       350     1,410
+skill-tool                            1,227        83     1,144
+todowrite-when-to-use                 1,176       230       946
+over-engineering                        943       196       747
+lsp-tool                              1,039       163       876
+edit-tool                               737       270       467
+enterplanmode-examples                  928       178       750
+enterplanmode-whathappens               363       143       220
+exitplanmode                          1,848       226     1,622
+webfetch-usage                          766       136       630
+grep-tool                               887       415       472
+todowrite-examples-v2                   437         0       437
+agent-claude-code-guide                 530       126       404
+notebookedit                            513       101       412
+write-tool                              482       106       376
+websearch-critical                      485       106       379
+bashoutput                              364       118       246
+code-references                         161         3       158
+git-commit-v2                           592       239       353
+agent-explore                           486       152       334
+security-warning                        459       181       278
+pr-creation-v2                          489       188       301
+glob-tool                               371       111       260
+askuserquestion                         451       193       258
+bash-description-param                  159        45       114
+hooks-instruction                       361       118       243
+grep-params-context                     563       320       243
+killshell                               202        35       167
+planning-timelines                      190        58       132
+glob-path-param                         268        53       215
+task-tool-intro                         481        91       390
+grep-params-output_mode                 338       133       205
+grep-params-head_limit                  366        88       278
+doing-tasks-intro                       259        31       228
+cli-format-instruction                  129        43        86
+read-tool                               298       122       176
+read-capabilities                       689       118       571
+system-reminder-instruction             214       100       114
+output-text-instruction                 107        74        33
+agent-general-purpose                   291       128       163
+explore-instruction                     286       120       166
+propose-changes                         185        33       152
+url-warning                             215        77       138
+security-vulnerabilities                203        66       137
+agent-plan                              238       103       135
+read-tool-offset                        165        51       114
+grep-params-offset                      153        45       108
+grep-params-type                        175        69       106
+todos-mark-complete                     131        49        82
+taskupdate                            2,284       149     2,135
+tasklist                                950        90       860
+expressive-tone                          43       121       -78
+natural-emojis                          105        46        59
+task-usage-notes                      3,163     1,766     1,397
+fast-mode-info                          151         4       147
+ant-comment-discipline                   56       584      -528
+ant-misconception-callout                88       312      -224
+ant-faithful-outcomes                   312       662      -350
+communicating-with-user               1,340     2,393    -1,053
+help-guide-agent                         81       231      -150
+---------------------------------------------------------------
+TOTAL                                46,661    14,383    32,278
