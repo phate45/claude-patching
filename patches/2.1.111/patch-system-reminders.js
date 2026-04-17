@@ -147,7 +147,10 @@ if (TASK_REMINDER !== 'keep') {
   if (TASK_REMINDER === 'remove') {
     // Match the entire case body from `case"task_reminder":{...}` through
     // the trailing `return WRAP([HELPER({content:VAR,isMeta:!0})])}`.
-    const taskCasePattern = /case"task_reminder":\{if\(!([$\w]+)\(\)\)return\[\];let ([$\w]+)=H\.content\.map\(\([$\w]+\)=>`[^`]*`\)\.join\(`\n`\),([$\w]+)=`The task tools haven't been used recently\.[^`]+NEVER mention this reminder to the user\n`;if\(\2\.length>0\)\3\+=`[^`]+`;return ([$\w]+)\(\[([$\w]+)\(\{content:\3,isMeta:!0\}\)\]\)\}/;
+    // The outer message arg (native: `H.content.map`, bare: `q.content.map`)
+    // is whatever the enclosing message handler named its parameter; the
+    // minifier picks different letters per bundle, so we accept any ident.
+    const taskCasePattern = /case"task_reminder":\{if\(!([$\w]+)\(\)\)return\[\];let ([$\w]+)=[$\w]+\.content\.map\(\([$\w]+\)=>`[^`]*`\)\.join\(`\n`\),([$\w]+)=`The task tools haven't been used recently\.[^`]+NEVER mention this reminder to the user\n`;if\(\2\.length>0\)\3\+=`[^`]+`;return ([$\w]+)\(\[([$\w]+)\(\{content:\3,isMeta:!0\}\)\]\)\}/;
 
     const taskMatch = patchedContent.match(taskCasePattern);
 
