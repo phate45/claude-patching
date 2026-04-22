@@ -1,8 +1,10 @@
 # Claude Code Patches
 
 Minimal patches for Claude Code, supporting both installation methods:
-- **bare** — pnpm/npm install (standalone `cli.js`)
-- **native** — Bun-compiled binary (`~/.local/bin/claude`)
+- **bare** — pnpm/npm install. Since 2.1.117 this ships a wrapper package that downloads a platform-specific Bun ELF via optional dependencies; postinstall hardlinks it to `bin/claude.exe`. Pre-2.1.117 bare installs (standalone `cli.js`) are still supported.
+- **native** — Bun-compiled binary (`~/.local/bin/claude`).
+
+Both install types now share the same patching pipeline: extract the JS payload from the Bun overlay, apply patches, repack the binary.
 
 Inspired by [tweakcc](https://github.com/Piebald-AI/tweakcc), but lighter — just the adjustments I want. Use at your own peril.
 

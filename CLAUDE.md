@@ -30,8 +30,10 @@ node claude-patching.js --restore             # Restore from .bak backup
 ```
 
 **Installation types:**
-- `--bare` — pnpm/npm install (standalone cli.js)
-- `--native` — Bun-compiled binary (~/.local/bin/claude)
+- `--bare` — pnpm/npm install. Since 2.1.117 this ships a wrapper package whose postinstall hardlinks a platform-specific Bun ELF to `bin/claude.exe`. Pre-2.1.117 installs with a standalone `cli.js` are still detected and patched.
+- `--native` — Bun-compiled binary (~/.local/bin/claude).
+
+Both install types share the same patching mechanism (Bun overlay extract → patch JS → repack); the bare/native labels only distinguish which install on disk is targeted.
 
 If only one install exists, target flags are optional. If both exist, you must specify.
 
@@ -47,7 +49,7 @@ This runs **setup** → **init** → **check** in one pass with condensed output
 
 **Typical follow-up:**
 
-1. **Thinking-visibility fails** — This patch is target-specific (bare vs native have different React memo cache structures). Look at the `.pretty` file for the new condition pattern, create a new patch in `patches/<version>/native/` or `bare/`. See `patches/2.1.63/native/patch-thinking-visibility.js` for the current pattern.
+1. **Thinking-visibility fails** — Since 2.1.117 bare and native ship byte-identical JS payloads, so a single patch works for both. If the React memo cache structure changes, look at the `.pretty` file for the new condition pattern and create an updated patch in `patches/<version>/js-patches/` (the current going-forward convention). See `patches/2.1.69/native/patch-thinking-visibility.js` for the current pattern — note that older patches still live at their original paths under `bare/` or `native/` subdirs; those legacy locations are kept to support older CC versions and should never be moved.
 
 2. **Prompt patches diverge** — Use the `upgrade-prompt-patches` skill, which reads the diagnostic output and walks through each failure. The most common causes: unicode escapes in find files (use literal chars), hardcoded variable names (use `__NAME__` placeholders), and restructured array boundaries.
 

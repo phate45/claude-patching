@@ -3,7 +3,7 @@
  * Claude Code Patching - Unified CLI
  *
  * Supports both installation types:
- *   - bare: pnpm/npm install (standalone cli.js)
+ *   - bare: pnpm/npm wrapper with platform-specific Bun binary (since 2.1.117)
  *   - native: Bun-compiled binary (~/.local/bin/claude)
  *
  * Usage:
@@ -52,7 +52,7 @@ USAGE
   node claude-patching.js [target] <action>
 
 TARGETS (optional if only one install detected)
-  --bare       Target pnpm/npm installation (cli.js)
+  --bare       Target pnpm/npm installation (Bun binary, since 2.1.117)
   --native     Target native installation (Bun binary)
 
 ACTIONS
@@ -248,31 +248,14 @@ if (wantRestore) {
       process.exit(1);
     }
   } else {
-    // Verify .bak is clean
+    // Both install types are Bun ELFs — we can't cheaply verify .bak contents
+    // without extraction, so just confirm the file exists and report sizes.
     try {
-      let bakContent;
-      if (restoreTarget.type === 'native') {
-        // For native, we can't easily read the JS from the .bak binary without extraction,
-        // so just check that the .bak file exists and is a reasonable size
-        const bakStats = fs.statSync(bakPath);
-        const liveStats = fs.statSync(restoreTarget.path);
-        log(`\nRestore: ${restoreTarget.type} install`);
-        log(`  Source: ${bakPath} (${formatBytes(bakStats.size)})`);
-        log(`  Target: ${restoreTarget.path} (${formatBytes(liveStats.size)})`);
-      } else {
-        bakContent = fs.readFileSync(bakPath, 'utf8');
-        if (isPatched(bakContent)) {
-          logError(`Backup at ${bakPath} is itself patched — cannot restore a clean state from it.`);
-          logError('Reinstall Claude Code to get a clean binary.');
-          emitJson({ type: 'result', status: 'failure', message: '.bak is also patched' });
-          process.exit(1);
-        }
-        const bakStats = fs.statSync(bakPath);
-        const liveStats = fs.statSync(restoreTarget.path);
-        log(`\nRestore: ${restoreTarget.type} install`);
-        log(`  Source: ${bakPath} (${formatBytes(bakStats.size)})`);
-        log(`  Target: ${restoreTarget.path} (${formatBytes(liveStats.size)})`);
-      }
+      const bakStats = fs.statSync(bakPath);
+      const liveStats = fs.statSync(restoreTarget.path);
+      log(`\nRestore: ${restoreTarget.type} install`);
+      log(`  Source: ${bakPath} (${formatBytes(bakStats.size)})`);
+      log(`  Target: ${restoreTarget.path} (${formatBytes(liveStats.size)})`);
     } catch (err) {
       logError(`Failed to read backup: ${err.message}`);
       process.exit(1);
