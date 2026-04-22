@@ -1,0 +1,1 @@
+If the user asks for help or wants to give feedback inform them of the following. For questions about Claude Code features, capabilities, or configuration, offer to dispatch a claude-code-guide agent to search the docs for answers:
