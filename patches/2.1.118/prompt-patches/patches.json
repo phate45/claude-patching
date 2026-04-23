@@ -34,10 +34,6 @@
       "file": "todowrite-when-to-use"
     },
     {
-      "name": "Slim over-engineering bullets (~900 → 200 chars)",
-      "file": "over-engineering"
-    },
-    {
       "name": "Slim LSP tool description (~750 → 150 chars)",
       "file": "lsp-tool"
     },
@@ -150,10 +146,6 @@
       "file": "grep-params-head_limit"
     },
     {
-      "name": "Slim doing tasks intro (~230 → 30 chars)",
-      "file": "doing-tasks-intro"
-    },
-    {
       "name": "Slim CLI format instruction (~230 → 35 chars)",
       "file": "cli-format-instruction"
     },
@@ -184,10 +176,6 @@
     {
       "name": "Slim URL warning (~220 → 70 chars)",
       "file": "url-warning"
-    },
-    {
-      "name": "Slim security vulnerabilities (~200 → 60 chars)",
-      "file": "security-vulnerabilities"
     },
     {
       "name": "Slim Plan agent (~210 → 85 chars)",
@@ -234,24 +222,20 @@
       "file": "fast-mode-info"
     },
     {
-      "name": "Inject ant-only comment discipline + verify-before-reporting",
-      "file": "ant-comment-discipline"
-    },
-    {
-      "name": "Inject ant-only misconception callout",
-      "file": "ant-misconception-callout"
-    },
-    {
-      "name": "Inject ant-only faithful outcomes reporting",
-      "file": "ant-faithful-outcomes"
-    },
-    {
       "name": "Replace output efficiency with communicating-with-the-user guidance",
       "file": "communicating-with-user"
     },
     {
-      "name": "Redirect help section to claude-code-guide agent",
-      "file": "help-guide-agent"
+      "name": "Restructure Doing tasks bullets into Karpathy-style principles",
+      "file": "work-principles"
+    },
+    {
+      "name": "Rename # Doing tasks section header to # How you work",
+      "file": "section-rename"
+    },
+    {
+      "name": "Null the # Executing actions with care section (content absorbed into principles)",
+      "file": "null-executing-actions"
     }
   ],
   "customPatches": [
@@ -259,13 +243,11 @@
     "natural-emojis",
     "bash-tool",
     "code-references",
-    "doing-tasks-intro",
     "fast-mode-info",
     "task-usage-notes",
-    "ant-comment-discipline",
-    "ant-misconception-callout",
-    "ant-faithful-outcomes",
     "communicating-with-user",
-    "help-guide-agent"
+    "work-principles",
+    "section-rename",
+    "null-executing-actions"
   ]
 }

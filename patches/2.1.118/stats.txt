@@ -1,10 +1,10 @@
 # Prompt Patch Baseline — v2.1.118
-# Generated: 2026-04-23T19:38:55.903Z
+# Generated: 2026-04-23T21:06:30.022Z
 # Logic hash: null
-# Patches: 63
-# Original size (find): 46,305 chars
-# Replaced size:        14,685 chars
-# Total savings:        31,620 chars (68%)
+# Patches: 59
+# Original size (find): 49,027 chars
+# Replaced size:        15,207 chars
+# Total savings:        33,820 chars (69%)
 
 Patch ID                               Find   Replace   Savings
 ---------------------------------------------------------------
@@ -16,7 +16,6 @@ enterplanmode-when-to-use             1,720       247     1,473
 todowrite-states                      1,760       350     1,410
 skill-tool                            1,269        83     1,186
 todowrite-when-to-use                 1,176       230       946
-over-engineering                        618       182       436
 lsp-tool                              1,039       163       876
 edit-tool                               737       270       467
 enterplanmode-examples                  928       178       750
@@ -45,16 +44,14 @@ glob-path-param                         268        53       215
 task-tool-intro                         481        91       390
 grep-params-output_mode                 338       133       205
 grep-params-head_limit                  366        88       278
-doing-tasks-intro                       259        31       228
 cli-format-instruction                  129        43        86
 read-tool                               298       122       176
-read-capabilities                       689       118       571
+read-capabilities                       685       111       574
 system-reminder-instruction             214       100       114
 output-text-instruction                 107        74        33
 agent-general-purpose                   291       128       163
 explore-instruction                     158       120        38
 url-warning                             215        77       138
-security-vulnerabilities                203        66       137
 agent-plan                              238       103       135
 read-tool-offset                        165        51       114
 grep-params-offset                      153        45       108
@@ -66,10 +63,9 @@ expressive-tone                          43       121       -78
 natural-emojis                          105        46        59
 task-usage-notes                      3,163     1,766     1,397
 fast-mode-info                          175         4       171
-ant-comment-discipline                  442       970      -528
-ant-misconception-callout               108       333      -225
-ant-faithful-outcomes                   312       662      -350
 communicating-with-user               1,340     2,393    -1,053
-help-guide-agent                         81       231      -150
+work-principles                       1,894     2,977    -1,083
+section-rename                           15        16        -1
+null-executing-actions                2,840        11     2,829
 ---------------------------------------------------------------
-TOTAL                                46,305    14,685    31,620
+TOTAL                                49,027    15,207    33,820
