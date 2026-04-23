@@ -76,6 +76,14 @@
     {
       "id": "thinking-visibility",
       "file": "2.1.69/native/patch-thinking-visibility.js"
+    },
+    {
+      "id": "trim-context-bloat",
+      "file": "2.1.118/js-patches/patch-trim-context-bloat.js"
+    },
+    {
+      "id": "hook-envelope-strip",
+      "file": "2.1.118/js-patches/patch-hook-envelope-strip.js"
     }
   ],
   "notes": {
