@@ -1,0 +1,16 @@
+Upstream comparison for v2.1.121 (vs upstream 2.1.89)
+Generated: 2026-04-28T07:28:29.612Z
+
+Shared: 51 patches
+Only in ours: expressive-tone, natural-emojis, task-usage-notes, fast-mode-info, communicating-with-user, work-principles, section-rename, null-executing-actions
+New in upstream: over-engineering, planning-timelines, task-tool-whennot, doing-tasks-intro, propose-changes, security-vulnerabilities
+Content differs:
+  todowrite-examples (find)
+  git-commit (find)
+  pr-creation (find)
+  skill-tool (find)
+  edit-tool (find + replace)
+  write-tool (find + replace)
+  task-tool-intro (find + replace)
+  read-capabilities (find + replace)
+  explore-instruction (find + replace)
