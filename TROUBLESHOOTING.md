@@ -140,7 +140,27 @@ cp /tmp/cc-pristine/package/cli.js /path/to/cli.js
 
 This bypasses any local state entirely. Useful when `--check` reports all patterns failing on a version that should work — the file under test may already be patched.
 
-## Debugging Techniques
+### 8. `node --check` Fails on `using` Declarations (Node ≤22)
+
+**Symptom:** `--apply` reports `applied: 21, failed: 0, success: true` but then bails with:
+
+```
+Patched JS has syntax errors:
+... using K=FO`JSON.stringify(${H})` ...
+SyntaxError: Unexpected identifier 'K'
+```
+
+**Cause:** CC 2.1.126's bundle uses `using` declarations (TC39 explicit resource management, ES2026). Node 24+ parses them natively; Node 22 does not, so `node --check` rejects code that the runtime (Bun) accepts. The patched JS is correct — only the validator is wrong.
+
+The CC native binary is a Bun-compiled ELF, so the JS only ever runs under Bun's parser. Validating Bun-targeted code with `node --check` was a latent bug that surfaced the moment Anthropic adopted a stage-3 feature ahead of Node.
+
+**Fix:** Since `ecf758f`, `lib/patch-runner.js` probes for `bun` on PATH and validates with `Bun.Transpiler().scan()` when available, falling back to `node --check` only if Bun is absent. The success/failure log says which checker ran (`Syntax check passed (bun)` / `(node)`).
+
+**Workarounds if you can't pull the fix:**
+- Install Node ≥24 (via nvm or system package).
+- Or run `--check` first — patches all land cleanly there; only `--apply`'s post-patch validation invokes the parser.
+
+
 
 ### 1. Extract and Format Code Sections
 
