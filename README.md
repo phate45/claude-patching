@@ -62,7 +62,7 @@ node claude-patching.js --bare --apply
 
 | Patch | Effect |
 |-------|--------|
-| **feature-flag-toggles** | Enables session memory and minimal Edit anchors (1-3 lines). Toggles `tengu_session_memory` and `tengu_edit_minimalanchor_jrn` to `true`. Previously also toggled `tengu_maple_forge_w8k` (removed in 2.1.97), `tengu_sm_compact` (gate removed in 2.1.92). |
+| **feature-flag-toggles** | Enables minimal Edit anchors (1-3 lines) by toggling `tengu_edit_minimalanchor_jrn` to `true`. Previously also toggled `tengu_session_memory` (retired 2.1.133), `tengu_sm_compact` (gate removed 2.1.92), `tengu_maple_forge_w8k` (removed 2.1.97). See `patches/2.1.133/js-patches/patch-feature-flag-toggles.js` for the full retired-flags history. |
 | **disable-claude-api-skill** | Nops the bundled `claude-api` skill registration. This skill injects SDK/API documentation into the system prompt and triggers proactively when code imports `anthropic` — noisy for projects that don't use the Anthropic SDK. |
 | **flag-env-override** | Patches the GrowthBook feature flag system to read overrides from `CLAUDE_CODE_FLAG_OVERRIDES` env var. Any flag in the JSON map bypasses server-side evaluation entirely. Example: `CLAUDE_CODE_FLAG_OVERRIDES='{"tengu_kairos_cron":true}' claude` enables the hidden `/loop` scheduling command. |
 | **tool-defer-whitelist** | Injects a whitelist check at the top of `isDeferredTool()`, ahead of all built-in logic including the MCP gate. Tools named in `CLAUDE_CODE_IMMEDIATE_TOOLS` (comma-separated) become immediately available instead of deferred behind ToolSearch. Example: `CLAUDE_CODE_IMMEDIATE_TOOLS='AskUserQuestion,WebFetch' claude`. |
@@ -106,6 +106,22 @@ If patches no longer match (new CC version), check for an updated patch set in t
 node claude-patching.js --restore              # auto-detects install type
 node claude-patching.js --native --restore     # or specify explicitly
 ```
+
+## Feature Flag Inventory
+
+`scan-feature-flags.js` extracts all GrowthBook feature flags from a prettified bundle, detecting the gate function name dynamically (it changes every build). Run it standalone or let `--port` handle it automatically.
+
+```bash
+# Scan the current native build
+node scan-feature-flags.js cli.js.native.pretty --save patches/<version>/flags.json
+
+# Diff against a prior version's inventory
+node scan-feature-flags.js cli.js.native.pretty --diff patches/<prev>/flags.json
+```
+
+`--port` generates `patches/<version>/flags.json` automatically and, when a previous version's inventory exists, writes `patches/<version>/diff-<prevVersion>.json` alongside a summary in the port output. The saved inventory includes the gate function name, per-flag defaults and line numbers, and a `defaultShapes` index grouping non-obvious default values by class.
+
+See `feature-flags-2.1.143.md` in the vault for the current flag map.
 
 ## Development
 

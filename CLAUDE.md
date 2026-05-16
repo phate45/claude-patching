@@ -74,7 +74,7 @@ This runs **setup** → **init** → **check** in one pass with condensed output
 | `--status` | Detects bare/native installs, shows versions, applied patches, workspace artifact freshness | Yes |
 | `--setup` | Clones/updates the tweakcc reference, creates `.original` backups from clean sources, generates `.pretty` files via js-beautify. Won't overwrite a clean backup if the source is already patched. | Yes |
 | `--init` | Creates `patches/<version>/index.json` from latest existing index, imports prompt patches by copying the latest local version ≤ target | No — errors if index already exists |
-| `--port` | Composes setup + init + check with condensed output. Init skips silently if index exists. | Yes (when index exists) |
+| `--port` | Composes setup + init + check with condensed output. Init skips silently if index exists. Also runs `scan-feature-flags.js` after setup to produce `patches/<version>/flags.json` and `patches/<version>/diff-<prevVersion>.json` if a prior inventory exists. | Yes (when index exists) |
 | `--check` | Dry-runs all patches against target. Auto-falls back to latest patch version if none exists for the target version. | Yes |
 | `--apply` | Applies patches, writes metadata comment, runs syntax check, reassembles binary (native). Creates `.bak` before patching. | No |
 | `--restore` | Copies `.bak` over the live installation. | No |
@@ -101,11 +101,16 @@ When porting to a new CC version, use the `upgrade-prompt-patches` skill.
 
 ## Feature Flag Toggles
 
-`patch-feature-flag-toggles.js` replaces `IL("flag_name",!1)` calls with `!0` for selected flags. Currently enables:
-- `tengu_mulberry_fog` — richer memory management prompt
-- `tengu_session_memory` + `tengu_sm_compact` — structured session memory compaction
+The gate function name and enabled flags are documented in the patch file itself — see `patches/2.1.133/js-patches/patch-feature-flag-toggles.js` for the current list and retired flag history.
 
-See `feature-flags-2.1.62.md` in the vault for the full flag map.
+For a full flag inventory for any version, run:
+
+```bash
+node scan-feature-flags.js cli.js.native.pretty --save patches/<version>/flags.json
+node scan-feature-flags.js cli.js.native.pretty --diff patches/<prev>/flags.json
+```
+
+See `feature-flags-2.1.143.md` in the vault for the current flag map (as of 2.1.143).
 
 ## Development Workflow
 
