@@ -22,14 +22,7 @@ Variable names change every build, but the regex auto-adapts. **You only fix pat
 
 ## Patch Ownership
 
-Our local patches are the **baseline**. They include both optimizations ported from the upstream `prompt-patching` repo and our own custom patches (e.g., `expressive-tone`, `natural-emojis`).
-
-| Location | Role | Content |
-|----------|------|---------|
-| `patches/<version>/prompt-patches/` | **Baseline** (authoritative) | All active patches — upstream-originated + custom |
-| `/tmp/prompt-patching/system-prompt/<version>/` | **Upstream reference** | Optimization patches from the prompt-patching community |
-
-The upstream repo is a source of new ideas, not a dependency. We own what ships.
+All prompt patches live in `patches/<version>/prompt-patches/` and are fully self-contained. There is no upstream repo — the local set is authoritative.
 
 ## Porting Workflow
 
@@ -37,7 +30,7 @@ The upstream repo is a source of new ideas, not a dependency. We own what ships.
 
 ```bash
 node claude-patching.js --status           # What CC version is installed?
-node lib/prompt-baseline.js --list         # What versions have patches (local + upstream)?
+node lib/prompt-baseline.js --list         # What versions have local patches?
 ```
 
 Identify: `NEW_VERSION` (installed CC) and the latest local patch set.
@@ -45,15 +38,13 @@ Identify: `NEW_VERSION` (installed CC) and the latest local patch set.
 ### Step 2: Setup and Init
 
 ```bash
-node claude-patching.js --setup            # Clone/update upstream repo
+node claude-patching.js --setup            # Refresh tweakcc reference + workspace
 node claude-patching.js --init             # Create index.json + import prompt patches locally
 ```
 
-`--init` copies our latest local patch set into `patches/<NEW_VERSION>/prompt-patches/`. If upstream has an exact version match, it imports from there instead (since they've already done the text-alignment work). Either way, the result is a local patch set we own.
+`--init` copies the latest local patch set ≤ `NEW_VERSION` into `patches/<NEW_VERSION>/prompt-patches/`. The result is a fresh local patch set ready for verification.
 
-After import, `--init` outputs:
-- **Our patch set** — count and total savings
-- **Upstream comparison** — shared patches, patches only we have, new patches upstream has, and content differences between shared patches
+After import, `--init` outputs the patch count and total savings.
 
 ### Step 3: Check
 
@@ -63,7 +54,7 @@ node claude-patching.js --bare --check     # or explicit
 node claude-patching.js --native --check   # native
 ```
 
-If all patches pass, the text didn't change — move to **Step 5** (upstream comparison).
+If all patches pass, the text didn't change — move to **Step 5** (apply).
 
 ### Step 4: Fix Failures
 
@@ -95,26 +86,7 @@ Recheck and iterate until all patches apply:
 node claude-patching.js --check   # should show more patches passing now
 ```
 
-### Step 5: Compare with Upstream
-
-Once all existing patches pass, check if the upstream repo has new patches we don't have:
-
-```bash
-# List upstream patches for this version (or closest)
-ls /tmp/prompt-patching/system-prompt/<NEW_VERSION>/patches/ 2>/dev/null || \
-  ls /tmp/prompt-patching/system-prompt/$(ls /tmp/prompt-patching/system-prompt/ | sort -V | tail -1)/patches/
-```
-
-Compare their patch list against our `patches.json`. Look for:
-- **New patches** upstream has that we don't — evaluate for inclusion
-- **Updated replacements** for patches we share — check if their version is better
-- **Patches they dropped** that we still carry — investigate if the text was removed from the prompt
-
-For new upstream patches worth merging: copy the `.find.txt`/`.replace.txt` files into our local dir, add entries to `patches.json`, and run `--check` to verify they apply.
-
-**Do not blindly import.** Our custom patches (`expressive-tone`, `natural-emojis`, and any future behavioral patches) take priority. If an upstream patch conflicts with our customizations, skip it or adapt it.
-
-### Step 6: Apply
+### Step 5: Apply
 
 ```bash
 node claude-patching.js --apply

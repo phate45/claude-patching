@@ -2,16 +2,9 @@
 /**
  * System prompt slimming patch (common — works on both bare and native)
  *
- * Applies find/replace patches to reduce system prompt token overhead.
- * Reads patch files with local-first resolution:
- *   1. patches/<version>/prompt-patches/  (local, persists across restarts)
- *   2. /tmp/prompt-patching/system-prompt/<version>/patches/  (upstream fallback)
- *
- * Local patches are created by `node claude-patching.js --init`.
- *
- * The regex engine (createRegexPatch) is adapted from the upstream
- * patch-cli.js. The logic hash is checked at runtime to detect upstream
- * changes that may need review.
+ * Applies find/replace patches from patches/<version>/prompt-patches/
+ * (populated by `node claude-patching.js --init`) to reduce system
+ * prompt token overhead.
  *
  * Usage:
  *   node patch-prompt-slim.js <cli.js path>
@@ -23,13 +16,8 @@ const path = require('path');
 const output = require('../../lib/output');
 const { extractVersion } = require('../../lib/shared');
 const {
-  parsePatchList, hashPatchLogic, hasLocalPromptPatches, localPromptDir,
-  PROMPT_REPO,
+  parsePatchList, hasLocalPromptPatches, localPromptDir,
 } = require('../../lib/prompt-baseline');
-
-// Logic hash of the upstream createRegexPatch() we adapted from.
-// If upstream changes, this will mismatch and warn.
-const EXPECTED_LOGIC_HASH = '6fa91149dddcf76b56c39159aeb75692';
 
 // Unicode characters that native (Bun) builds escape differently
 const UNICODE_ESCAPES = [
@@ -280,29 +268,17 @@ function diagnoseFailure(find, content, original, appliedPatches) {
 }
 
 // ============================================================
-// Patch loading — local-first, upstream fallback
+// Patch loading
 // ============================================================
 
 function loadPatchPair(version, fileId) {
-  // 1. Local
-  const localDir = localPromptDir(version);
-  const localFind = path.join(localDir, `${fileId}.find.txt`);
-  if (fs.existsSync(localFind)) {
-    const localReplace = path.join(localDir, `${fileId}.replace.txt`);
-    const find = fs.readFileSync(localFind, 'utf8');
-    const replace = fs.existsSync(localReplace) ? fs.readFileSync(localReplace, 'utf8') : '';
-    return { find, replace };
-  }
-
-  // 2. Upstream
-  const upstreamDir = path.join(PROMPT_REPO, version, 'patches');
-  const findPath = path.join(upstreamDir, `${fileId}.find.txt`);
+  const dir = localPromptDir(version);
+  const findPath = path.join(dir, `${fileId}.find.txt`);
   if (!fs.existsSync(findPath)) return null;
 
-  const replacePath = path.join(upstreamDir, `${fileId}.replace.txt`);
+  const replacePath = path.join(dir, `${fileId}.replace.txt`);
   const find = fs.readFileSync(findPath, 'utf8');
   const replace = fs.existsSync(replacePath) ? fs.readFileSync(replacePath, 'utf8') : '';
-
   return { find, replace };
 }
 
@@ -333,29 +309,12 @@ if (!version) {
   process.exit(1);
 }
 
-// Check patch availability (local first, upstream fallback)
-const hasLocal = hasLocalPromptPatches(version);
-const hasUpstream = fs.existsSync(path.join(PROMPT_REPO, version));
-
-if (!hasLocal && !hasUpstream) {
+if (!hasLocalPromptPatches(version)) {
   output.error(`No prompt patches for v${version}`, [
-    `Checked local: ${localPromptDir(version)}`,
-    `Checked upstream: ${path.join(PROMPT_REPO, version)}`,
-    'Run --init to import prompt patches, or --setup to update the upstream repo',
+    `Checked: ${localPromptDir(version)}`,
+    'Run --init to populate prompt patches for this version',
   ]);
   process.exit(1);
-}
-
-// Check logic hash (only meaningful when using upstream patches)
-if (!hasLocal) {
-  const currentHash = hashPatchLogic(version);
-  if (currentHash && currentHash !== EXPECTED_LOGIC_HASH) {
-    output.warning('Upstream patch-cli.js logic has changed', [
-      `Expected: ${EXPECTED_LOGIC_HASH}`,
-      `Got:      ${currentHash}`,
-      'The regex engine may have been updated — review before trusting results.',
-    ]);
-  }
 }
 
 // Load patch list

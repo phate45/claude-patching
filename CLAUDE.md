@@ -72,8 +72,8 @@ This runs **setup** → **init** → **check** in one pass with condensed output
 | Command | Purpose | Idempotent? |
 |---------|---------|-------------|
 | `--status` | Detects bare/native installs, shows versions, applied patches, workspace artifact freshness | Yes |
-| `--setup` | Clones/updates tweakcc + prompt-patching repos, creates `.original` backups from clean sources, generates `.pretty` files via js-beautify. Won't overwrite a clean backup if the source is already patched. | Yes |
-| `--init` | Creates `patches/<version>/index.json` from latest existing index, imports prompt patches (upstream base + local customizations merged), generates `upstream-comparison.txt` | No — errors if index already exists |
+| `--setup` | Clones/updates the tweakcc reference, creates `.original` backups from clean sources, generates `.pretty` files via js-beautify. Won't overwrite a clean backup if the source is already patched. | Yes |
+| `--init` | Creates `patches/<version>/index.json` from latest existing index, imports prompt patches by copying the latest local version ≤ target | No — errors if index already exists |
 | `--port` | Composes setup + init + check with condensed output. Init skips silently if index exists. | Yes (when index exists) |
 | `--check` | Dry-runs all patches against target. Auto-falls back to latest patch version if none exists for the target version. | Yes |
 | `--apply` | Applies patches, writes metadata comment, runs syntax check, reassembles binary (native). Creates `.bak` before patching. | No |
@@ -89,25 +89,13 @@ Scoped rules in `.claude/rules/` provide context-sensitive reference:
 | `patch-format.md` | `patches/**` | Patch module contract, index.json, version porting |
 | `native-binary.md` | `lib/bun-binary.ts`, native patches | Bun overlay format, size budget |
 | `code-exploration.md` | Global | Search tools, cli.js patterns, TUI architecture |
-| `reference-repos.md` | Global | tweakcc and prompt-patching repo details |
+| `reference-repos.md` | Global | tweakcc repo details |
 
 ## Prompt Patches
 
-System prompt patches live in `patches/<version>/prompt-patches/` as `.find.txt`/`.replace.txt` pairs, listed in `patches.json`. Our local set is the **baseline** — it includes optimizations ported from the upstream [prompt-patching](https://github.com/ykdojo/claude-code-tips) repo plus our own custom patches.
+System prompt patches live in `patches/<version>/prompt-patches/` as `.find.txt`/`.replace.txt` pairs, listed in `patches.json`. The set is fully self-contained — `--init` populates a new version by copying the latest local version ≤ target. No external dependencies.
 
-**Custom patches** are tracked via the `customPatches` field in `patches.json`. These are carried forward automatically when `--init` imports from upstream:
-
-| Patch | Type | Effect |
-|-------|------|--------|
-| `expressive-tone` | local-only | Replaces blunt brevity directive with natural expression guidance |
-| `natural-emojis` | local-only | Replaces emoji ban with natural usage permission |
-| `bash-tool` | divergent | Our version rewrites the full description; upstream only trims one line |
-| `code-references` | divergent | Our version removes the adjacent "colon before tool calls" instruction too |
-| `doing-tasks-intro` | divergent | Upstream's find cuts mid-sentence, leaving a garbled fragment; ours consumes the full sentence |
-
-**Suppressed patches** are tracked via the `suppressedPatches` field in `patches.json` — a map of `{ fileId: "reason" }`. These are upstream patches that were consumed/merged into a custom patch and should not be re-imported. Without this, `--init` would resurrect the upstream original alongside our merged version. Currently suppressed: `task-tool-whennot` (consumed by `task-usage-notes`).
-
-**Upstream** (`/tmp/prompt-patching/`, cloned by `--setup`) is a reference for new optimizations, not a dependency. `--init` uses upstream as the base when it has a newer version than our latest local, then merges our `customPatches` on top (filtering `suppressedPatches`). The `upstream-comparison.txt` in each version directory shows what differs.
+Some patches retain historical `customPatches` / `suppressedPatches` keys in `patches.json` (formerly used to merge upstream imports). These fields are now inert and propagate forward only as metadata.
 
 When porting to a new CC version, use the `upgrade-prompt-patches` skill.
 

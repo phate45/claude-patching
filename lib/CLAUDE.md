@@ -14,7 +14,7 @@ These modules support the main `claude-patching.js` orchestrator. Individual pat
 | `status.js` | `--status` command: display installations and workspace artifacts | Orchestrator |
 | `setup.js` | `--setup` command: backups, prettify, repo cloning | Orchestrator, `port.js` |
 | `bun-binary.ts` | Native binary extraction and repacking (LIEF + Bun overlay) | `patch-runner.js` (lazy-loaded) |
-| `prompt-baseline.js` | Prompt patch import, baseline generation, upstream comparison | `init.js` |
+| `prompt-baseline.js` | Prompt patch import (from latest local ≤ target), baseline generation, diffs | `init.js` |
 
 ## Dependency Graph
 

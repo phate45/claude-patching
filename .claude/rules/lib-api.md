@@ -68,12 +68,13 @@ Prompt patching baseline and diff tool.
 
 **Exports:**
 - `generateBaseline(version)` → `{ findText, replaceText, patches, outputDir, totalFindChars, totalReplaceChars }`
-- `generateDiff(oldVersion, newVersion)` → `{ diffPath, diffText, added, removed, logicChanged, oldHash, newHash }`
-- `listVersions()` → sorted `string[]` of versions in the prompt-patching repo
+- `generateDiff(oldVersion, newVersion)` → `{ diffPath, diffText, added, removed }`
+- `listVersions()` → sorted `string[]` of local versions with prompt patches
 - `previousVersion(version)` → `string` or `null`
-- `parsePatchList(version)` → `[{ name, file }]` ordered array from patch-cli.js
-- `hashPatchLogic(version)` → `string` MD5 hash of non-config logic
-- `PROMPT_REPO` — `/tmp/prompt-patching/system-prompt`
+- `parsePatchList(version)` → `[{ name, file }]` ordered array from `patches.json`
+- `importPromptPatches(version)` → `{ count, source, targetDir } | null` (copies from latest local ≤ target)
+- `hasLocalPromptPatches(version)` → `boolean`
+- `localPromptDir(version)` → absolute path to `patches/<version>/prompt-patches/`
 - `PATCHES_DIR` — `<project>/patches/`
 
 **CLI usage:**

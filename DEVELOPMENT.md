@@ -27,8 +27,8 @@ node claude-patching.js --restore             # Restore from .bak backup
 | Command | Purpose | Idempotent? |
 |---------|---------|-------------|
 | `--status` | Detects bare/native installs, shows versions, applied patches, workspace artifact freshness | Yes |
-| `--setup` | Clones/updates tweakcc + prompt-patching repos, creates `.original` backups from clean sources, generates `.pretty` files via js-beautify | Yes |
-| `--init` | Creates `patches/<version>/index.json` from latest existing index, imports prompt patches (upstream base + local customizations merged), generates `upstream-comparison.txt` | No — errors if index already exists |
+| `--setup` | Clones/updates the tweakcc reference, creates `.original` backups from clean sources, generates `.pretty` files via js-beautify | Yes |
+| `--init` | Creates `patches/<version>/index.json` from latest existing index, imports prompt patches by copying the latest local version ≤ target | No — errors if index already exists |
 | `--port` | Composes setup + init + check with condensed output. Init skips silently if index exists. | Yes (when index exists) |
 | `--check` | Dry-runs all patches against target. Auto-falls back to latest patch version if none exists for the target version. | Yes |
 | `--apply` | Applies patches, writes metadata comment, runs syntax check, reassembles binary (native). Creates `.bak` before patching. | No |
@@ -139,34 +139,15 @@ node patch-thinking-visibility.js /path/to/cli.js             # apply
 
 ## Prompt Patches
 
-System prompt patches live in `patches/<version>/prompt-patches/` as `.find.txt`/`.replace.txt` pairs, listed in `patches.json`.
-
-### Custom Patches
-
-The `customPatches` field in `patches.json` tracks patches we wrote or intentionally diverged from upstream. These are carried forward automatically when `--init` imports from a newer upstream version:
-
-| Patch | Type | Effect |
-|-------|------|--------|
-| `expressive-tone` | local-only | Replaces blunt brevity directive with natural expression guidance |
-| `natural-emojis` | local-only | Replaces emoji ban with natural usage permission |
-| `bash-tool` | divergent | Our version rewrites the full description; upstream only trims one line |
-| `code-references` | divergent | Our version removes the adjacent "colon before tool calls" instruction too |
-
-Without `customPatches`, the merge logic can't distinguish "our custom patch" from "upstream patch they dropped" — which would cause dropped upstream patches to be incorrectly resurrected on import.
-
-### Upstream Integration
-
-The upstream [prompt-patching](https://github.com/ykdojo/claude-code-tips) repo (`/tmp/prompt-patching/`, cloned by `--setup`) is a reference for new optimizations, not a dependency. `--init` uses upstream as the base when it has a newer version than our latest local, then merges our `customPatches` on top. The `upstream-comparison.txt` in each version directory shows what differs.
+System prompt patches live in `patches/<version>/prompt-patches/` as `.find.txt`/`.replace.txt` pairs, listed in `patches.json`. The set is fully self-contained — `--init` populates a new version by copying the latest local version ≤ target. There is no external repo dependency.
 
 ### Regex Engine
 
-The prompt patch regex engine (`createRegexPatch()` from upstream):
+The prompt patch regex engine (`createRegexPatch()` in `patches/2.1.59/patch-prompt-slim.js`):
 - `${varName}` placeholders match template literal vars (`${n3}`, `${T3}`) — auto-adapts across versions
 - `__NAME__` placeholders match plain identifiers (`kY7`, `aDA`)
 - Placeholders become regex capture groups with backreferences in replacements
 - Also handles native unicode escapes (em-dash, arrows, smart quotes → `\\uXXXX`)
-
-The patch checks a logic hash of the upstream engine at runtime. If the engine changes between CC versions, a warning is emitted.
 
 ## Patch Implementation Details
 
