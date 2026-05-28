@@ -1,0 +1,8 @@
+Reads a file.
+
+- \`file_path\` must be absolute.
+- Up to ${mgH} lines${q}.
+${K}
+${$}
+- Reads images.${xgH()?' PDFs via `pages` ("1-5", max 20; required >10 pages).':""} Supports .ipynb.
+- Errors on directory, missing, or empty files.${uFK}

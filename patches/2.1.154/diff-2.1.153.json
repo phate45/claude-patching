@@ -1,0 +1,9 @@
+{"type":"diff_meta","fromVersion":"2.1.153","toVersion":"2.1.154","addedCount":6,"removedCount":5,"changedCount":1}
+{"type":"diff_removed","flags":["tengu_fennel_kite_model","tengu_fg_left_arrow_agents","tengu_mcp_retry_on_tools_list_error","tengu_streaming_tool_execution2","tengu_vellum_lantern"]}
+{"type":"flag","name":"tengu_amber_redwood2","default":"\"\"","occurrences":1,"lines":[407495],"change":"occurrences_changed","previousOccurrences":2}
+{"type":"flag","name":"tengu_amber_redwood3","default":"\"\"","occurrences":1,"lines":[407488],"change":"added"}
+{"type":"flag","name":"tengu_basalt_meadow","default":"!0","occurrences":2,"lines":[575663,575669],"change":"added"}
+{"type":"flag","name":"tengu_birch_kettle","default":"!1","occurrences":1,"lines":[597090],"change":"added"}
+{"type":"flag","name":"tengu_cedar_hollow_7m","default":"{}","occurrences":1,"lines":[265110],"change":"added"}
+{"type":"flag","name":"tengu_cobalt_thicket","default":"!0","occurrences":1,"lines":[628856],"change":"added"}
+{"type":"flag","name":"tengu_xterm_atlas_reset","default":"!1","occurrences":1,"lines":[575661],"change":"added"}
