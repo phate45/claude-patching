@@ -14,7 +14,12 @@ node claude-patching.js --apply               # Apply all patches
 node claude-patching.js --native --check      # Target native install explicitly
 node claude-patching.js --bare --apply        # Target bare install explicitly
 node claude-patching.js --restore             # Restore from .bak backup
+node claude-patching.js --restore --apply     # Reset state: restore .bak then re-apply all patches (use when editing an
+                                              #   already-applied patch — the metadata gate in patch-runner skips IDs
+                                              #   listed in __CLAUDE_PATCHES__, so re-applying without reset is a no-op)
 ```
+
+**Note on the metadata gate:** `--apply` reads the existing `__CLAUDE_PATCHES__` metadata block and skips any patch whose ID already appears there (except `spinner`, which is always re-run). When iterating on a patch you've already applied once, run `--restore --apply` so the binary starts from a clean .bak before the new patch runs. The `--restore` step fails with `ETXTBSY` if a running Claude instance still holds the binary open — close all sessions first.
 
 **Output format:** All commands emit **NDJSON** (one JSON object per line). The last line is always the summary.
 

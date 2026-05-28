@@ -1,0 +1,1 @@
+__FN__("auto memory",__A__,__B__).join
