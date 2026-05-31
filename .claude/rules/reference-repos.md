@@ -24,7 +24,7 @@ Prompt patches are now self-contained in `patches/<version>/prompt-patches/`. No
 - `__NAME__` placeholders match plain identifiers (`kY7`, `aDA`)
 - Placeholders become regex capture groups with backreferences in replacements
 - Handles native unicode escapes (em-dash, arrows, smart quotes → `\\uXXXX`)
-- Ternaries inside `${...}` (e.g. `${flag()?'on':''}`) do NOT tokenize as placeholders — the brace content allows only `[a-zA-Z0-9_.$]+` plus an optional `()` call. Such expressions must appear literally in `.find.txt` and re-port manually when minified names churn.
+- Ternaries inside `${...}` (e.g. `${flag()?'on':''}`) do NOT tokenize as a `${var}` placeholder — the brace content allows only `[a-zA-Z0-9_.$]+` plus an optional `()` call. The surrounding `${...?...:...}` framing must appear literally, but the bare function-name token inside the ternary can still be made resilient by substituting an `__NAME__` placeholder (e.g. `${__FLAG__()?'on':''}`) — the identifier capture group `[a-zA-Z0-9_$]+` will track minifier renames across versions.
 
 **Backtick escaping inside JS source.** When a target prompt string sits inside a template literal (delimited by `` ` ``), inner backticks at the source level are escaped as `\``. Inside `${...}` interpolations the context flips back to JS expression mode — backticks inside `"..."` or `'...'` strings within that interpolation stay plain. This matters because `.find.txt` content is matched byte-for-byte against the extracted JS:
 - Template-literal bullets like ``- \`old_string\` must…`` → write `\`` in find.txt

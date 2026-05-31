@@ -1,0 +1,9 @@
+{"type":"diff_meta","fromVersion":"2.1.154","toVersion":"2.1.158","addedCount":5,"removedCount":2,"changedCount":2}
+{"type":"diff_removed","flags":["tengu_anchor_tide","tengu_copper_fox"]}
+{"type":"flag","name":"tengu_basalt_meadow","default":"!1","occurrences":2,"lines":[576536,576542],"change":"default_changed","previousDefault":"!0"}
+{"type":"flag","name":"tengu_byte_stream_idle_timeout_ms","default":"H","occurrences":1,"lines":[127593],"change":"added"}
+{"type":"flag","name":"tengu_cedar_marsh","default":"!1","occurrences":1,"lines":[174655],"change":"added"}
+{"type":"flag","name":"tengu_compass_dial","default":"!1","occurrences":1,"lines":[561588],"change":"added"}
+{"type":"flag","name":"tengu_coordinator_panel","default":"!0","occurrences":1,"lines":[372995],"change":"added"}
+{"type":"flag","name":"tengu_kairos_loop_keepalive","default":"!1","occurrences":1,"lines":[209480],"change":"added"}
+{"type":"flag","name":"tengu_loggia_carousel","default":"!1","occurrences":2,"lines":[100216,204587],"change":"occurrences_changed","previousOccurrences":1}
