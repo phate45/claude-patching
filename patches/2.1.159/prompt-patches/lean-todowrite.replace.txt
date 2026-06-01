@@ -1,0 +1,1 @@
+Track tasks for the session — replaces previous list each call. Each todo has `content`, `status` ("pending"|"in_progress"|"completed"), `activeForm`. One `in_progress` at a time.

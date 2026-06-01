@@ -1,0 +1,5 @@
+Exact string replacement.
+
+- ${HK} the file first or the call fails.
+- \`old_string\` must match exactly (including indentation) and be unique. Strip the Read line prefix (${$?"line number + a single tab or `:`":"line number + tab"}) before matching.
+- \`replace_all: true\` for every occurrence.
