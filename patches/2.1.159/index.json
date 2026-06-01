@@ -59,7 +59,7 @@
     },
     {
       "id": "worktree-dedup",
-      "file": "2.1.153/js-patches/patch-worktree-dedup.js"
+      "file": "2.1.159/js-patches/patch-worktree-dedup.js"
     },
     {
       "id": "disable-claude-api-skill",
