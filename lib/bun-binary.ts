@@ -420,6 +420,35 @@ function replaceClaudeJsInPlace(
 
   debug(`Updated contents length at byte ${contentsLengthOffset}: ${originalLength} -> ${newLength}`);
 
+  // ── Invalidate the embedded bytecode (CRITICAL — see below) ──────────────
+  //
+  // Bun `--compile --bytecode` binaries embed a precompiled JSC bytecode blob
+  // alongside the JS source. At runtime Bun runs that bytecode and lazily
+  // compiles uncached functions from the source using byte-offset ranges
+  // baked into the bytecode. Our in-place source edits change byte offsets
+  // (net deletions shift everything downstream), so any function the bytecode
+  // resolves by offset now slices the WRONG bytes from the patched source —
+  // silently breaking code paths whose stale offsets happen to misalign
+  // (e.g. the skill_listing attachment builder, which throws and gets
+  // swallowed by the attachment try/catch, so the skill roster never reaches
+  // the model). Symptoms are partial and version-fragile.
+  //
+  // We don't regenerate the bytecode (that needs Bun's compiler). Instead we
+  // zero the module's bytecode StringPointer so Bun finds no bytecode and
+  // compiles everything from the patched source — the source IS our source of
+  // truth. The 123 MB blob stays in the data region as dead bytes (zeroing
+  // the pointer, not the bytes, preserves every other offset and the region
+  // size). On pre-bytecode builds this is a no-op (pointer already {0,0}).
+  //
+  // The bytecode StringPointer sits at module +24 (offset u32) / +28 (length).
+  const bytecodeOffsetField = moduleEntryOffset + 24;
+  const bytecodeLengthField = moduleEntryOffset + 28;
+  const oldBytecodeLen = result.readUInt32LE(bytecodeLengthField);
+  result.writeUInt32LE(0, bytecodeOffsetField);
+  result.writeUInt32LE(0, bytecodeLengthField);
+
+  debug(`Zeroed bytecode StringPointer (was ${oldBytecodeLen} bytes) to force source compilation`);
+
   return result;
 }
 
