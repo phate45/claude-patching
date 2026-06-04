@@ -92,6 +92,16 @@ When a new CC version drops:
 ## Patch Development Rules
 
 - Match structure, not specific variable names (`[$\w]+` for any identifier)
+- **Never hardcode a minified identifier in a replacement string** — capture it. A
+  structurally-identical site in a *renamed/restructured* function will still match
+  your regex (so `--check` stays green), but the hardcoded name then resolves to a
+  *different binding* there. Real failure: `thinking-no-fold` hardcoded the flush
+  helper `A()` from 2.1.153's `XP4` grouper; in 2.1.162 that grouper became `lk4`
+  where `A` is a *timestamp string*, so the replacement emitted `A()` → "A is not a
+  function … 'A' is \"2026-…Z\"". Fix: capture the helper from a neighboring idiom
+  in the same scope (e.g. the loop's own `else if(pred(x))flush(),out.push(x);`) and
+  reuse the captured names. A green `--check` only proves the *pattern matched*, not
+  that the *replacement's identifiers are correct in that scope*.
 - Use word boundaries (`\b`) for regex performance
 - Always test with `--check` before `--apply`
 - Run `node --check <file>.js` after writing a patch to catch syntax errors

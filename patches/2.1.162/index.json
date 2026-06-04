@@ -79,7 +79,7 @@
     },
     {
       "id": "thinking-no-fold",
-      "file": "2.1.153/js-patches/patch-thinking-no-fold.js"
+      "file": "2.1.162/js-patches/patch-thinking-no-fold.js"
     },
     {
       "id": "trim-context-bloat",
