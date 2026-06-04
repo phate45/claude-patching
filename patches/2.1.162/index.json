@@ -62,8 +62,12 @@
       "file": "2.1.162/js-patches/patch-worktree-dedup.js"
     },
     {
-      "id": "disable-claude-api-skill",
-      "file": "2.1.86/patch-disable-claude-api-skill.js"
+      "id": "disable-bundled-skills",
+      "file": "2.1.162/js-patches/patch-disable-bundled-skills.js"
+    },
+    {
+      "id": "disable-skills",
+      "file": "2.1.162/js-patches/patch-disable-skills.js"
     },
     {
       "id": "spinner",
@@ -98,7 +102,8 @@
     "tool-defer-whitelist": "CLAUDE_CODE_IMMEDIATE_TOOLS env var whitelists tools past the deferral gate (including MCP tools)",
     "keyword-highlights": "Extended with inline code spans, markdown formatting (**bold**, *italic*, ~~strikethrough~~), and effect-only render path",
     "code-blocks": "Renders fenced code blocks in user messages with hljs syntax highlighting via the f9 ANSI component",
-    "disable-claude-api-skill": "Nops the claude-api skill registration — removes SDK docs injection and proactive triggering on anthropic imports",
+    "disable-bundled-skills": "CLAUDE_CODE_DISABLED_BUNDLED_SKILLS env var (CSV of bundled skill names) aborts bundled-skill registration at the Mz() chokepoint, removing them from both the model's skill_listing and the /slash surface. Sentinel '*' disables all bundled skills. Supersedes disable-claude-api-skill (put claude-api in the CSV). Registration-time, bundled-only, permanent.",
+    "disable-skills": "CLAUDE_CODE_DISABLED_SKILLS env var (CSV of skill names) — session/profile filter. Filters the merged, deduped command list in the RC8 loader (Y=ll([...])), hiding ANY skill (bundled/project/user/plugin) by name from both skill_listing and /slash without unregistering it. The 'Claude Code Profiles' lever for per-session skill sets.",
     "resume-cache-fix": "RETIRED in 2.1.90 — Anthropic fixed natively (also added agent_listing_delta + companion_intro to allow-list)",
     "buddy-salt": "RETIRED in 2.1.97 — companion system rewritten with crypto-based name generator, hardcoded salt removed.",
     "thinking-display-summarized": "Opus 4.7 omits thinking text by default; this injects display:\"summarized\" in the request builder so reasoning comes back populated. No-op on 4.6 (already defaults to summarized).",
