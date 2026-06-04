@@ -56,6 +56,19 @@ node claude-patching.js --native --check   # native
 
 If all patches pass, the text didn't change — move to **Step 5** (apply).
 
+**Surface the per-patch divergence warnings.** The orchestrator's top-level `--check` summarizes prompt-slim as a single `M/N patches` line and the divergence diagnostics get swallowed in the noise. To get the structured warnings directly, invoke the patch script and filter with `jq`:
+
+```bash
+# native
+node patches/<NEW_VERSION>/patch-prompt-slim.js --check cli.js.native.original \
+  | jq -c 'select(.type=="warning" or .type=="result")'
+# bare
+node patches/<NEW_VERSION>/patch-prompt-slim.js --check cli.js.bare.original \
+  | jq -c 'select(.type=="warning" or .type=="result")'
+```
+
+The `result` line shows the running tally (e.g. `prompt-slim (v2.1.162): 65/67 patches, ~34,684 chars saved`); the `warning` entry carries a `details` array with one diverged/chained/not-found diagnostic per failed patch. Use this same invocation iteratively as you fix `.find.txt`/`.replace.txt` pairs — it's the only view that shows the *next* failure after you fix the current one.
+
 ### Step 4: Fix Failures
 
 `patch-prompt-slim.js` has **built-in diagnostics** for failures. The `--check` output classifies each skipped patch:

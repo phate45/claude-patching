@@ -1,0 +1,1 @@
+Invoke skills by name only (no leading slash). Only use skills from the user-invocable skills list. Do not guess names.

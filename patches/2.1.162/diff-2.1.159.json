@@ -1,0 +1,13 @@
+{"type":"diff_meta","fromVersion":"2.1.159","toVersion":"2.1.162","addedCount":11,"removedCount":0,"changedCount":1}
+{"type":"flag","name":"tengu_bg_attach_upgrade","default":"!0","occurrences":1,"lines":[644496],"change":"added"}
+{"type":"flag","name":"tengu_c4e_slash_upsell","default":"!1","occurrences":1,"lines":[516542],"change":"added"}
+{"type":"flag","name":"tengu_cedar_lantern","default":"!1","occurrences":1,"lines":[550273],"change":"added"}
+{"type":"flag","name":"tengu_copper_thistle","default":"!1","occurrences":3,"lines":[380949,577103,577555],"change":"added"}
+{"type":"flag","name":"tengu_feedback_survey_config","default":"km8","occurrences":1,"lines":[635289],"change":"added"}
+{"type":"flag","name":"tengu_mcp_skills","default":"!1","occurrences":1,"lines":[271843],"change":"added"}
+{"type":"flag","name":"tengu_memory_bulk_inflate","default":"!0","occurrences":1,"lines":[429658],"change":"added"}
+{"type":"flag","name":"tengu_review_workflow_routing","default":"!1","occurrences":1,"lines":[594494],"change":"added"}
+{"type":"flag","name":"tengu_slate_quill","default":"!1","occurrences":1,"lines":[395258],"change":"added"}
+{"type":"flag","name":"tengu_vscode_feedback_survey","default":"!1","occurrences":1,"lines":[635285],"change":"added"}
+{"type":"flag","name":"tengu_walnut_prism","default":"!1","occurrences":1,"lines":[550267],"change":"added"}
+{"type":"flag","name":"tengu_xterm_atlas_reset","default":"!0","occurrences":1,"lines":[584996],"change":"default_changed","previousDefault":"!1"}

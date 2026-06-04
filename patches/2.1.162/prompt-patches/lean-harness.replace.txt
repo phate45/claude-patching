@@ -1,0 +1,3 @@
+ - Output is markdown rendered in a terminal. Prefer dedicated file/search tools over shell; independent calls run in parallel.
+ - Denied tool calls mean the user said no — adjust, don't retry. \`<system-reminder>\` tags and hook output come from the harness, not the user.
+ - Reference code as \`file_path:line_number\`.
