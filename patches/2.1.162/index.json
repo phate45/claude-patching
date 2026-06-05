@@ -96,6 +96,10 @@
     {
       "id": "env-block-trim",
       "file": "2.1.162/js-patches/patch-env-block-trim.js"
+    },
+    {
+      "id": "auto-color",
+      "file": "2.1.162/js-patches/patch-auto-color.js"
     }
   ],
   "notes": {
@@ -112,6 +116,7 @@
     "buddy-salt": "RETIRED in 2.1.97 — companion system rewritten with crypto-based name generator, hardcoded salt removed.",
     "thinking-display-summarized": "Opus 4.7 omits thinking text by default; this injects display:\"summarized\" in the request builder so reasoning comes back populated. No-op on 4.6 (already defaults to summarized).",
     "thinking-no-fold": "2.1.153 added a transcript grouper (XP4) that folds thinking blocks into adjacent tool groups, rendering them as a 'Thought for Ns' pill with ctrl+o-to-expand. This patch makes the helper flush the current group and push thinking as its own message so the inline thinking-visibility patch path renders the full reasoning.",
+    "auto-color": "Auto-assigns every plain session a stable random session color at startup so concurrent sessions are visually distinguishable without manually running /color. Hooks the banner CONSUMER (Mu8/useSwarmBanner), not the init path: replaces the hook's terminal `return null` — reached only by genuinely plain sessions (teammate/swarm/named-agent/--agent all return earlier) — with a banner carrying a random palette color (d3) memoized once on globalThis.__autoColorBanner. NB: patching the standaloneAgentContext constructor (UC$) does NOT work — cold launches init that context via main.tsx initialState, never through UC$, so a UC$ hook is a no-op at startup. In-memory only; resumed sessions that ran /color keep their stored color (standalone branch returns before the hook).",
     "env-block-trim": "Drops three lines from the '# Environment' preamble: 'Platform' (shadowed by 'OS Version'), 'Shell: $SHELL' (misleading — Bash tool always resolves bash/zsh via ab5(), never the login shell, so fish/nu users got fish syntax against a bash executor), and the static 'Claude Code is available as a CLI ... IDE extensions' filler. Two builder sites each for platform/shell and the IDE line."
   }
 }
