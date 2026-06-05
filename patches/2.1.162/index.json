@@ -92,6 +92,10 @@
     {
       "id": "hook-envelope-strip",
       "file": "2.1.118/js-patches/patch-hook-envelope-strip.js"
+    },
+    {
+      "id": "env-block-trim",
+      "file": "2.1.162/js-patches/patch-env-block-trim.js"
     }
   ],
   "notes": {
@@ -107,6 +111,7 @@
     "resume-cache-fix": "RETIRED in 2.1.90 — Anthropic fixed natively (also added agent_listing_delta + companion_intro to allow-list)",
     "buddy-salt": "RETIRED in 2.1.97 — companion system rewritten with crypto-based name generator, hardcoded salt removed.",
     "thinking-display-summarized": "Opus 4.7 omits thinking text by default; this injects display:\"summarized\" in the request builder so reasoning comes back populated. No-op on 4.6 (already defaults to summarized).",
-    "thinking-no-fold": "2.1.153 added a transcript grouper (XP4) that folds thinking blocks into adjacent tool groups, rendering them as a 'Thought for Ns' pill with ctrl+o-to-expand. This patch makes the helper flush the current group and push thinking as its own message so the inline thinking-visibility patch path renders the full reasoning."
+    "thinking-no-fold": "2.1.153 added a transcript grouper (XP4) that folds thinking blocks into adjacent tool groups, rendering them as a 'Thought for Ns' pill with ctrl+o-to-expand. This patch makes the helper flush the current group and push thinking as its own message so the inline thinking-visibility patch path renders the full reasoning.",
+    "env-block-trim": "Drops three lines from the '# Environment' preamble: 'Platform' (shadowed by 'OS Version'), 'Shell: $SHELL' (misleading — Bash tool always resolves bash/zsh via ab5(), never the login shell, so fish/nu users got fish syntax against a bash executor), and the static 'Claude Code is available as a CLI ... IDE extensions' filler. Two builder sites each for platform/shell and the IDE line."
   }
 }
