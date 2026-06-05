@@ -126,3 +126,5 @@ See `feature-flags-2.1.143.md` in the vault for the current flag map (as of 2.1.
 5. `--apply` — Apply patches (includes syntax check + auto-rollback on failure)
 
 Setup won't overwrite a clean backup if the source is already patched (`__CLAUDE_PATCHES__` marker).
+
+**Branching:** This is a solo single-maintainer repo — commit directly to `master`, no feature branches or PRs. (Overrides the default "branch first" guardrail.)
