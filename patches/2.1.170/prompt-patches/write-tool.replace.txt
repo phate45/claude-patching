@@ -1,0 +1,1 @@
+Write file (overwrites existing).${__NAME__()}  Prefer editing over creating. No unsolicited docs/READMEs.

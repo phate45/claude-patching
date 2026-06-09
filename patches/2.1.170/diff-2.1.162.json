@@ -1,0 +1,16 @@
+{"type":"diff_meta","fromVersion":"2.1.162","toVersion":"2.1.170","addedCount":13,"removedCount":2,"changedCount":1}
+{"type":"diff_removed","flags":["tengu_cedar_hollow_7m","tengu_loggia_carousel"]}
+{"type":"flag","name":"tengu_amber_sextant","default":"!0","occurrences":1,"lines":[559214],"change":"added"}
+{"type":"flag","name":"tengu_ant_yolo_equiv_strip_config","default":"{}","occurrences":1,"lines":[452066],"change":"added"}
+{"type":"flag","name":"tengu_bg_prewarm_per_sweep","default":"3","occurrences":1,"lines":[660656],"change":"added"}
+{"type":"flag","name":"tengu_cedar_lantern","default":"!0","occurrences":1,"lines":[559602],"change":"default_changed","previousDefault":"!1"}
+{"type":"flag","name":"tengu_cedar_plume","default":"!1","occurrences":1,"lines":[634445],"change":"added"}
+{"type":"flag","name":"tengu_event_watchdog_default_on","default":"!1","occurrences":1,"lines":[561467],"change":"added"}
+{"type":"flag","name":"tengu_maple_sundial","default":"!1","occurrences":1,"lines":[462953],"change":"added"}
+{"type":"flag","name":"tengu_mcp_stateless_skip_init","default":"!1","occurrences":1,"lines":[252993],"change":"added"}
+{"type":"flag","name":"tengu_mint_lanes","default":"!1","occurrences":1,"lines":[581293],"change":"added"}
+{"type":"flag","name":"tengu_native_cursor","default":"!1","occurrences":1,"lines":[167740],"change":"added"}
+{"type":"flag","name":"tengu_saffron_lattice","default":"{}","occurrences":1,"lines":[326910],"change":"added"}
+{"type":"flag","name":"tengu_velvet_falcon_model","default":"\"\"","occurrences":1,"lines":[102126],"change":"added"}
+{"type":"flag","name":"tengu_velvet_hammer","default":"!1","occurrences":2,"lines":[417809,417931],"change":"added"}
+{"type":"flag","name":"tengu_velvet_mallet","default":"!1","occurrences":2,"lines":[344730,344797],"change":"added"}

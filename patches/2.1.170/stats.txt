@@ -1,0 +1,78 @@
+# Prompt Patch Baseline — v2.1.170
+# Generated: 2026-06-09T19:15:09.455Z
+# Patches: 67
+# Original size (find): 54,628 chars
+# Replaced size:        18,434 chars
+# Total savings:        36,194 chars (66%)
+
+Patch ID                               Find   Replace   Savings
+---------------------------------------------------------------
+todowrite-examples                    5,834       437     5,397
+git-commit                            4,182       592     3,590
+bash-tool                               265        76       189
+pr-creation                           1,938       489     1,449
+enterplanmode-when-to-use             1,720       247     1,473
+todowrite-states                      1,760       350     1,410
+skill-tool                            1,269       115     1,154
+todowrite-when-to-use                 1,176       230       946
+lsp-tool                              1,235       163     1,072
+edit-tool                               737       270       467
+enterplanmode-examples                  928       178       750
+enterplanmode-whathappens               426       143       283
+exitplanmode                          1,848       226     1,622
+webfetch-usage                          766       136       630
+grep-tool                               887       415       472
+todowrite-examples-v2                   437         0       437
+agent-claude-code-guide                 530       126       404
+notebookedit                            647       213       434
+write-tool                              482       106       376
+websearch-critical                      485       106       379
+bashoutput                              364       118       246
+code-references                         380         9       371
+git-commit-v2                           592       239       353
+agent-explore                           607       152       455
+security-warning                        459       181       278
+pr-creation-v2                          489       188       301
+glob-tool                               371       111       260
+askuserquestion                         827       795        32
+bash-description-param                  159        45       114
+hooks-instruction                       361       118       243
+grep-params-context                     563       320       243
+killshell                               202        35       167
+glob-path-param                         268        53       215
+task-tool-intro                         481        91       390
+grep-params-output_mode                 338       133       205
+grep-params-head_limit                  366        88       278
+cli-format-instruction                  129        43        86
+read-tool                               298       122       176
+read-capabilities                       685       111       574
+system-reminder-instruction             214       100       114
+output-text-instruction                 107        74        33
+agent-general-purpose                   291       128       163
+explore-instruction                     158       120        38
+url-warning                             215        77       138
+agent-plan                              238       103       135
+read-tool-offset                        165        51       114
+grep-params-offset                      153        45       108
+grep-params-type                        175        69       106
+todos-mark-complete                     131        49        82
+taskupdate                            2,284       149     2,135
+tasklist                                950        90       860
+expressive-tone                          43       121       -78
+natural-emojis                          105        46        59
+task-usage-notes                      4,642     2,662     1,980
+fast-mode-info                          174         4       170
+communicating-with-user               1,340     2,395    -1,055
+work-principles                       1,882     2,977    -1,095
+section-rename                           15        16        -1
+null-executing-actions                2,840        11     2,829
+auto-memory-xuk                          38        38         0
+auto-memory-ym6                          44        44         0
+lean-harness                            604       322       282
+lean-action-caution                     793       303       490
+lean-todowrite                          394       179       215
+lean-read                               491       243       248
+lean-write                              243       152        91
+lean-edit                               408       296       112
+---------------------------------------------------------------
+TOTAL                                54,628    18,434    36,194
