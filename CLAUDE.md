@@ -79,7 +79,7 @@ This runs **setup** → **init** → **check** in one pass with condensed output
 | `--status` | Detects bare/native installs, shows versions, applied patches, workspace artifact freshness | Yes |
 | `--setup` | Clones/updates the tweakcc reference, creates `.original` backups from clean sources, generates `.pretty` files via js-beautify. Won't overwrite a clean backup if the source is already patched. | Yes |
 | `--init` | Creates `patches/<version>/index.json` from latest existing index, imports prompt patches by copying the latest local version ≤ target | No — errors if index already exists |
-| `--port` | Composes setup + init + check with condensed output. Init skips silently if index exists. Also runs `scan-feature-flags.js` after setup to produce `patches/<version>/flags.json` and `patches/<version>/diff-<prevVersion>.json` if a prior inventory exists. | Yes (when index exists) |
+| `--port` | Composes setup + init + check with condensed output. Init skips silently if index exists. Also runs `scan-feature-flags.js` and `scan-env-vars.js` after setup to produce `flags.json`/`env-vars.json` (plus `diff-<prev>.json`/`env-diff-<prev>.json` if a prior inventory exists) under `patches/<version>/`. | Yes (when index exists) |
 | `--check` | Dry-runs all patches against target. Auto-falls back to latest patch version if none exists for the target version. | Yes |
 | `--apply` | Applies patches, writes metadata comment, runs syntax check, reassembles binary (native). Creates `.bak` before patching. | No |
 | `--restore` | Copies `.bak` over the live installation. | No |
@@ -116,6 +116,17 @@ node scan-feature-flags.js cli.js.native.pretty --diff patches/<prev>/flags.json
 ```
 
 See `feature-flags-2.1.143.md` in the vault for the current flag map (as of 2.1.143).
+
+## Env Var Tracking
+
+`scan-env-vars.js` is the sibling of the flag scanner — same NDJSON contract, same per-version inventory + diff layout — but tracks `CLAUDE_CODE_*` and `ANTHROPIC_*` environment variable names instead of GrowthBook flags. Env reads have no uniform accessor (`process.env.X`, the minified env mirror `z$.X`, quoted keys), so it extracts by **name token** and records the normalised access **forms** (`process.env` / `property` / `string` / `bracket` / `other`) plus occurrence counts rather than a default value. `--port` runs it automatically (Phase 2.6).
+
+```bash
+node scan-env-vars.js cli.js.native.pretty --save patches/<version>/env-vars.json
+node scan-env-vars.js cli.js.native.pretty --diff patches/<prev>/env-vars.json
+```
+
+Inventory lands at `patches/<version>/env-vars.json`; the diff at `patches/<version>/env-diff-<prev>.json`. The diff surfaces `added` / `occurrences_changed` / removed (no `default_changed` — env reads carry no default). Note: a bare `rg 'ANTHROPIC_[A-Z0-9_]+'` over-counts because names like `CLAUDE_CODE_USE_ANTHROPIC_AWS` embed an `ANTHROPIC_` substring; the scanner consumes the enclosing `CLAUDE_CODE_` token first, so its counts are the honest ones.
 
 ## Development Workflow
 
