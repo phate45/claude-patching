@@ -112,9 +112,14 @@
     {
       "id": "subagent-nesting",
       "file": "2.1.209/js-patches/patch-subagent-nesting-knob.js"
+    },
+    {
+      "id": "sticky-prompt-header",
+      "file": "2.1.220/js-patches/patch-sticky-prompt-header.js"
     }
   ],
   "notes": {
+    "sticky-prompt-header": "One combined replacement rewrites the tracker's (JVb) bottom-up scan + walk-back guard: first-iteration break (bottom-most item straddling the viewport top) now sets d=r instead of leaving d=t, and the &&!isSticky guard is dropped so the header also shows while following the bottom. Second replacement restyles the renderer (QHa): pointer span subtle, text span inactive (config at top of patch file). The guard's d variable binds the loop regex to the right site, so the generic loop shape can't false-positive elsewhere.",
     "thinking-style": "Dim styling is now native in 2.1.31 - no patch needed",
     "auto-memory": "tengu_oboe removed in 2.1.59. Replaced by feature-flag-toggles patch.",
     "feature-flag-toggles": "Enables: edit_minimalanchor_jrn. Retired: session_memory removed in 2.1.133, maple_forge_w8k in 2.1.97, sm_compact gate in 2.1.92, defer_all_bn4 in 2.1.89.",
