@@ -112,9 +112,14 @@
     {
       "id": "subagent-nesting",
       "file": "2.1.209/js-patches/patch-subagent-nesting-knob.js"
+    },
+    {
+      "id": "task-reminder-conditional",
+      "file": "2.1.220/js-patches/patch-task-reminder-conditional.js"
     }
   ],
   "notes": {
+    "task-reminder-conditional": "The task_reminder payload's .content is the current task list; the dispatch case already branches on it to append the list when non-empty. The patch extends the existing early-return gate with an empty-list bail, so the periodic nag only fires when tasks exist but have gone unattended.",
     "thinking-style": "Dim styling is now native in 2.1.31 - no patch needed",
     "auto-memory": "tengu_oboe removed in 2.1.59. Replaced by feature-flag-toggles patch.",
     "feature-flag-toggles": "Enables: edit_minimalanchor_jrn. Retired: session_memory removed in 2.1.133, maple_forge_w8k in 2.1.97, sm_compact gate in 2.1.92, defer_all_bn4 in 2.1.89.",
