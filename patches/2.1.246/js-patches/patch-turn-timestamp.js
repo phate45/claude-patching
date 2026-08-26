@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * turn-timestamp — show the turn-end time in full ISO format.
+ * turn-timestamp — show the turn-end time as a local-time stamp.
  *
  * 2.1.246 made turn-end timestamping NATIVE: the completed-turn status line now
  * renders `${verb} for ${elapsed}${doneAt?` · done ${doneAt}`:""}`, e.g.
@@ -11,11 +11,18 @@
  * string — native just downgrades it to locale time for display.
  *
  * This patch cooperates with the now-native line instead of injecting its own:
- * it drops the `Vs()` reformat so the stored value renders verbatim —
- *     "Sautéed for 23s · done 2026-08-26T10:24:04.000Z"
+ * it swaps the `Vs()` reformat for an inline formatter rendering the stored
+ * UTC instant in LOCAL time as `[YYYY-MM-DD HH:MM:SS]` —
+ *     "Sautéed for 23s · done [2026-08-26 14:06:29]"
+ * Local conversion is `d - d.getTimezoneOffset()*6e4` before `toISOString()`,
+ * which follows DST because the offset is read from the instant itself (CEST
+ * -120 in summer, CET -60 in winter).
+ *
  * The message var is captured from the `doneAt:FMT(MSG.timestamp)` site; the
- * value stays falsy while a turn is running (timestamp undefined), so the
- * `${doneAt?…:""}` guard still renders nothing mid-turn.
+ * `MSG.timestamp&&…` guard keeps the value falsy while a turn is running
+ * (timestamp undefined), so the `${doneAt?…:""}` guard still renders nothing
+ * mid-turn. The site is a plain object literal, so the double-quoted bracket
+ * literals need no escaping.
  *
  * Usage:
  *   node patch-turn-timestamp.js <cli.js path>
@@ -64,10 +71,13 @@ if (matches.length > 1) {
 const [full, msg] = matches[0];
 output.discovery('doneAt formatter', full, { 'message var': msg });
 
-const replacement = `doneAt:${msg}.timestamp`;
+const replacement =
+  `doneAt:${msg}.timestamp&&(d=>"["` +
+  `+new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,19).replace("T"," ")` +
+  `+"]")(new Date(${msg}.timestamp))`;
 content = content.replace(pattern, () => replacement);
 
-output.modification('turn-end timestamp → full ISO', full, replacement);
+output.modification('turn-end timestamp → local [YYYY-MM-DD HH:MM:SS]', full, replacement);
 
 if (dryRun) {
   output.result('dry_run', 'turn-timestamp: 1/1 patches verified');
