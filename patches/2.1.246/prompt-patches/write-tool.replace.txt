@@ -1,1 +1,1 @@
-Write file (overwrites existing).${__NAME__()}  Prefer editing over creating. No unsolicited docs/READMEs.
+Write file (overwrites existing).${__WA__?__WB__():__WC__()}  Prefer editing over creating. No unsolicited docs/READMEs.

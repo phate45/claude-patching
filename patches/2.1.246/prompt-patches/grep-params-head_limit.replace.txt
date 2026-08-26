@@ -1,1 +1,1 @@
-head_limit:__WRAP__(__VAR1__.number().optional()).describe("Limit to first N results"),
+head_limit:__WRAP__(__NUM__().optional()).describe("Limit to first N results"),
