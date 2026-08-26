@@ -35,11 +35,11 @@
     },
     {
       "id": "cron-visibility",
-      "file": "2.1.219/js-patches/patch-cron-visibility.js"
+      "file": "2.1.246/js-patches/patch-cron-visibility.js"
     },
     {
       "id": "keyword-highlights",
-      "file": "2.1.209/js-patches/patch-keyword-highlights.js"
+      "file": "2.1.246/js-patches/patch-keyword-highlights.js"
     },
     {
       "id": "tool-defer-whitelist",
@@ -75,7 +75,7 @@
     },
     {
       "id": "thinking-visibility",
-      "file": "2.1.209/js-patches/patch-thinking-visibility.js"
+      "file": "2.1.246/js-patches/patch-thinking-visibility.js"
     },
     {
       "id": "thinking-no-fold",
