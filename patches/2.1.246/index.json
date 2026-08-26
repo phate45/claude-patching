@@ -55,7 +55,7 @@
     },
     {
       "id": "disable-bundled-skills",
-      "file": "2.1.162/js-patches/patch-disable-bundled-skills.js"
+      "file": "2.1.246/js-patches/patch-disable-bundled-skills.js"
     },
     {
       "id": "disable-skills",
@@ -122,7 +122,7 @@
     "tool-defer-whitelist": "CLAUDE_CODE_IMMEDIATE_TOOLS env var whitelists tools past the deferral gate (including MCP tools)",
     "keyword-highlights": "Extended with inline code spans, markdown formatting (**bold**, *italic*, ~~strikethrough~~), and effect-only render path",
     "code-blocks": "DROPPED from the active set at 2.1.246. The user-message code-block renderer bridges two subsystems that the 2.1.246 module split placed in different chunks (hljs getter chunk 420, wrapper chunk 1034) — injecting the getter into the wrapper ReferenceErrors at runtime though --check passes. Fixable via a globalThis publish/consume bridge, but deemed not worth it. Patch files kept under patches/2.1.209 for older CC. Not referenced by the 2.1.246 index.",
-    "disable-bundled-skills": "CLAUDE_CODE_DISABLED_BUNDLED_SKILLS env var (CSV of bundled skill names) aborts bundled-skill registration at the Mz() chokepoint, removing them from both the model's skill_listing and the /slash surface. Sentinel '*' disables all bundled skills. Supersedes disable-claude-api-skill (put claude-api in the CSV). Registration-time, bundled-only, permanent.",
+    "disable-bundled-skills": "CLAUDE_CODE_DISABLED_BUNDLED_SKILLS env var (CSV of bundled skill names) aborts bundled-skill registration at the Zo()/registerBundledSkill chokepoint (the void funnel into H().bundledSkills), removing them from both the model's skill_listing and the /slash surface. Sentinel '*' disables all bundled skills. 2.1.246 re-port: anchors on the Zo head, NOT the old let{files:$} idiom (that is now qs(), whose return is destructured — an early return there crashes startup). Supersedes disable-claude-api-skill (put claude-api in the CSV). Registration-time, bundled-only, permanent.",
     "disable-skills": "CLAUDE_CODE_DISABLED_SKILLS env var (CSV of skill names) — session/profile filter. Filters the merged, deduped command list in the RC8 loader (Y=<flatten>([...]); helper renamed ll->Ei in 2.1.170, captured not hardcoded), hiding ANY skill (bundled/project/user/plugin) by name from both skill_listing and /slash without unregistering it. The 'Claude Code Profiles' lever for per-session skill sets.",
     "quiet-notifications": "RETIRED in 2.1.222 — obsolete and actively harmful. (a) Upstream now dedups at enqueue time: o4e() atomically claims task.notified before rjt() enqueues, so the duplicate this patch was written for (Claude 3 era, when the model poked running agents with TaskOutput before they finished) no longer occurs. (b) The globalThis.__taskOutputRead set leaked: a successful TaskOutput sets notified:!0, which makes o4e fail to claim, so rjt SKIPS the enqueue entirely and the task id is never removed from the set. Resuming that agent via SendMessage (JTe -> g4e -> s0() resets notified:!1 on the SAME task id) then produced a genuine second notification that the stale flag silently swallowed. Named/resumable agents lost reports intermittently. Patch files kept under patches/2.1.4x-2.1.209 for older CC versions; not referenced by any current index.",
     "resume-cache-fix": "RETIRED in 2.1.90 — Anthropic fixed natively (also added agent_listing_delta + companion_intro to allow-list)",
