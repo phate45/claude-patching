@@ -1,0 +1,1411 @@
+{
+  "version": "2.1.246",
+  "scannedAt": "2026-08-26T08:20:14.801Z",
+  "gateFunction": "we",
+  "defaultShapes": {
+    "empty-object": [
+      "{}"
+    ],
+    "variable": [
+      "LKe",
+      "PVr",
+      "U4r",
+      "_H(",
+      "bDs",
+      "jFr",
+      "kHe",
+      "n",
+      "xRe",
+      "zFr"
+    ],
+    "string": [
+      "\"baseline\"",
+      "\"off\""
+    ],
+    "null": [
+      "null"
+    ],
+    "empty-string": [
+      "\"\""
+    ],
+    "number": [
+      "0",
+      "5400"
+    ]
+  },
+  "flags": {
+    "tengu_amber_kestrel": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        466756
+      ]
+    },
+    "tengu_amber_lattice": {
+      "default": "{}",
+      "defaultClass": "empty-object",
+      "occurrences": 1,
+      "lines": [
+        539650
+      ]
+    },
+    "tengu_amber_packet": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        431477
+      ]
+    },
+    "tengu_amber_prism": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        585122
+      ]
+    },
+    "tengu_amber_redwood2": {
+      "default": "\"\"",
+      "defaultClass": "empty-string",
+      "occurrences": 1,
+      "lines": [
+        425110
+      ]
+    },
+    "tengu_amber_redwood3": {
+      "default": "\"\"",
+      "defaultClass": "empty-string",
+      "occurrences": 1,
+      "lines": [
+        425110
+      ]
+    },
+    "tengu_amber_rokovoko": {
+      "default": "kHe",
+      "defaultClass": "variable",
+      "occurrences": 1,
+      "lines": [
+        425431
+      ]
+    },
+    "tengu_amber_sentinel": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        336951
+      ]
+    },
+    "tengu_amber_sextant": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        544065
+      ]
+    },
+    "tengu_ant_yolo_equiv_strip_config": {
+      "default": "{}",
+      "defaultClass": "empty-object",
+      "occurrences": 1,
+      "lines": [
+        448795
+      ]
+    },
+    "tengu_auto_mode_config": {
+      "default": "{}",
+      "defaultClass": "empty-object",
+      "occurrences": 3,
+      "lines": [
+        338880,
+        449144,
+        449382
+      ]
+    },
+    "tengu_basalt_scarp": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        435968
+      ]
+    },
+    "tengu_basalt_spur": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        435964
+      ]
+    },
+    "tengu_bracken_sluice": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        500872
+      ]
+    },
+    "tengu_bramble_lintel": {
+      "default": "null",
+      "defaultClass": "null",
+      "occurrences": 1,
+      "lines": [
+        436267
+      ]
+    },
+    "tengu_brass_sled": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        530603
+      ]
+    },
+    "tengu_brick_follow": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        583090
+      ]
+    },
+    "tengu_bridge_recovery_patience": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        488588
+      ]
+    },
+    "tengu_bridge_requires_action_details": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 2,
+      "lines": [
+        490034,
+        490075
+      ]
+    },
+    "tengu_bridge_selfheal_heartbeats": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        488584
+      ]
+    },
+    "tengu_brindle_causeway": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        311211
+      ]
+    },
+    "tengu_byte_stream_idle_timeout_ms": {
+      "default": "n",
+      "defaultClass": "variable",
+      "occurrences": 1,
+      "lines": [
+        380239
+      ]
+    },
+    "tengu_c4e_slash_upsell": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        556433
+      ]
+    },
+    "tengu_ccr_bundle_max_bytes": {
+      "default": "null",
+      "defaultClass": "null",
+      "occurrences": 1,
+      "lines": [
+        417453
+      ]
+    },
+    "tengu_ccr_handoff_metadata": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        489007
+      ]
+    },
+    "tengu_ccr_idle_heartbeat": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        488600
+      ]
+    },
+    "tengu_ccr_reactivation_beat": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        488608
+      ]
+    },
+    "tengu_ccr_reconnect_beat": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        488604
+      ]
+    },
+    "tengu_ccr_stream_event_flush_ms": {
+      "default": "LKe",
+      "defaultClass": "variable",
+      "occurrences": 1,
+      "lines": [
+        488596
+      ]
+    },
+    "tengu_cedar_lantern": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        544482
+      ]
+    },
+    "tengu_cedar_lattice": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        547971
+      ]
+    },
+    "tengu_chair_sermon": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 4,
+      "lines": [
+        586766,
+        586784,
+        587032,
+        589271
+      ]
+    },
+    "tengu_chomp_inflection": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        436980
+      ]
+    },
+    "tengu_cinder_plover": {
+      "default": "\"\"",
+      "defaultClass": "empty-string",
+      "occurrences": 1,
+      "lines": [
+        451942
+      ]
+    },
+    "tengu_cinder_wren": {
+      "default": "\"\"",
+      "defaultClass": "empty-string",
+      "occurrences": 1,
+      "lines": [
+        451947
+      ]
+    },
+    "tengu_classifier_disabled_surfaces": {
+      "default": "\"\"",
+      "defaultClass": "empty-string",
+      "occurrences": 1,
+      "lines": [
+        439346
+      ]
+    },
+    "tengu_classifier_summary_kill": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        439352
+      ]
+    },
+    "tengu_classifier_summary_llm_emit": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        439374
+      ]
+    },
+    "tengu_clever_orbit": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        367950
+      ]
+    },
+    "tengu_cobalt_harbor_notice": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        583085
+      ]
+    },
+    "tengu_cobalt_lantern": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 2,
+      "lines": [
+        414418,
+        557339
+      ]
+    },
+    "tengu_cobalt_plinth_alder": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        506288
+      ]
+    },
+    "tengu_cobalt_plinth_thistle": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        498428
+      ]
+    },
+    "tengu_cobalt_plinth_yew": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        510218
+      ]
+    },
+    "tengu_cobalt_wren": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        439370
+      ]
+    },
+    "tengu_compact_cache_prefix": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 2,
+      "lines": [
+        432725,
+        433148
+      ]
+    },
+    "tengu_concurrent_shore": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        412947
+      ]
+    },
+    "tengu_coral_anchor": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        415349
+      ]
+    },
+    "tengu_cowork_auto_mode_include_allowed_write_mcp": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        355590
+      ]
+    },
+    "tengu_cowork_chrome_automode_default": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        449143
+      ]
+    },
+    "tengu_dazzling_garden": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        488592
+      ]
+    },
+    "tengu_deep_feather": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        495224
+      ]
+    },
+    "tengu_deferred_stub_tool": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        545751
+      ]
+    },
+    "tengu_disable_live_host_context": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        344020
+      ]
+    },
+    "tengu_disable_streaming_to_non_streaming_fallback": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        548832
+      ]
+    },
+    "tengu_edit_minimalanchor_jrn": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        405341
+      ]
+    },
+    "tengu_expressive_whistle": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        546021
+      ]
+    },
+    "tengu_fgts": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        544620
+      ]
+    },
+    "tengu_flint_harbor_prompt": {
+      "default": "{}",
+      "defaultClass": "empty-object",
+      "occurrences": 1,
+      "lines": [
+        557705
+      ]
+    },
+    "tengu_flint_harbor_share": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        523397
+      ]
+    },
+    "tengu_gorse_pylon": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        501259
+      ]
+    },
+    "tengu_gorse_sill": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        501271
+      ]
+    },
+    "tengu_harbor_kite_mode_emit": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        492123
+      ]
+    },
+    "tengu_harbor_moth": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        557045
+      ]
+    },
+    "tengu_harbor_permissions": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        455756
+      ]
+    },
+    "tengu_harbor_prism": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        361478
+      ]
+    },
+    "tengu_hawthorn_steeple": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        343242
+      ]
+    },
+    "tengu_hazel_osprey": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        546092
+      ]
+    },
+    "tengu_hazel_osprey_floor": {
+      "default": "bDs",
+      "defaultClass": "variable",
+      "occurrences": 1,
+      "lines": [
+        546096
+      ]
+    },
+    "tengu_hearth_resolved_rows": {
+      "default": "\"off\"",
+      "defaultClass": "string",
+      "occurrences": 1,
+      "lines": [
+        339187
+      ]
+    },
+    "tengu_heron_brook": {
+      "default": "\"\"",
+      "defaultClass": "empty-string",
+      "occurrences": 1,
+      "lines": [
+        544049
+      ]
+    },
+    "tengu_hushed_lark": {
+      "default": "jFr",
+      "defaultClass": "variable",
+      "occurrences": 1,
+      "lines": [
+        534321
+      ]
+    },
+    "tengu_hushed_lark_text": {
+      "default": "zFr",
+      "defaultClass": "variable",
+      "occurrences": 1,
+      "lines": [
+        534305
+      ]
+    },
+    "tengu_import": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        554224
+      ]
+    },
+    "tengu_juniper_relay": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 2,
+      "lines": [
+        475601,
+        475602
+      ]
+    },
+    "tengu_juniper_sundial": {
+      "default": "null",
+      "defaultClass": "null",
+      "occurrences": 1,
+      "lines": [
+        534553
+      ]
+    },
+    "tengu_kairos_brief_config": {
+      "default": "U4r",
+      "defaultClass": "variable",
+      "occurrences": 1,
+      "lines": [
+        556922
+      ]
+    },
+    "tengu_kairos_brief_stop_hook_text": {
+      "default": "\"\"",
+      "defaultClass": "empty-string",
+      "occurrences": 1,
+      "lines": [
+        439488
+      ]
+    },
+    "tengu_kairos_input_needed_push": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        336914
+      ]
+    },
+    "tengu_kairos_loop_dynamic": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        337297
+      ]
+    },
+    "tengu_kairos_loop_keepalive": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        337302
+      ]
+    },
+    "tengu_kairos_loop_persistent": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        337076
+      ]
+    },
+    "tengu_kairos_loop_prompt": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        337112
+      ]
+    },
+    "tengu_kairos_push_notifications": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        336910
+      ]
+    },
+    "tengu_lantern_prism": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        338787
+      ]
+    },
+    "tengu_lantern_spool": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        547059
+      ]
+    },
+    "tengu_loggia_denkbild": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        441756
+      ]
+    },
+    "tengu_malformed_tool_use_clean_retry": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        440669
+      ]
+    },
+    "tengu_maple_sundial": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        554104
+      ]
+    },
+    "tengu_mcp_auto_background": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        568502
+      ]
+    },
+    "tengu_mcp_claudeai_eligibility_gate": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        561458
+      ]
+    },
+    "tengu_mcp_connect_timeout_retry": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 3,
+      "lines": [
+        570769,
+        573965,
+        578404
+      ]
+    },
+    "tengu_mcp_discovery_cache_enable": {
+      "default": "null",
+      "defaultClass": "null",
+      "occurrences": 1,
+      "lines": [
+        566507
+      ]
+    },
+    "tengu_mcp_issuer_strict_echo": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        564777
+      ]
+    },
+    "tengu_mcp_listen_reopen_park": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 2,
+      "lines": [
+        569905,
+        569915
+      ]
+    },
+    "tengu_mcp_listen_reopen_park_tuning": {
+      "default": "null",
+      "defaultClass": "null",
+      "occurrences": 1,
+      "lines": [
+        569901
+      ]
+    },
+    "tengu_mcp_protocol_negotiation_ccr": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        570737
+      ]
+    },
+    "tengu_mcp_protocol_negotiation_claudeai": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        570726
+      ]
+    },
+    "tengu_mcp_protocol_negotiation_http": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        570719
+      ]
+    },
+    "tengu_mcp_proxy_needs_approval_retry": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 3,
+      "lines": [
+        572502,
+        580150,
+        580160
+      ]
+    },
+    "tengu_mcp_server_policy_bypass_exempt": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        356093
+      ]
+    },
+    "tengu_mcp_singleton_unwrap": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 2,
+      "lines": [
+        572436,
+        580047
+      ]
+    },
+    "tengu_mcp_skills": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        477215
+      ]
+    },
+    "tengu_mcp_stateless_skip_init": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        444121
+      ]
+    },
+    "tengu_mcp_strip_trailing_xml_tags": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 2,
+      "lines": [
+        571636,
+        579247
+      ]
+    },
+    "tengu_mcp_subagent_prompt": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        428764
+      ]
+    },
+    "tengu_media_byte_cap": {
+      "default": "_H(",
+      "defaultClass": "variable",
+      "occurrences": 1,
+      "lines": [
+        546907
+      ]
+    },
+    "tengu_medlar_quoin": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        497489
+      ]
+    },
+    "tengu_melodic_wolf": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        362619
+      ]
+    },
+    "tengu_neapolitan": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        451166
+      ]
+    },
+    "tengu_observer_agents_enabled": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        395012
+      ]
+    },
+    "tengu_observer_subagent_fanout": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        395018
+      ]
+    },
+    "tengu_ochre_wren": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        544475
+      ]
+    },
+    "tengu_official_plugin_prompt_overrides": {
+      "default": "{}",
+      "defaultClass": "empty-object",
+      "occurrences": 1,
+      "lines": [
+        561475
+      ]
+    },
+    "tengu_onyx_plover": {
+      "default": "null",
+      "defaultClass": "null",
+      "occurrences": 2,
+      "lines": [
+        435944,
+        436711
+      ]
+    },
+    "tengu_onyx_sluice": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        498024
+      ]
+    },
+    "tengu_osier_pylon_trace": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        506450
+      ]
+    },
+    "tengu_paper_halyard": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 3,
+      "lines": [
+        423292,
+        423416,
+        535245
+      ]
+    },
+    "tengu_passport_quail": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        436333
+      ]
+    },
+    "tengu_pewter_kite_ms": {
+      "default": "0",
+      "defaultClass": "number",
+      "occurrences": 1,
+      "lines": [
+        524517
+      ]
+    },
+    "tengu_pewter_owl_model": {
+      "default": "\"\"",
+      "defaultClass": "empty-string",
+      "occurrences": 1,
+      "lines": [
+        439439
+      ]
+    },
+    "tengu_plugin_binary_assets": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        388659
+      ]
+    },
+    "tengu_plugin_official_mkt_git_fallback": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 2,
+      "lines": [
+        387087,
+        387191
+      ]
+    },
+    "tengu_plum_vx3": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        472949
+      ]
+    },
+    "tengu_pr_footer_surface_suffix": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        553534
+      ]
+    },
+    "tengu_propose_goal": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        481392
+      ]
+    },
+    "tengu_propose_skills": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        481319
+      ]
+    },
+    "tengu_quartz_pipit": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        440092
+      ]
+    },
+    "tengu_reactive_compact_remote": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        425133
+      ]
+    },
+    "tengu_read_dedup_killswitch": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        532742
+      ]
+    },
+    "tengu_record_created_pr_to_ccr": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        362354
+      ]
+    },
+    "tengu_remote_auto_mode_include_destructive_mcp": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        355594
+      ]
+    },
+    "tengu_repl_mcp_error_throw": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        469439
+      ]
+    },
+    "tengu_sable_thrush": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        411230
+      ]
+    },
+    "tengu_saffron_wren": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        435684
+      ]
+    },
+    "tengu_sage_compass2": {
+      "default": "{}",
+      "defaultClass": "empty-object",
+      "occurrences": 1,
+      "lines": [
+        310007
+      ]
+    },
+    "tengu_send_user_file": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        481174
+      ]
+    },
+    "tengu_sepia_moth": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        431468
+      ]
+    },
+    "tengu_session_name_uniqueness": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        308655
+      ]
+    },
+    "tengu_shale_finch": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        449861
+      ]
+    },
+    "tengu_silent_harbor": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        544202
+      ]
+    },
+    "tengu_slate_harbor": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        361155
+      ]
+    },
+    "tengu_slate_harbor_experiment": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        554294
+      ]
+    },
+    "tengu_smooth_harbor": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        547058
+      ]
+    },
+    "tengu_soft_slate_nudge": {
+      "default": "\"baseline\"",
+      "defaultClass": "string",
+      "occurrences": 1,
+      "lines": [
+        534540
+      ]
+    },
+    "tengu_sorrel_trellis": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        501255
+      ]
+    },
+    "tengu_stream_watchdog_default_on": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        380498
+      ]
+    },
+    "tengu_structured_output_strict": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        544617
+      ]
+    },
+    "tengu_subagent_cache_evict": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        546825
+      ]
+    },
+    "tengu_surreal_dali": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        480621
+      ]
+    },
+    "tengu_teal_corbel": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        497481
+      ]
+    },
+    "tengu_thinking_block_resumption": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        440961
+      ]
+    },
+    "tengu_thinking_display_updates": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        545129
+      ]
+    },
+    "tengu_ticklish_whisper": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        355521
+      ]
+    },
+    "tengu_truncated_response_recovery": {
+      "default": "!0",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        440953
+      ]
+    },
+    "tengu_tussock_oriole": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 2,
+      "lines": [
+        453325,
+        453331
+      ]
+    },
+    "tengu_ultraplan_config": {
+      "default": "null",
+      "defaultClass": "null",
+      "occurrences": 1,
+      "lines": [
+        555429
+      ]
+    },
+    "tengu_ultraplan_prompt_identifier": {
+      "default": "PVr",
+      "defaultClass": "variable",
+      "occurrences": 1,
+      "lines": [
+        555451
+      ]
+    },
+    "tengu_ultraplan_timeout_seconds": {
+      "default": "5400",
+      "defaultClass": "number",
+      "occurrences": 1,
+      "lines": [
+        555483
+      ]
+    },
+    "tengu_umber_lattice": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        506533
+      ]
+    },
+    "tengu_vellum_anchor": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        396394
+      ]
+    },
+    "tengu_vellum_siding": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        583091
+      ]
+    },
+    "tengu_velvet_ibis": {
+      "default": "{}",
+      "defaultClass": "empty-object",
+      "occurrences": 1,
+      "lines": [
+        559897
+      ]
+    },
+    "tengu_velvet_static": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        556378
+      ]
+    },
+    "tengu_virtual_knuth": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        360062
+      ]
+    },
+    "tengu_vscode_onboarding": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        583086
+      ]
+    },
+    "tengu_vscode_review_upsell": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        583084
+      ]
+    },
+    "tengu_walnut_spire": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        338791
+      ]
+    },
+    "tengu_watchdog_skip_nonstreaming_fallback": {
+      "default": "!1",
+      "defaultClass": "boolean",
+      "occurrences": 1,
+      "lines": [
+        548832
+      ]
+    }
+  }
+}

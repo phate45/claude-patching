@@ -1,0 +1,5 @@
+Launch agents for complex, multi-step tasks. Specify subagent_type parameter.
+
+Available agent types are listed in <system-reminder> messages in the conversation.${__PVAR__}
+
+Before investigating an unfamiliar area, spawn an Explore agent to map the rough shape of the domain first, then dive in with that context — no blind grepping through code you haven't oriented in.

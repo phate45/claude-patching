@@ -1,0 +1,37 @@
+## When not to use
+
+If the target is already known, use the direct tool: ${__READVAR__} for a known path, ${__GVAR__} for a specific symbol or string. Reserve this tool for open-ended questions that span the codebase, or tasks that match an available agent type.
+`;if(__QVAR__){let __EVAR__=__LVAR__&&!__TEAMS__?__NVAR__?`
+- Subagents run in the background; you'll be notified when one completes. Never fabricate or predict a pending agent's results \u2014 the notification is never something you write yourself; if the user asks before it arrives, say it's still running.`:"\n- Subagents run in the background by default; you'll be notified when one completes. Pass `run_in_background: false` for a synchronous run when you need the result before continuing. Never fabricate or predict a pending agent's results \u2014 the notification is never something you write yourself; if the user asks before it arrives, say it's still running.":"",__AVAR__=__FUNC3__()?"\n- `run_in_background` and `name` are unavailable here \u2014 only synchronous subagents.":__FUNC4__()?"\n- `name` is unavailable here \u2014 teammates cannot spawn teammates.":"",__BVAR__=__REMOTEFN__()?'\n- `isolation: "remote"` runs the agent in a remote CCR sandbox (always background).':"",__TVAR__=__TEAMS__?`
+
+A fork runs in the background and keeps its tool output out of your context. If you are the fork, execute directly \u2014 don't re-delegate.`:"",__CVAR__="For a single-fact lookup where you already know the file, symbol, or value, search directly. Once you've delegated a search, don't also run it yourself \u2014 wait for the result.";return`${__DVAR__}${__WVAR__?"":__FFVAR__?`
+
+## When to use
+
+Reach for this when the task matches an available agent type, when you have independent work to run in parallel, or when answering would mean reading across several files \u2014 delegate it and you keep the conclusion, not the file dumps. ${"For a single-fact lookup where you already know the file, symbol, or value, search directly. Once you've delegated a search, don't also run it yourself \u2014 wait for the result."}`:`
+
+## When to use
+
+${"For a single-fact lookup where you already know the file, symbol, or value, search directly. Once you've delegated a search, don't also run it yourself \u2014 wait for the result."}`}${__TVAR__}
+
+- ${__LVAR__?"The agent's final report is not shown to the user \u2014 relay what matters.":"The agent's final message is returned to you as the tool result; it is not shown to the user \u2014 relay what matters."}
+- Use ${__SENDVAR__} with the agent's ID or name to continue a previously spawned agent with its context intact; a new ${__TOOLVAR__} call starts fresh${__TEAMS__?' (except subagent_type: "fork", which inherits your context)':""}.
+- Each agent type's model, reasoning effort, and tools come from its definition (\`.claude/agents/*.md\` frontmatter or SDK \`agents\`).
+- \`isolation: "worktree"\` gives the agent its own git worktree (auto-cleaned if unchanged).${__BVAR__}${__EVAR__}${__AVAR__}`}return`${__DVAR__}
+${__PVAR__}
+## Usage notes
+
+- Always include a short description summarizing what the agent will do
+- ${__LVAR__?"When the agent is done, its final report is not visible to the user. To show the user the result, you should send a text message back to the user with a concise summary of the result.":"When the agent is done, it will return a single message back to you. The result returned by the agent is not visible to the user. To show the user the result, you should send a text message back to the user with a concise summary of the result."}
+- Trust but verify: an agent's summary describes what it intended to do, not necessarily what it did. When an agent writes or edits code, check the actual changes before reporting the work as done.${__LVAR__&&!__NVAR__?"\n- Agents run in the background by default. When an agent runs in the background, you will be automatically notified when it completes \u2014 do NOT sleep, poll, or proactively check on its progress. Continue with other work or respond to the user instead.\n- **Foreground vs background**: Pass `run_in_background: false` to run an agent in the foreground when you need its results before you can proceed \u2014 e.g., research agents whose findings inform your next steps. Otherwise let it run in the background (the default) so you can keep working in parallel.":""}${__LVAR__&&!__TEAMS__?`
+- **Don't race**: after launching a background agent, you know nothing about its results. Never fabricate or predict them in any format \u2014 not as prose, summary, or structured output. The completion notification arrives in a later turn; it is never something you write yourself. If the user asks before it lands, say the agent is still running \u2014 give status, not a guess.`:""}
+- To continue a previously spawned agent, use ${__SENDVAR__} with the agent's ID or name as the \`to\` field \u2014 that resumes it with full context. A new ${__TOOLVAR__} call starts a fresh agent with no memory of prior runs${__TEAMS__?' (except subagent_type: "fork")':""}, so the prompt must be self-contained.
+- Each agent type's model, reasoning effort, and tool access are set in its definition (\`.claude/agents/*.md\` frontmatter, or the SDK \`agents\` option); the \`model\` parameter here overrides the definition for this one call.
+- Clearly tell the agent whether you expect it to write code or just to do research (search, file reads, web fetches, etc.), since a fresh agent is not aware of the user's intent${__FFVAR__?`
+- If the agent description mentions that it should be used proactively, then you should try your best to use it without the user having to ask for it first.
+- If the user specifies that they want you to run agents "in parallel", you MUST send a single message with multiple ${__TOOLVAR__} tool use content blocks. For example, if you need to launch both a build-validator agent and a test-runner agent in parallel, send a single message with both tool calls.`:""}
+- With \`isolation: "worktree"\`, the worktree is automatically cleaned up if the agent makes no changes; otherwise the path and branch are returned in the result.${__REMOTEFN__()?'\n- You can set `isolation: "remote"` to run the agent in a remote CCR environment. This is always a background task; you\'ll be notified when it completes. Use for long-running tasks that need a fresh sandbox.':""}${__FUNC5__()?`
+- The run_in_background and name parameters are not available in this context. Only synchronous subagents are supported.`:__FUNC4__()?`
+- The name parameter is not available in this context \u2014 teammates cannot spawn other teammates. Omit it to spawn a subagent.`:""}${__FVAR__}${__IVAR__}
+
+${__TEAMS__?__ZVAR__:__OVAR__}`
