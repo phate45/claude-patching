@@ -108,9 +108,48 @@ logic. If it fails, we learn exactly where (overlap / encoding / module_info).
   36.4MB earlier estimate counted the 3 `loader=5` `.js` assets; 30.4MB is the honest
   JS-only corpus. Single-module in-place apply now guarded with a Phase-B-pending error.
 - **Phase B — write path:** match→chunk routing + per-chunk repack + `--apply`.
-  Exit: patched binary runs; patches verified. Prerequisite: **match-multiplicity
-  policy** (250 version-string copies across 57 chunks — a patch meant for one site
-  could fire in dozens).
+  Exit: patched binary runs; patches verified. **✅ DONE (2026-08-26, commits
+  eda3d9f + 0c9c563).** Full 28-patch native `--apply` produces a working binary
+  (live install test-driven via `wclaude`, all patched paths exercised). Details
+  below.
+
+### Phase B result — ✅ DONE (2026-08-26)
+
+`repackMultiModule` in `lib/bun-binary.ts` (dispatched from `repackWithModifiedJs`
+when `chunks.length > 1`):
+
+1. **Diff-and-route, not structured matches.** Patches rewrite the concat opaquely
+   (subprocess find/replace), so we recover edits by diffing pristine-vs-patched
+   concat. Divide-and-conquer: trim common prefix/suffix; a residual region inside
+   one chunk becomes a hunk; a multi-chunk region is split at an interior **chunk
+   boundary** (guaranteed sync point — no edit straddles one), window-probe as
+   fallback. This mooted the "match-multiplicity policy" worry: we route the
+   *actual* edits the patches made, not every literal occurrence.
+2. **Reconstruction gate.** Rebuild the concat from routed chunks and assert it
+   equals the patched body before touching the binary. A mis-route aborts clean.
+3. **Relocation-on-grow (design correction).** The "shrink-only + pad" assumption
+   was wrong: 8 *injection* patches grow their chunk (feature-flags +3591, cron
+   +925, highlights +635, skills +310, timestamp +206, spinner +104, thinking +27,
+   ghostty +26). A chunk can't grow in place. Fix: since each edited chunk's
+   bytecode pointer is zeroed anyway and Phase 0 proved contents/bytecode regions
+   are disjoint (verified again: 0 overlaps for all 8), a grown chunk **relocates
+   into its own freed bytecode region** (repoint contents.offset; every grown
+   chunk's bytecode region is 3–4× the space needed). Shrunk/equal chunks stay in
+   place + pad. Section size stays constant.
+4. **Metadata** is peeled off the concat front (it would grow chunk 0) and
+   re-injected into the max-slack edited chunk (chunk 381, heavily shrunk by
+   prompt-slim). `readPatchMetadata`/`--status` find it after re-extraction.
+5. **Syntax check flipped to node-first** (`lib/patch-runner.js`): `Bun.Transpiler
+   .scan()` is pathological on the 32MB concat (5+ minutes); `node --check` clears
+   it in 0.1s and node 22+ handles the stage-3 syntax that once justified Bun. Bun
+   stays as a fallback only when node reports an error.
+
+**Cross-cutting lesson (bit us here):** a green `--check` on a multi-module binary
+proves the *pattern matched*, not that the patch is *runtime-correct* — and now that
+`--apply` works, runtime bugs surface. `disable-bundled-skills` (ported from 2.1.162)
+matched the wrong function in 2.1.246 (`qs`, whose return is destructured) and its
+`return;` crashed startup; re-anchored on the real registrar `Zo` (commit 0c9c563).
+Always test-drive the patched binary after a port, not just `--check`.
 
 ## Safety net
 
