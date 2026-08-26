@@ -2,15 +2,15 @@
   "source": "local:2.1.222",
   "patches": [
     {
-      "name": "Slim TodoWrite examples (6KB → 0.4KB)",
+      "name": "Slim TodoWrite examples",
       "file": "todowrite-examples"
     },
     {
-      "name": "Simplify git commit section (~3.4KB)",
+      "name": "Simplify git commit section",
       "file": "git-commit"
     },
     {
-      "name": "Slim Bash tool description (3.7KB → 0.6KB)",
+      "name": "Slim Bash tool description",
       "file": "bash-tool"
     },
     {
@@ -22,195 +22,195 @@
       "file": "bash-background-discipline-legacy"
     },
     {
-      "name": "Simplify PR creation section (~1.7KB)",
+      "name": "Simplify PR creation section",
       "file": "pr-creation"
     },
     {
-      "name": "Slim EnterPlanMode When to Use (1.2KB → 200 chars)",
+      "name": "Slim EnterPlanMode When to Use",
       "file": "enterplanmode-when-to-use"
     },
     {
-      "name": "Slim TodoWrite states section (1.8KB → 0.4KB)",
+      "name": "Slim TodoWrite states section",
       "file": "todowrite-states"
     },
     {
-      "name": "Slim Skill tool instructions (887 → 80 chars)",
+      "name": "Slim Skill tool instructions",
       "file": "skill-tool"
     },
     {
-      "name": "Slim TodoWrite When to Use (1.2KB → 200 chars)",
+      "name": "Slim TodoWrite When to Use",
       "file": "todowrite-when-to-use"
     },
     {
-      "name": "Slim LSP tool description (~750 → 150 chars)",
+      "name": "Slim LSP tool description",
       "file": "lsp-tool"
     },
     {
-      "name": "Slim Edit tool description (~900 → 200 chars)",
+      "name": "Slim Edit tool description",
       "file": "edit-tool"
     },
     {
-      "name": "Slim EnterPlanMode examples (670 → 150 chars)",
+      "name": "Slim EnterPlanMode examples",
       "file": "enterplanmode-examples"
     },
     {
-      "name": "Slim EnterPlanMode What Happens (~400 → 120 chars)",
+      "name": "Slim EnterPlanMode What Happens",
       "file": "enterplanmode-whathappens"
     },
     {
-      "name": "Slim ExitPlanMode description (~1.5KB → 200 chars)",
+      "name": "Slim ExitPlanMode description",
       "file": "exitplanmode"
     },
     {
-      "name": "Slim WebFetch usage notes (808 → 120 chars)",
+      "name": "Slim WebFetch usage notes",
       "file": "webfetch-usage"
     },
     {
-      "name": "Slim Grep tool description (~715 → 350 chars)",
+      "name": "Slim Grep tool description",
       "file": "grep-tool"
     },
     {
-      "name": "Slim TodoWrite examples v2 (~400 chars)",
+      "name": "Slim TodoWrite examples v2",
       "file": "todowrite-examples-v2"
     },
     {
-      "name": "Slim claude-code-guide agent (~500 → 115 chars)",
+      "name": "Slim claude-code-guide agent",
       "file": "agent-claude-code-guide"
     },
     {
-      "name": "Slim NotebookEdit (~510 → 100 chars)",
+      "name": "Slim NotebookEdit",
       "file": "notebookedit"
     },
     {
-      "name": "Slim Write tool description (~550 → 100 chars)",
+      "name": "Slim Write tool description",
       "file": "write-tool"
     },
     {
-      "name": "Slim WebSearch CRITICAL section (485 → 100 chars)",
+      "name": "Slim WebSearch CRITICAL section",
       "file": "websearch-critical"
     },
     {
-      "name": "Slim BashOutput (~440 → 95 chars)",
+      "name": "Slim BashOutput",
       "file": "bashoutput"
     },
     {
-      "name": "Remove Code References section (363 chars)",
+      "name": "Remove Code References section",
       "file": "code-references"
     },
     {
-      "name": "Further slim git commit (~400 → 200 chars)",
+      "name": "Further slim git commit",
       "file": "git-commit-v2"
     },
     {
-      "name": "Slim Explore agent (~350 → 120 chars)",
+      "name": "Slim Explore agent",
       "file": "agent-explore"
     },
     {
-      "name": "Slim security warning (~430 → 120 chars)",
+      "name": "Slim security warning",
       "file": "security-warning"
     },
     {
-      "name": "Further slim PR creation (~400 → 150 chars)",
+      "name": "Further slim PR creation",
       "file": "pr-creation-v2"
     },
     {
-      "name": "Slim Glob tool description (~400 → 100 chars)",
+      "name": "Slim Glob tool description",
       "file": "glob-tool"
     },
     {
-      "name": "Slim AskUserQuestion (~450 → 190 chars)",
+      "name": "Slim AskUserQuestion",
       "file": "askuserquestion"
     },
     {
-      "name": "Slim Bash.description param (~300 → 40 chars)",
+      "name": "Slim Bash.description param",
       "file": "bash-description-param"
     },
     {
-      "name": "Slim hooks instruction (~380 → 110 chars)",
+      "name": "Slim hooks instruction",
       "file": "hooks-instruction"
     },
     {
-      "name": "Slim Grep -A/-B/-C context params (~300 → 100 chars)",
+      "name": "Slim Grep -A/-B/-C context params",
       "file": "grep-params-context"
     },
     {
-      "name": "Slim KillShell (~260 → 35 chars)",
+      "name": "Slim KillShell",
       "file": "killshell"
     },
     {
-      "name": "Slim Glob.path param (~255 → 65 chars)",
+      "name": "Slim Glob.path param",
       "file": "glob-path-param"
     },
     {
-      "name": "Slim Agent tool intro (4.1KB → 0.6KB)",
+      "name": "Slim Agent tool intro",
       "file": "agent-tool-intro"
     },
     {
-      "name": "Slim Grep output_mode param (227 → 70 chars)",
+      "name": "Slim Grep output_mode param",
       "file": "grep-params-output_mode"
     },
     {
-      "name": "Slim Grep head_limit param (232 → 30 chars)",
+      "name": "Slim Grep head_limit param",
       "file": "grep-params-head_limit"
     },
     {
-      "name": "Slim CLI format instruction (~230 → 35 chars)",
+      "name": "Slim CLI format instruction",
       "file": "cli-format-instruction"
     },
     {
-      "name": "Slim Read tool intro (292 → 110 chars)",
+      "name": "Slim Read tool intro",
       "file": "read-tool"
     },
     {
-      "name": "Slim Read capabilities (400 → 80 chars)",
+      "name": "Slim Read capabilities",
       "file": "read-capabilities"
     },
     {
-      "name": "Slim system-reminder instruction (~280 → 90 chars)",
+      "name": "Slim system-reminder instruction",
       "file": "system-reminder-instruction"
     },
     {
-      "name": "Slim output text instruction (~230 → 60 chars)",
+      "name": "Slim output text instruction",
       "file": "output-text-instruction"
     },
     {
-      "name": "Slim general-purpose agent (~280 → 100 chars)",
+      "name": "Slim general-purpose agent",
       "file": "agent-general-purpose"
     },
     {
-      "name": "Slim explore instruction (~275 → 105 chars)",
+      "name": "Slim explore instruction",
       "file": "explore-instruction"
     },
     {
-      "name": "Slim URL warning (~220 → 70 chars)",
+      "name": "Slim URL warning",
       "file": "url-warning"
     },
     {
-      "name": "Slim Plan agent (~210 → 85 chars)",
+      "name": "Slim Plan agent",
       "file": "agent-plan"
     },
     {
-      "name": "Slim Read offset/limit line (~165 → 50 chars)",
+      "name": "Slim Read offset/limit line",
       "file": "read-tool-offset"
     },
     {
-      "name": "Slim Grep offset param (135 → 35 chars)",
+      "name": "Slim Grep offset param",
       "file": "grep-params-offset"
     },
     {
-      "name": "Slim Grep type param (114 → 30 chars)",
+      "name": "Slim Grep type param",
       "file": "grep-params-type"
     },
     {
-      "name": "Slim todos mark complete (~150 → 45 chars)",
+      "name": "Slim todos mark complete",
       "file": "todos-mark-complete"
     },
     {
-      "name": "Slim TaskUpdate description (~1.8KB → 150 chars)",
+      "name": "Slim TaskUpdate description",
       "file": "taskupdate"
     },
     {
-      "name": "Slim TaskList description (~1.2KB → 90 chars)",
+      "name": "Slim TaskList description",
       "file": "tasklist"
     },
     {
@@ -222,11 +222,11 @@
       "file": "natural-emojis"
     },
     {
-      "name": "Slim Agent tool when-not + usage notes + examples (~4KB)",
+      "name": "Slim Agent tool when-not + usage notes + examples",
       "file": "agent-usage-notes"
     },
     {
-      "name": "Strip fast-mode-info sentence (~150 chars)",
+      "name": "Strip fast-mode-info sentence",
       "file": "fast-mode-info"
     },
     {
@@ -284,6 +284,30 @@
     {
       "name": "Add missing period to decisiveness paragraph",
       "file": "decisiveness-period"
+    },
+    {
+      "name": "lean: Bash dedicated-tools caveat",
+      "file": "lean-bash-caveat"
+    },
+    {
+      "name": "lean: # Corrections section",
+      "file": "lean-corrections"
+    },
+    {
+      "name": "lean: # Delivering work section",
+      "file": "lean-delivering-work"
+    },
+    {
+      "name": "memory: dedupe + don't-save rules (Rr, shared across builders)",
+      "file": "lean-memory-rules"
+    },
+    {
+      "name": "Slim ToolSearch description (mgo tail: drop Result format restatement)",
+      "file": "lean-toolsearch"
+    },
+    {
+      "name": "Slim AskUserQuestion preview block (keeps every schema constraint)",
+      "file": "lean-askuserquestion-preview"
     }
   ]
 }
