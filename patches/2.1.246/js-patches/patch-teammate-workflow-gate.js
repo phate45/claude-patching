@@ -399,21 +399,28 @@ replaceExact('TaskList Teammate Workflow gate',
 // and replaces TaskStop's WHOLE description block with a one-liner, taking this
 // bullet with it. So the bullet may legitimately be gone already. Rather than
 // hardcode "either literal", assert the invariant we actually care about: the
-// phrase must not survive anywhere in the bundle.
+// bullet must not survive.
+//
+// The "still present" probe must key on text UNIQUE to the bullet. An earlier
+// loose probe (`agent-team teammate`) produced a false failure on --apply: the
+// bundle also ships a changelog string ("...agent-team teammate*s* now use the
+// leader's model...") that contains the phrase and is never removed. Anchor on
+// `("name@team")` instead — that ID form appears only in this bullet.
 
 const TASKSTOP_BULLET =
   '\n- To stop an agent-team teammate, pass its agent ID ("name@team") or bare teammate name as task_id';
+const TASKSTOP_BULLET_MARKER = 'agent-team teammate, pass its agent ID ("name@team")';
 
 if (content.includes(TASKSTOP_BULLET)) {
   replaceExact('TaskStop teammate bullet', TASKSTOP_BULLET, '');
-} else if (!content.includes('agent-team teammate')) {
+} else if (!content.includes(TASKSTOP_BULLET_MARKER)) {
   output.discovery('TaskStop teammate bullet', 'already absent', {
     'reason': 'removed upstream in this run (prompt-slim killshell slims the whole TaskStop description)'
   });
 } else {
   output.error('Could not find TaskStop teammate bullet', [
     `Expected: ${TASKSTOP_BULLET.trim()}`,
-    'The phrase "agent-team teammate" is still in the bundle but not in the expected bullet form',
+    'The bullet marker survives but not in the exact expected form',
     'The TaskStop description bullets may have changed'
   ]);
   process.exit(1);

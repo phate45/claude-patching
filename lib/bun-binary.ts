@@ -534,11 +534,10 @@ function replaceClaudeJsInPlace(
 ): Buffer {
   const stride = detectModuleStride(bunData, bunOffsets);
 
-  // Guard: the single-module in-place path only works when exactly one JS
-  // module (loader===1) carries the code. Since CC 2.1.246 Bun splits the
-  // code across ~1400 chunks; `extractClaudeJs` returns their concat, which
-  // cannot be mapped back to one module here. That routing is Phase B of the
-  // multi-module design (docs/plans/2026-08-26-multi-module-patching-design.md).
+  // Guard: this single-module in-place path only works when exactly one JS
+  // module (loader===1) carries the code. Multi-module binaries (CC 2.1.246+)
+  // are routed to repackMultiModule by repackWithModifiedJs before reaching
+  // here, so this is a defensive check for any direct caller.
   let jsModuleCount = 0;
   mapModules(bunData, bunOffsets, (module) => {
     if (module.loader === 1 && module.contents.length > 0) jsModuleCount++;
@@ -546,9 +545,8 @@ function replaceClaudeJsInPlace(
   }, stride);
   if (jsModuleCount > 1) {
     throw new Error(
-      `Multi-module binary (${jsModuleCount} JS chunks): in-place apply is not yet ` +
-      `implemented. The read path (--check) works; --apply awaits Phase B ` +
-      `(match→chunk routing). See docs/plans/2026-08-26-multi-module-patching-design.md.`
+      `Multi-module binary (${jsModuleCount} JS chunks): use repackMultiModule, not ` +
+      `replaceClaudeJsInPlace. See docs/plans/2026-08-26-multi-module-patching-design.md.`
     );
   }
 
@@ -652,6 +650,13 @@ function repackWithModifiedJs(
   modifiedJs: Buffer,
   outputPath: string
 ): void {
+  // Multi-module (2.1.246+): route the patched concat back to individual chunks.
+  const { chunks } = extractAllJsModules(binaryPath);
+  if (chunks.length > 1) {
+    repackMultiModule(binaryPath, modifiedJs, outputPath);
+    return;
+  }
+
   const { bunData, bunOffsets, elfBinary, format } = extractBunData(binaryPath);
 
   debug(`Original bunData size: ${bunData.length}, format: ${format}`);
@@ -809,6 +814,283 @@ function validateRepackedBinary(outputPath: string): void {
   }
 }
 
+// ============ Multi-Module Repack (Phase B — write path) ============
+//
+// Since CC 2.1.246 the code is split across ~1400 JS chunks and `extractClaudeJs`
+// returns their transparent concat. Patches rewrite that concat opaquely (they
+// are subprocesses doing find/replace on the temp file), so on apply we recover
+// the edits by DIFFING the pristine concat against the patched one, route each
+// edit hunk back to the single chunk it lives in (by original concat offset),
+// rebuild that chunk's content, and repack per-chunk (shrink+pad+length-update+
+// bytecode-zero — the primitive proven by the Phase 0 spike). A final
+// reconstruction check (rebuilt concat === patched concat) guards correctness
+// before the binary is touched; a hunk that straddles a chunk boundary aborts.
+// Design: docs/plans/2026-08-26-multi-module-patching-design.md.
+
+// The __CLAUDE_PATCHES__ metadata comment is prepended to the concat by
+// writePatchMetadata (shared.js). Left in place it would land at concat offset 0
+// and grow chunk 0 past its original length (illegal under shrink-only). We
+// strip it before diffing and re-inject it into a chunk that has slack.
+const META_RE = /\/\* __CLAUDE_PATCHES__ \{[\s\S]*?\} \*\/\n?/;
+
+/** Longest common prefix (in bytes) of a[aLo,aHi) and b[bLo,bHi). */
+function commonPrefixLen(a: Buffer, b: Buffer, aLo: number, aHi: number, bLo: number, bHi: number): number {
+  const max = Math.min(aHi - aLo, bHi - bLo);
+  const BLK = 65536;
+  let i = 0;
+  while (i < max) {
+    const n = Math.min(BLK, max - i);
+    if (a.compare(b, bLo + i, bLo + i + n, aLo + i, aLo + i + n) === 0) { i += n; continue; }
+    for (let j = 0; j < n; j++) if (a[aLo + i + j] !== b[bLo + i + j]) return i + j;
+  }
+  return max;
+}
+
+/** Longest common suffix (in bytes) of a[aLo,aHi) and b[bLo,bHi). */
+function commonSuffixLen(a: Buffer, b: Buffer, aLo: number, aHi: number, bLo: number, bHi: number): number {
+  const max = Math.min(aHi - aLo, bHi - bLo);
+  const BLK = 65536;
+  let i = 0;
+  while (i < max) {
+    const n = Math.min(BLK, max - i);
+    if (a.compare(b, bHi - i - n, bHi - i, aHi - i - n, aHi - i) === 0) { i += n; continue; }
+    for (let j = 0; j < n; j++) if (a[aHi - i - 1 - j] !== b[bHi - i - 1 - j]) return i + j;
+  }
+  return max;
+}
+
+interface Hunk { srcStart: number; srcEnd: number; bytes: Buffer; }
+
+/**
+ * Recover the set of edit hunks turning `src` (pristine concat) into `dst`
+ * (patched concat). Divide-and-conquer: trim common prefix/suffix, and if the
+ * residual differing region still spans more than one chunk, split it at an
+ * interior anchor (a 64-byte window shared by both sides) and recurse. A region
+ * confined to one chunk becomes a single hunk (the whole span, unchanged middle
+ * included — correct, since we replace the exact byte range in that chunk).
+ */
+function recoverHunks(
+  src: Buffer,
+  dst: Buffer,
+  chunkPosAt: (off: number) => number,
+  boundaries: ConcatResult['boundaries']
+): Hunk[] {
+  const hunks: Hunk[] = [];
+  const W = 64;
+
+  // Primary anchor: split at an interior CHUNK BOUNDARY. Since no patch edit
+  // straddles a boundary, the bytes around every interior boundary are unedited,
+  // so a boundary is a guaranteed sync point — and splitting there keeps every
+  // sub-region chunk-aligned, driving the recursion straight to single chunks.
+  // A chunk whose very first bytes were edited is handled by probing the tail of
+  // the preceding chunk instead. Returns a zero-width split {s0==s1, d0==d1}.
+  function boundaryAnchor(sLo: number, sHi: number, dLo: number, dHi: number) {
+    const kLo = chunkPosAt(sLo);
+    const kHi = chunkPosAt(sHi - 1);
+    for (let k = kLo; k < kHi; k++) {
+      const b = boundaries[k].end; // interior boundary: end of chunk k == start of chunk k+1
+      if (b <= sLo || b >= sHi) continue;
+      // Probe the start of chunk k+1 (unedited unless an edit begins at its head).
+      if (b + W <= sHi) {
+        const idx = dst.indexOf(src.subarray(b, b + W), dLo);
+        if (idx >= 0 && idx + W <= dHi) return { s0: b, s1: b, d0: idx, d1: idx };
+      }
+      // Fall back to the tail of chunk k (unedited unless an edit ends at its tail).
+      if (b - W >= sLo) {
+        const idx = dst.indexOf(src.subarray(b - W, b), dLo);
+        if (idx >= 0 && idx + W <= dHi) return { s0: b, s1: b, d0: idx + W, d1: idx + W };
+      }
+    }
+    return null;
+  }
+
+  // Fallback anchor: a shared 64-byte window sampled from dst, located in src.
+  function windowAnchor(sLo: number, sHi: number, dLo: number, dHi: number) {
+    for (const f of [0.5, 0.25, 0.75, 0.12, 0.88]) {
+      let dp = dLo + Math.floor((dHi - dLo) * f);
+      if (dp + W > dHi) dp = dHi - W;
+      if (dp < dLo) continue;
+      const probe = dst.subarray(dp, dp + W);
+      const idx = src.indexOf(probe, sLo);
+      if (idx < 0 || idx + W > sHi) continue;
+      let s0 = idx, s1 = idx + W, d0 = dp, d1 = dp + W;
+      while (s0 > sLo && d0 > dLo && src[s0 - 1] === dst[d0 - 1]) { s0--; d0--; }
+      while (s1 < sHi && d1 < dHi && src[s1] === dst[d1]) { s1++; d1++; }
+      return { s0, s1, d0, d1 };
+    }
+    return null;
+  }
+
+  const findAnchor = (sLo: number, sHi: number, dLo: number, dHi: number) =>
+    boundaryAnchor(sLo, sHi, dLo, dHi) || windowAnchor(sLo, sHi, dLo, dHi);
+
+  function rec(sLo: number, sHi: number, dLo: number, dHi: number): void {
+    const p = commonPrefixLen(src, dst, sLo, sHi, dLo, dHi); sLo += p; dLo += p;
+    const s = commonSuffixLen(src, dst, sLo, sHi, dLo, dHi); sHi -= s; dHi -= s;
+    if (sLo === sHi && dLo === dHi) return; // identical region
+
+    const cA = chunkPosAt(sLo);
+    const cB = sHi > sLo ? chunkPosAt(sHi - 1) : cA;
+    if (cA === cB) { hunks.push({ srcStart: sLo, srcEnd: sHi, bytes: dst.subarray(dLo, dHi) }); return; }
+
+    const anc = findAnchor(sLo, sHi, dLo, dHi);
+    if (!anc) { hunks.push({ srcStart: sLo, srcEnd: sHi, bytes: dst.subarray(dLo, dHi) }); return; } // straddle → caught by guard
+    rec(sLo, anc.s0, dLo, anc.d0);
+    rec(anc.s1, sHi, anc.d1, dHi);
+  }
+
+  rec(0, src.length, 0, dst.length);
+  return hunks;
+}
+
+/**
+ * Repack a multi-module (2.1.246+) binary from the patched concat.
+ * `modifiedJs` is the concat as rewritten by the patch subprocesses, carrying
+ * the prepended __CLAUDE_PATCHES__ comment.
+ */
+function repackMultiModule(binaryPath: string, modifiedJs: Buffer, outputPath: string): void {
+  const { chunks, bunData, elfBinary, format } = extractAllJsModules(binaryPath);
+  const { concat: pristine, boundaries } = concatJsModules(chunks);
+
+  // Peel the metadata comment off the front; it is re-injected into a slack chunk.
+  const modStr = modifiedJs.toString('latin1');
+  const metaMatch = modStr.match(META_RE);
+  const meta = metaMatch ? metaMatch[0] : null;
+  const bodyStr = meta ? modStr.replace(META_RE, '') : modStr;
+  const body = Buffer.from(bodyStr, 'latin1');
+
+  const total = pristine.length;
+  const starts = boundaries.map(b => b.start);
+  const chunkPosAt = (off: number): number => {
+    if (off >= total) return boundaries.length - 1;
+    let lo = 0, hi = boundaries.length - 1, ans = 0;
+    while (lo <= hi) { const mid = (lo + hi) >> 1; if (starts[mid] <= off) { ans = mid; lo = mid + 1; } else hi = mid - 1; }
+    return ans;
+  };
+
+  const hunks = recoverHunks(pristine, body, chunkPosAt, boundaries);
+
+  // Group hunks by chunk position; a straddle is a hard error.
+  const byChunk = new Map(); // pos -> Hunk[]
+  for (const h of hunks) {
+    const a = chunkPosAt(h.srcStart);
+    const b = h.srcEnd > h.srcStart ? chunkPosAt(h.srcEnd - 1) : a;
+    if (a !== b) {
+      throw new Error(
+        `Patch edit straddles chunk boundary (chunks ${boundaries[a].index}..${boundaries[b].index}, ` +
+        `concat offset ${h.srcStart}-${h.srcEnd}). Multi-module routing requires each edit within one chunk.`
+      );
+    }
+    if (!byChunk.has(a)) byChunk.set(a, []);
+    byChunk.get(a).push(h);
+  }
+
+  // Rebuild each edited chunk's content (edits applied back-to-front).
+  const newContent = new Map(); // pos -> Buffer
+  for (const [pos, hs] of byChunk) {
+    const bnd = boundaries[pos];
+    let buf = Buffer.from(pristine.subarray(bnd.start, bnd.end));
+    const local = hs.map((h: Hunk) => ({ start: h.srcStart - bnd.start, end: h.srcEnd - bnd.start, bytes: h.bytes }))
+      .sort((x: { start: number }, y: { start: number }) => x.start - y.start);
+    for (let k = local.length - 1; k >= 0; k--) {
+      const e = local[k];
+      buf = Buffer.concat([buf.subarray(0, e.start), e.bytes, buf.subarray(e.end)]);
+    }
+    newContent.set(pos, buf);
+  }
+
+  // Verify routing: reconstructing the concat from routed chunks must reproduce
+  // the patched body exactly. This is the correctness gate — if the diff
+  // mis-routed anything, we abort here, before the binary is touched.
+  {
+    const parts = [];
+    for (let pos = 0; pos < boundaries.length; pos++) {
+      parts.push(newContent.has(pos) ? newContent.get(pos) : pristine.subarray(boundaries[pos].start, boundaries[pos].end));
+    }
+    const rebuilt = Buffer.concat(parts);
+    if (!rebuilt.equals(body)) {
+      throw new Error(
+        `Multi-module routing verification failed: rebuilt concat (${rebuilt.length}B) ` +
+        `!= patched concat (${body.length}B). Diff routing is unsound; binary untouched.`
+      );
+    }
+  }
+
+  // Re-inject the metadata comment into the edited chunk with the most slack.
+  if (meta) {
+    let best = -1, bestSlack = -1;
+    for (const [pos, buf] of newContent) {
+      const slack = (boundaries[pos].end - boundaries[pos].start) - buf.length;
+      if (slack > bestSlack) { bestSlack = slack; best = pos; }
+    }
+    if (best < 0 || bestSlack < meta.length) {
+      throw new Error(`No edited chunk has slack (${bestSlack}B) to store the ${meta.length}B patch metadata comment.`);
+    }
+    newContent.set(best, Buffer.concat([newContent.get(best), Buffer.from(meta, 'latin1')]));
+  }
+
+  // Splice each edited chunk in place: content at original offset, pad to
+  // original length (space), update the contents StringPointer length, zero the
+  // bytecode pointer (force recompile from patched source). Offsets never move,
+  // section size stays constant. See replaceClaudeJsInPlace for the rationale.
+  // A patch may GROW its chunk (an injection patch: feature-flag toggles, cron
+  // visibility, spinner frames, …). It cannot grow in place — the next chunk's
+  // bytes sit immediately after. But every edited chunk's bytecode pointer is
+  // zeroed anyway (recompile from source), so its bytecode region becomes dead
+  // space — and Phase 0 proved contents regions never overlap bytecode regions.
+  // So a grown chunk RELOCATES into its own freed bytecode region (repoint the
+  // contents StringPointer offset there). Shrunk/equal chunks stay in place.
+  const unplaceable = [];
+  for (const [pos, buf] of newContent) {
+    const chunk = chunks[pos];
+    if (buf.length > chunk.origLen && buf.length > chunk.bytecode.length) {
+      const bnd = boundaries[pos];
+      const pfx = commonPrefixLen(pristine, buf, bnd.start, bnd.end, 0, buf.length);
+      const snip = buf.subarray(pfx, Math.min(pfx + 80, buf.length)).toString('latin1');
+      unplaceable.push(
+        `chunk ${chunk.index}: ${chunk.origLen} -> ${buf.length} (+${buf.length - chunk.origLen}), ` +
+        `bytecode region only ${chunk.bytecode.length}B — near "${snip}"`
+      );
+    }
+  }
+  if (unplaceable.length > 0) {
+    throw new Error(
+      `cannot place ${unplaceable.length} grown chunk(s) — growth exceeds the freed bytecode region:\n  ` +
+      unplaceable.join('\n  ')
+    );
+  }
+
+  const result = Buffer.from(bunData);
+  for (const [pos, buf] of newContent) {
+    const chunk = chunks[pos];
+    if (buf.length <= chunk.origLen) {
+      // In place: overwrite at original offset, pad tail to preserve size.
+      buf.copy(result, chunk.origOffset);
+      if (buf.length < chunk.origLen) {
+        result.fill(0x20, chunk.origOffset + buf.length, chunk.origOffset + chunk.origLen);
+      }
+      result.writeUInt32LE(buf.length, chunk.entryOffset + 12);     // contents.length
+    } else {
+      // Relocate into the (now-dead) bytecode region; repoint contents there.
+      buf.copy(result, chunk.bytecode.offset);
+      result.writeUInt32LE(chunk.bytecode.offset, chunk.entryOffset + 8);  // contents.offset
+      result.writeUInt32LE(buf.length, chunk.entryOffset + 12);           // contents.length
+    }
+    result.writeUInt32LE(0, chunk.entryOffset + 24);                // bytecode.offset
+    result.writeUInt32LE(0, chunk.entryOffset + 28);                // bytecode.length
+  }
+
+  debug(`Multi-module repack: ${newContent.size} chunks edited of ${chunks.length}`);
+
+  const originalBinary = fs.readFileSync(binaryPath);
+  if (format === 'overlay') {
+    repackOverlay(originalBinary, elfBinary, result, outputPath, binaryPath);
+  } else {
+    repackSection(originalBinary, elfBinary, result, outputPath, binaryPath);
+  }
+  validateRepackedBinary(outputPath);
+}
+
 // ============ Exports ============
 
 module.exports = {
@@ -817,6 +1099,7 @@ module.exports = {
   // Multi-module (transparent concat) — read path + Phase B building blocks
   extractAllJsModules,
   concatJsModules,
+  repackMultiModule,
   // Expose internals for testing/debugging
   extractBunData,
   detectModuleStride,
