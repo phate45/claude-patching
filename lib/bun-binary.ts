@@ -20,8 +20,20 @@ LIEF.logging.disable();
 
 const BUN_TRAILER = Buffer.from('\n---- Bun! ----\n');
 const SIZEOF_STRING_POINTER = 8;  // u32 offset + u32 length
-const SIZEOF_MODULE = 36;         // 4 StringPointers (32) + 4 flags (4)
+// Bun's CompiledModuleGraphFile record. Two historical layouts:
+//   OLD (≤ ~Bun that shipped pre-2.1.2xx): 4 StringPointers (32) + 4 u8 flags = 36
+//   NEW (2.1.222+, incl. the 2.1.246 split): 6 StringPointers (48) + 4 u8 flags = 52
+// NEW inserted `module_info` (+32) and `bytecode_origin_path` (+40) between the
+// `bytecode` pointer and the trailing flags, pushing the flag bytes from +32 to +48.
+// Confirmed against Bun's StandaloneModuleGraph.rs and the 2.1.246 round-trip spike.
+const SIZEOF_MODULE_OLD = 36;
+const SIZEOF_MODULE_NEW = 52;
 const SIZEOF_OFFSETS = 32;
+
+// Sanity bounds used when auto-detecting the module stride: module names are
+// short `/$bunfs/root/...` paths, never anywhere near this long. A mis-strided
+// walk reads a bogus name length (often multi-GB) — the original 2.1.246 OOM.
+const MAX_MODULE_NAME_LEN = 4096;
 
 const DEBUG = process.env.DEBUG_BUN_BINARY;
 
@@ -48,10 +60,31 @@ interface BunModule {
   contents: StringPointer;
   sourcemap: StringPointer;
   bytecode: StringPointer;
+  moduleInfo?: StringPointer;          // NEW layout only (+32)
+  bytecodeOriginPath?: StringPointer;  // NEW layout only (+40)
   encoding: number;
   loader: number;
   moduleFormat: number;
   side: number;
+}
+
+/** One JS chunk in the transparent-concat model (design 2026-08-26). */
+interface JsChunk {
+  index: number;        // module-table index (identity for repack routing)
+  name: string;         // /$bunfs/root/... module name
+  contents: Buffer;     // raw content bytes (a view into bunData)
+  origOffset: number;   // contents offset within bunData
+  origLen: number;      // contents length within bunData
+  entryOffset: number;  // absolute offset of this module's record in bunData
+  bytecode: StringPointer;
+  encoding: number;
+  loader: number;
+}
+
+/** Result of concatenating JS chunks into one pristine corpus. */
+interface ConcatResult {
+  concat: Buffer;
+  boundaries: Array<{ index: number; start: number; end: number }>;
 }
 
 type BunFormat = 'overlay' | 'section';
@@ -89,19 +122,89 @@ function parseOffsets(buffer: Buffer): BunOffsets {
 }
 
 /**
- * Parse a single 36-byte module structure
+ * Parse a single module record. Layout depends on the stride (36 vs 52) — the
+ * NEW 52-byte record carries two extra StringPointers before the flag bytes.
  */
-function parseModule(buffer: Buffer, offset: number): BunModule {
-  return {
+function parseModule(buffer: Buffer, offset: number, stride: number): BunModule {
+  const base: BunModule = {
     name: parseStringPointer(buffer, offset),
     contents: parseStringPointer(buffer, offset + 8),
     sourcemap: parseStringPointer(buffer, offset + 16),
     bytecode: parseStringPointer(buffer, offset + 24),
-    encoding: buffer.readUInt8(offset + 32),
-    loader: buffer.readUInt8(offset + 33),
-    moduleFormat: buffer.readUInt8(offset + 34),
-    side: buffer.readUInt8(offset + 35),
+    encoding: 0,
+    loader: 0,
+    moduleFormat: 0,
+    side: 0,
   };
+
+  if (stride >= SIZEOF_MODULE_NEW) {
+    base.moduleInfo = parseStringPointer(buffer, offset + 32);
+    base.bytecodeOriginPath = parseStringPointer(buffer, offset + 40);
+    base.encoding = buffer.readUInt8(offset + 48);
+    base.loader = buffer.readUInt8(offset + 49);
+    base.moduleFormat = buffer.readUInt8(offset + 50);
+    base.side = buffer.readUInt8(offset + 51);
+  } else {
+    base.encoding = buffer.readUInt8(offset + 32);
+    base.loader = buffer.readUInt8(offset + 33);
+    base.moduleFormat = buffer.readUInt8(offset + 34);
+    base.side = buffer.readUInt8(offset + 35);
+  }
+
+  return base;
+}
+
+/**
+ * Check whether a candidate stride yields a coherent module table.
+ *
+ * The table length must divide evenly by the stride, and a sample of records
+ * (first, second, middle, last) must carry in-bounds name/contents pointers
+ * with plausibly short names. A wrong stride reads misaligned u32s — typically
+ * a giant name length that points past the buffer (the 2.1.246 OOM). We only
+ * read u32s here and never decode a string, so validation itself is safe.
+ */
+function strideValid(tableBytes: Buffer, bunDataLen: number, stride: number): boolean {
+  if (tableBytes.length === 0 || tableBytes.length % stride !== 0) return false;
+  const count = tableBytes.length / stride;
+
+  const sample = [...new Set([0, 1, Math.floor(count / 2), count - 1])].filter(i => i >= 0 && i < count);
+  for (const i of sample) {
+    const off = i * stride;
+    const nameOff = tableBytes.readUInt32LE(off);
+    const nameLen = tableBytes.readUInt32LE(off + 4);
+    const contentOff = tableBytes.readUInt32LE(off + 8);
+    const contentLen = tableBytes.readUInt32LE(off + 12);
+
+    if (nameLen === 0 || nameLen > MAX_MODULE_NAME_LEN) return false;
+    if (nameOff + nameLen > bunDataLen) return false;
+    if (contentOff + contentLen > bunDataLen) return false;
+  }
+  return true;
+}
+
+/**
+ * Determine the module-record stride (36 vs 52) for this binary.
+ *
+ * Prefer the NEW 52-byte layout (the go-forward format, 2.1.222+); fall back to
+ * the legacy 36-byte layout for older binaries. Both are validated against the
+ * actual pointer contents, so an ambiguous length that divides by both resolves
+ * to whichever produces a coherent table.
+ */
+function detectModuleStride(bunData: Buffer, bunOffsets: BunOffsets): number {
+  const tableBytes = getStringContent(bunData, bunOffsets.modulesPtr);
+  const len = tableBytes.length;
+
+  if (len % SIZEOF_MODULE_NEW === 0 && strideValid(tableBytes, bunData.length, SIZEOF_MODULE_NEW)) {
+    return SIZEOF_MODULE_NEW;
+  }
+  if (len % SIZEOF_MODULE_OLD === 0 && strideValid(tableBytes, bunData.length, SIZEOF_MODULE_OLD)) {
+    return SIZEOF_MODULE_OLD;
+  }
+
+  throw new Error(
+    `Could not determine Bun module stride: modulesPtr.length=${len} ` +
+    `divides by neither ${SIZEOF_MODULE_NEW} nor ${SIZEOF_MODULE_OLD} with valid pointers.`
+  );
 }
 
 /**
@@ -128,21 +231,24 @@ function isClaudeModule(name: string): boolean {
 // ============ Module Iteration ============
 
 /**
- * Iterate through all modules in the Bun data, calling visitor for each
+ * Iterate through all modules in the Bun data, calling visitor for each.
+ * Auto-detects the record stride (36 vs 52) unless one is supplied.
  */
 function mapModules<T>(
   bunData: Buffer,
   bunOffsets: BunOffsets,
-  visitor: (module: BunModule, moduleName: string, index: number) => T | undefined
+  visitor: (module: BunModule, moduleName: string, index: number) => T | undefined,
+  stride?: number
 ): T | undefined {
   const modulesListBytes = getStringContent(bunData, bunOffsets.modulesPtr);
-  const modulesCount = Math.floor(modulesListBytes.length / SIZEOF_MODULE);
+  const size = stride ?? detectModuleStride(bunData, bunOffsets);
+  const modulesCount = Math.floor(modulesListBytes.length / size);
 
-  debug(`Found ${modulesCount} modules`);
+  debug(`Found ${modulesCount} modules (stride ${size})`);
 
   for (let i = 0; i < modulesCount; i++) {
-    const offset = i * SIZEOF_MODULE;
-    const module = parseModule(modulesListBytes, offset);
+    const offset = i * size;
+    const module = parseModule(modulesListBytes, offset, size);
     const moduleName = getStringContent(bunData, module.name).toString('utf-8');
 
     const result = visitor(module, moduleName, i);
@@ -152,6 +258,74 @@ function mapModules<T>(
   }
 
   return undefined;
+}
+
+// ============ Multi-Module Extraction (transparent concat) ============
+
+/**
+ * Extract every JS chunk from a native binary in module-table index order.
+ *
+ * Inclusion rule is `loader === 1` (JS) — NOT the module name suffix. Verified
+ * in the Phase 0 spike: 2.1.246 carries 1405 real JS chunks at `loader=1`
+ * (`encoding=1`, Latin1), while three `.js`-named modules are `loader=5` assets.
+ * Non-JS modules (assets, `.node`, html) are skipped entirely.
+ *
+ * Returns the chunks plus the raw Bun data / offsets so callers (setup for the
+ * read path, the repack for the write path) share one walk.
+ */
+function extractAllJsModules(binaryPath: string): {
+  chunks: JsChunk[];
+  bunData: Buffer;
+  bunOffsets: BunOffsets;
+  elfBinary: LIEF.ELF.Binary;
+  format: BunFormat;
+  stride: number;
+} {
+  const { bunData, bunOffsets, elfBinary, format } = extractBunData(binaryPath);
+  const stride = detectModuleStride(bunData, bunOffsets);
+  const tableBase = bunOffsets.modulesPtr.offset;
+  const tableBytes = getStringContent(bunData, bunOffsets.modulesPtr);
+  const count = Math.floor(tableBytes.length / stride);
+
+  const chunks: JsChunk[] = [];
+  for (let i = 0; i < count; i++) {
+    const module = parseModule(tableBytes, i * stride, stride);
+    if (module.loader !== 1) continue; // JS only
+
+    chunks.push({
+      index: i,
+      name: getStringContent(bunData, module.name).toString('utf-8'),
+      contents: getStringContent(bunData, module.contents),
+      origOffset: module.contents.offset,
+      origLen: module.contents.length,
+      entryOffset: tableBase + i * stride,
+      bytecode: module.bytecode,
+      encoding: module.encoding,
+      loader: module.loader,
+    });
+  }
+
+  debug(`Extracted ${chunks.length} JS chunks of ${count} modules (stride ${stride})`);
+  return { chunks, bunData, bunOffsets, elfBinary, format, stride };
+}
+
+/**
+ * Concatenate JS chunk contents (index order) into one pristine corpus, with a
+ * boundary index mapping concat offsets back to source chunks. The boundaries
+ * are what the write path uses to route a match found in the concat to the
+ * chunk buffer it lives in. Deterministic and recomputed from the live binary —
+ * never persisted.
+ */
+function concatJsModules(chunks: JsChunk[]): ConcatResult {
+  const boundaries: ConcatResult['boundaries'] = [];
+  let cursor = 0;
+  for (const chunk of chunks) {
+    const start = cursor;
+    cursor += chunk.contents.length;
+    boundaries.push({ index: chunk.index, start, end: cursor });
+  }
+  const concat = Buffer.concat(chunks.map(c => c.contents), cursor);
+  return { concat, boundaries };
 }
 
 // ============ Extraction ============
@@ -304,44 +478,38 @@ function extractFromSection(elfBinary: LIEF.ELF.Binary, bunSection: LIEF.ELF.Sec
 }
 
 /**
- * Extract the Claude JS module content from a native binary
+ * Extract the Claude JS corpus from a native binary.
+ *
+ * Since CC 2.1.246 Bun splits the code across ~1400 JS chunk modules (the
+ * legacy monolithic `/cli` module is now a 20KB bootstrap stub). We return the
+ * **transparent concat** of every `loader===1` chunk in module-table order —
+ * for older single-module binaries this is just that one module, so the return
+ * contract (one JS Buffer) is unchanged and callers need no edits.
+ *
+ * The concat is returned as raw bytes; `setup.js`/`patch-runner.js` write the
+ * Buffer without re-encoding, so the corpus is byte-faithful (Latin1-safe).
  */
 function extractClaudeJs(binaryPath: string): Buffer {
-  const { bunData, bunOffsets } = extractBunData(binaryPath);
+  const { chunks } = extractAllJsModules(binaryPath);
 
-  const moduleNames: string[] = [];
-  let claudeContents: Buffer | undefined;
-
-  mapModules(bunData, bunOffsets, (module, moduleName) => {
-    moduleNames.push(moduleName);
-
-    if (isClaudeModule(moduleName)) {
-      claudeContents = getStringContent(bunData, module.contents);
-      debug(`Found Claude module: ${moduleName}, ${claudeContents.length} bytes`);
-      return true; // Short-circuit
-    }
-    return undefined;
-  });
-
-  if (!claudeContents) {
-    throw new Error(
-      'Claude module not found in binary.\n' +
-      'Expected module named "/$bunfs/root/claude", "claude", or "/$bunfs/root/src/entrypoints/cli.js".\n' +
-      `Found ${moduleNames.length} modules: ${moduleNames.filter(n => n.length < 200).join(', ') || '(all names too long to display)'}`
-    );
+  if (chunks.length === 0) {
+    throw new Error('No JS modules (loader===1) found in binary.');
   }
 
-  // Validate it's JS, not binary
-  if (claudeContents[0] === 0x7f && claudeContents[1] === 0x45) {
+  const { concat } = concatJsModules(chunks);
+
+  // Validate it's JS, not a stray binary (first chunk must not be an ELF).
+  if (concat[0] === 0x7f && concat[1] === 0x45) {
     throw new Error('Extraction failed: got ELF binary instead of JS');
   }
 
-  // Sanity check size (should be ~10MB)
-  if (claudeContents.length < 1_000_000 || claudeContents.length > 50_000_000) {
-    throw new Error(`Unexpected JS size: ${claudeContents.length} bytes (expected ~10MB)`);
+  // Sanity check total size (single-module ~10MB; 2.1.246 split concat ~36MB).
+  if (concat.length < 1_000_000 || concat.length > 80_000_000) {
+    throw new Error(`Unexpected JS corpus size: ${concat.length} bytes (${chunks.length} chunks)`);
   }
 
-  return claudeContents;
+  debug(`Concatenated ${chunks.length} JS chunks -> ${concat.length} bytes`);
+  return concat;
 }
 
 // ============ Repacking ============
@@ -364,6 +532,26 @@ function replaceClaudeJsInPlace(
   bunOffsets: BunOffsets,
   modifiedJs: Buffer
 ): Buffer {
+  const stride = detectModuleStride(bunData, bunOffsets);
+
+  // Guard: the single-module in-place path only works when exactly one JS
+  // module (loader===1) carries the code. Since CC 2.1.246 Bun splits the
+  // code across ~1400 chunks; `extractClaudeJs` returns their concat, which
+  // cannot be mapped back to one module here. That routing is Phase B of the
+  // multi-module design (docs/plans/2026-08-26-multi-module-patching-design.md).
+  let jsModuleCount = 0;
+  mapModules(bunData, bunOffsets, (module) => {
+    if (module.loader === 1 && module.contents.length > 0) jsModuleCount++;
+    return undefined;
+  }, stride);
+  if (jsModuleCount > 1) {
+    throw new Error(
+      `Multi-module binary (${jsModuleCount} JS chunks): in-place apply is not yet ` +
+      `implemented. The read path (--check) works; --apply awaits Phase B ` +
+      `(match→chunk routing). See docs/plans/2026-08-26-multi-module-patching-design.md.`
+    );
+  }
+
   // Find the claude module
   let claudeModule: BunModule | undefined;
   let claudeIndex: number | undefined;
@@ -377,7 +565,7 @@ function replaceClaudeJsInPlace(
       return true;
     }
     return undefined;
-  });
+  }, stride);
 
   if (!claudeModule || claudeIndex === undefined) {
     throw new Error('Claude module not found in binary during repack');
@@ -413,8 +601,8 @@ function replaceClaudeJsInPlace(
 
   // Update the contents StringPointer length in the modules table.
   // The modules table is at bunOffsets.modulesPtr within bunData.
-  // Each module is SIZEOF_MODULE (36) bytes, contents pointer is at offset +8.
-  const moduleEntryOffset = bunOffsets.modulesPtr.offset + (claudeIndex * SIZEOF_MODULE);
+  // Each module is `stride` bytes; contents pointer is at offset +8.
+  const moduleEntryOffset = bunOffsets.modulesPtr.offset + (claudeIndex * stride);
   const contentsLengthOffset = moduleEntryOffset + 8 + 4; // +8 for contents field, +4 for offset (to get to length)
   result.writeUInt32LE(newLength, contentsLengthOffset);
 
@@ -626,8 +814,12 @@ function validateRepackedBinary(outputPath: string): void {
 module.exports = {
   extractClaudeJs,
   repackWithModifiedJs,
+  // Multi-module (transparent concat) — read path + Phase B building blocks
+  extractAllJsModules,
+  concatJsModules,
   // Expose internals for testing/debugging
   extractBunData,
+  detectModuleStride,
   replaceClaudeJsInPlace,
   isClaudeModule,
 };
