@@ -97,9 +97,20 @@ logic. If it fails, we learn exactly where (overlap / encoding / module_info).
 
 - **Phase 0 — spike:** three checks + no-op round-trip. Go/no-go.
 - **Phase A — read path:** stride-52 walk, `extractAllJsModules`, setup concat, `.pretty`.
-  Exit: `--check` green on 2.1.246. Unblocks patch-regex triage.
+  Exit: `--check` runs (mechanism sound), unblocking patch-regex triage. **✅ DONE
+  (2026-08-26, commit c43a318).** Live 2.1.246: stride-52 auto-detected, **1405 JS
+  chunks (loader===1), 30.4MB concat**, boundary round-trip 0 mismatches, 666ms at
+  **default heap** (OOM was purely the mis-strided walk). `extractClaudeJs` returns
+  the concat; `setup.js`/`patch-runner.js` unchanged. `--check` = **14/29 pass**; the
+  15 fails are genuine 24-version regex drift (spot-checked: `xterm-ghostty` present
+  verbatim in concat, spinner memo *shape* changed upstream) — boundary-straddle ruled
+  out structurally (Bun lays each source module contiguously) and empirically. The
+  36.4MB earlier estimate counted the 3 `loader=5` `.js` assets; 30.4MB is the honest
+  JS-only corpus. Single-module in-place apply now guarded with a Phase-B-pending error.
 - **Phase B — write path:** match→chunk routing + per-chunk repack + `--apply`.
-  Exit: patched binary runs; patches verified.
+  Exit: patched binary runs; patches verified. Prerequisite: **match-multiplicity
+  policy** (250 version-string copies across 57 chunks — a patch meant for one site
+  could fire in dozens).
 
 ## Safety net
 
