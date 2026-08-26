@@ -51,7 +51,7 @@
     },
     {
       "id": "worktree-dedup",
-      "file": "2.1.162/js-patches/patch-worktree-dedup.js"
+      "file": "2.1.246/js-patches/patch-worktree-dedup.js"
     },
     {
       "id": "disable-bundled-skills",
@@ -59,11 +59,11 @@
     },
     {
       "id": "disable-skills",
-      "file": "2.1.219/js-patches/patch-disable-skills.js"
+      "file": "2.1.246/js-patches/patch-disable-skills.js"
     },
     {
       "id": "spinner",
-      "file": "2.1.186/js-patches/patch-spinner.js"
+      "file": "2.1.246/js-patches/patch-spinner.js"
     },
     {
       "id": "thinking-display-summarized",
