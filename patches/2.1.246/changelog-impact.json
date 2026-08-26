@@ -1848,5 +1848,23 @@
       ]
     }
   ],
-  "reasoning": {}
+  "reasoning": {
+    "_meta": "2.1.246 port: nearly every break was a SILENT structural change with no changelog footprint — the 2.1.234 JSX-factory swap (NS.jsx(T,…)→bare o(T,…)) across the render cluster, the 2.1.246 module split, the grep zod builder swap (z.string()→I(), z.enum()→ln()), and the skill-module qs/Zo restructure. BM25 triage was therefore mostly noise floor. Genuine signal appeared only where CC shipped a named feature in the patch's own domain (turn-timestamp, system-reminders, teammate/SendMessage). Fixes: 53fccb5/98a621e/bc2b94f/09b3f5f (JS), 5df377a (prompt-slim), eda3d9f (Phase B write path), 0c9c563 (disable-bundled-skills re-port).",
+    "turn-timestamp": "SIGNAL — top match names the exact feature (CC added the turn's completion time to the end-of-turn line). Not really a 'break': reworked to render the native timestamp as full ISO (dropped the Vs() locale reformat) per Mark, riding the genuine feature change.",
+    "system-reminders": "SIGNAL — real: CC moved between-turn background-task notifications into <system-reminder> tags. The patch break tracked this delivery-path change, not coincidence.",
+    "teammate-workflow-gate": "SIGNAL (domain) / SEMI (specifics) — changelog covers the SendMessage/agent-teams machinery the patch gates, so the theme is right, but the actual break was restructure of the Vc()/gx() gates + schema-strip sites, which the bullets don't pinpoint. Aside: the Patch-Point-16 apply-time false failure was a bundled changelog string ('agent-team teammates…') colliding with a too-loose probe — fixed with a bullet-unique anchor.",
+    "disable-skills": "SEMI — right domain (bundled-skill command resolution in -p mode) but not the cause; break was the skill-module restructure. Worth verifying alias behavior post-apply.",
+    "worktree-dedup": "SEMI — strong theme collision (changelog fixes a worktree retention-sweep bug) but the patch break was structural/minifier drift, not that fix.",
+    "mode-cycle-order": "SEMI — permission-mode theme matches; real cause structural (the cycle-order site moved).",
+    "trim-context-bloat": "SEMI/NOISE — the <system-reminder> delivery entry is context-adjacent but not the cause; break was structural.",
+    "keyword-highlights": "NOISE — dark-ansi theme match is theming-adjacent only; real cause the 2.1.234 JSX-factory swap + the hljs render path.",
+    "thinking-visibility": "NOISE — 'prompts render markdown' match is coincidental; cause = 2.1.234 JSX-factory swap (NS.jsx→bare o) in the render cluster.",
+    "thinking-no-fold": "NOISE — same 'render markdown' match; cause = JSX-factory swap + thinking grouper restructure (capture the flush helper from a neighbor, never hardcode — see patch-format rule).",
+    "cron-visibility": "NOISE — /tui-rewind match unrelated; cause = JSX-factory swap + background-session render gating.",
+    "spinner": "NOISE — the redraw-fix match is unrelated; cause = spinner frame array structure (frames must be \\xNN/\\uNNNN escapes, see [[spinner-frame-encoding]]).",
+    "code-blocks": "NOISE / DROPPED — 'prompts render markdown' is thematically on-topic but not why it broke: the 2.1.246 module split put its captured hljs symbol cross-chunk, and per-chunk runtime scope ReferenceErrors even with a green --check. Dropped; needs a globalThis bridge to revive. See [[cross-chunk-symbol-injection]].",
+    "flag-env-override": "NOISE — env-var theme collision (ANTHROPIC_BEDROCK_REGION_PREFIX); unrelated to CLAUDE_CODE_FLAG_OVERRIDES parsing; cause structural.",
+    "prompt-slim": "NOISE — busy-spinner-glyph match unrelated; real causes were the grep zod builder swap (z.string()→I(), z.enum()→ln()), usage-helper ternaries (edit/write-tool), and prose drift. 71/71 after 5df377a.",
+    "disable-bundled-skills": "NOISE + TRAP (broken=false, yet runtime-broken) — NOT flagged by --check: its stale 2.1.162 pattern matched the WRONG function (qs(), whose return is destructured), so --check looked green. No changelog footprint (silent skill-module refactor). The early return crashed startup, exposed only once Phase B enabled native --apply. Re-anchored on the real registrar Zo() / registerBundledSkill (commit 0c9c563). Lesson: a green multi-module --check proves the pattern matched, not runtime-correctness — test-drive the patched binary after a port."
+  }
 }
