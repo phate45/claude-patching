@@ -1,0 +1,26 @@
+## When not to use
+
+If the target is already known, use the direct tool: ${__READVAR__} for a known path, ${__GVAR__} for a specific symbol or string.
+`;if(__QVAR__){let __EVAR__=__LVAR__&&!__TEAMS__?__NVAR__?`
+- Subagents run in the background; you'll be notified when one completes. Never fabricate or predict a pending agent's results \u2014 the notification is never something you write yourself; if the user asks before it arrives, say it's still running.`:"\n- Subagents run in the background by default; you'll be notified when one completes. Pass `run_in_background: false` only when your very next action depends on the result and nothing else could usefully happen while it runs \u2014 otherwise background it so the user can interject. Never fabricate or predict a pending agent's results \u2014 the notification is never something you write yourself; if the user asks before it arrives, say it's still running.":"",__AVAR__=__FUNC3__()?"\n- `run_in_background` and `name` are unavailable here \u2014 only synchronous subagents.":__FUNC4__()?"\n- `name` is unavailable here \u2014 teammates cannot spawn teammates.":"",__BVAR__=__REMOTEFN__()?'\n- `isolation: "remote"` runs the agent in a remote CCR sandbox (always background).':"",__TVAR__=__TEAMS__?`
+
+A fork runs in the background and keeps its tool output out of your context. If you are the fork, execute directly \u2014 don't re-delegate. Subagents run in the background; you'll be notified when one completes. Never fabricate or predict a pending agent's results \u2014 the notification is never something you write yourself; if the user asks before it arrives, say it's still running.`:"",__CVAR__="For a single-fact lookup where you already know the file, symbol, or value, search directly. Once you've delegated a search, don't also run it yourself \u2014 wait for the result.";return`${__DVAR__}
+
+- The agent's final message is returned to you as the tool result; it is not shown to the user \u2014 relay what matters.
+- Use ${__SENDVAR__} with the agent's ID or name to continue a previously spawned agent with its context intact; a new ${__TOOLVAR__} call${__TEAMS__?" with a subagent_type":""} starts fresh.
+- If you might want to reuse or resume this agent later, give it a \`name\`: ${__SENDVAR__} can then target it by name and it picks up with its full context. Omit \`name\` for one-and-done work.
+- \`isolation: "worktree"\` gives the agent its own git worktree (auto-cleaned if unchanged).${__BVAR__}${__EVAR__}${__AVAR__}`}return`${__DVAR__}
+${__PVAR__}
+## Usage notes
+
+- Agent results are not visible to the user. Summarize findings in a text message.
+- **Foreground vs background**: Use foreground when you need results before proceeding. Use background for independent parallel work. You will be notified when background agents complete \u2014 do not poll.
+- **Background agent output**: NEVER read a background agent's output file directly. Do not use Read or Bash tail on the output file. When a background agent is running, end your turn and wait \u2014 the notification will arrive automatically with the agent's complete answer in the result field. Reading the raw output file wastes context on noisy JSONL logs and bypasses the clean result summary.
+- Tell the agent whether you expect it to write code or just research, since it is not aware of the user's intent.
+- Trust but verify: when an agent writes or edits code, check the actual changes before reporting work as done. If an agent description says to use it proactively, do so without being asked.
+- If the user wants agents "in parallel", send multiple ${__TOOLVAR__} tool use blocks in a single message.
+- To resume a previously spawned agent, use ${__SENDVAR__} with the agent's ID or name as the \`to\` field. The agent continues with its full context preserved. Always use the ID outside of the "teammate" context. Names are binding only for teammate agents.
+- Teammates (spawned with \`name\`/\`mode\`) are ongoing collaborators, not one-shot workers \u2014 only start one when the work is genuinely continuous across turns. For a single handoff like refactoring a module to a design or reviewing a folder for inconsistencies, spawn a plain subagent (omit \`name\`/\`mode\`) and use its returned result.
+${__FVAR__}${__IVAR__}
+
+${__TEAMS__?__ZVAR__:__OVAR__}`
