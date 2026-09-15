@@ -1,0 +1,2 @@
+Always respond in ${H}. Use ${H} for all explanations, comments, and communications with the user. Technical terms and code identifiers should remain in their original form.
+Maintain full orthographic correctness for ${H}, including all required diacritical marks, accents, and special characters. Never substitute accented characters with their ASCII equivalents (e.g., never write "nao" for "n\xE3o", "fur" for "f\xFCr", or "loeschen" for "l\xF6schen").

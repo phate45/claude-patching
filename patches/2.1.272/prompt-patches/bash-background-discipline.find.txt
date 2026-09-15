@@ -1,0 +1,1 @@
+- `run_in_background` runs the command detached: it keeps running across turns and re-invokes you when it exits. No `&` needed.

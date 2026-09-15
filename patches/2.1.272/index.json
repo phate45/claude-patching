@@ -1,0 +1,137 @@
+{
+  "version": "2.1.272",
+  "patches": [
+    {
+      "id": "ghostty-term",
+      "file": "2.1.14/patch-ghostty-term.js"
+    },
+    {
+      "id": "system-reminders",
+      "file": "2.1.246/js-patches/patch-system-reminders.js"
+    },
+    {
+      "id": "no-collapse-reads",
+      "file": "2.1.139/js-patches/patch-no-collapse-reads.js"
+    },
+    {
+      "id": "read-summary",
+      "file": "2.1.41/patch-read-summary.js"
+    },
+    {
+      "id": "prompt-slim",
+      "file": "2.1.59/patch-prompt-slim.js"
+    },
+    {
+      "id": "feature-flag-toggles",
+      "file": "2.1.260/js-patches/patch-feature-flag-toggles.js"
+    },
+    {
+      "id": "toolsearch-visibility",
+      "file": "2.1.84/patch-toolsearch-visibility.js"
+    },
+    {
+      "id": "flag-env-override",
+      "file": "2.1.272/js-patches/patch-flag-env-override.js"
+    },
+    {
+      "id": "keyword-highlights",
+      "file": "2.1.272/js-patches/patch-keyword-highlights.js"
+    },
+    {
+      "id": "tool-defer-whitelist",
+      "file": "2.1.260/js-patches/patch-tool-defer-whitelist.js"
+    },
+    {
+      "id": "abbreviations",
+      "file": "2.1.83/patch-abbreviations.js"
+    },
+    {
+      "id": "worktree-dedup",
+      "file": "2.1.246/js-patches/patch-worktree-dedup.js"
+    },
+    {
+      "id": "disable-bundled-skills",
+      "file": "2.1.246/js-patches/patch-disable-bundled-skills.js"
+    },
+    {
+      "id": "disable-skills",
+      "file": "2.1.246/js-patches/patch-disable-skills.js"
+    },
+    {
+      "id": "spinner",
+      "file": "2.1.246/js-patches/patch-spinner.js"
+    },
+    {
+      "id": "thinking-display-summarized",
+      "file": "2.1.272/js-patches/patch-thinking-display-summarized.js"
+    },
+    {
+      "id": "thinking-visibility",
+      "file": "2.1.246/js-patches/patch-thinking-visibility.js"
+    },
+    {
+      "id": "thinking-no-fold",
+      "file": "2.1.272/js-patches/patch-thinking-no-fold.js"
+    },
+    {
+      "id": "trim-context-bloat",
+      "file": "2.1.260/js-patches/patch-trim-context-bloat.js"
+    },
+    {
+      "id": "hook-envelope-strip",
+      "file": "2.1.118/js-patches/patch-hook-envelope-strip.js"
+    },
+    {
+      "id": "env-block-trim",
+      "file": "2.1.260/js-patches/patch-env-block-trim.js"
+    },
+    {
+      "id": "auto-color",
+      "file": "2.1.162/js-patches/patch-auto-color.js"
+    },
+    {
+      "id": "mode-cycle-order",
+      "file": "2.1.246/js-patches/patch-mode-cycle-order.js"
+    },
+    {
+      "id": "explore-haiku",
+      "file": "2.1.209/js-patches/patch-explore-haiku.js"
+    },
+    {
+      "id": "subagent-nesting",
+      "file": "2.1.209/js-patches/patch-subagent-nesting-knob.js"
+    },
+    {
+      "id": "teammate-workflow-gate",
+      "file": "2.1.260/js-patches/patch-teammate-workflow-gate.js"
+    },
+    {
+      "id": "turn-timestamp",
+      "file": "2.1.246/js-patches/patch-turn-timestamp.js"
+    }
+  ],
+  "notes": {
+    "thinking-style": "Dim styling is now native in 2.1.31 - no patch needed",
+    "auto-memory": "tengu_oboe removed in 2.1.59. Replaced by feature-flag-toggles patch.",
+    "feature-flag-toggles": "Enables: edit_minimalanchor_jrn. Retired: session_memory removed in 2.1.133, maple_forge_w8k in 2.1.97, sm_compact gate in 2.1.92, defer_all_bn4 in 2.1.89.",
+    "prompt-slim": "Updated to 2.1.59 with local-first patch resolution and built-in diagnostics",
+    "tool-defer-whitelist": "CLAUDE_CODE_IMMEDIATE_TOOLS env var whitelists tools past the deferral gate (including MCP tools)",
+    "keyword-highlights": "Extended with inline code spans, markdown formatting (**bold**, *italic*, ~~strikethrough~~), and effect-only render path",
+    "code-blocks": "DROPPED from the active set at 2.1.246. The user-message code-block renderer bridges two subsystems that the 2.1.246 module split placed in different chunks (hljs getter chunk 420, wrapper chunk 1034) — injecting the getter into the wrapper ReferenceErrors at runtime though --check passes. Fixable via a globalThis publish/consume bridge, but deemed not worth it. Patch files kept under patches/2.1.209 for older CC. Not referenced by the 2.1.246 index.",
+    "disable-bundled-skills": "CLAUDE_CODE_DISABLED_BUNDLED_SKILLS env var (CSV of bundled skill names) aborts bundled-skill registration at the Zo()/registerBundledSkill chokepoint (the void funnel into H().bundledSkills), removing them from both the model's skill_listing and the /slash surface. Sentinel '*' disables all bundled skills. 2.1.246 re-port: anchors on the Zo head, NOT the old let{files:$} idiom (that is now qs(), whose return is destructured — an early return there crashes startup). Supersedes disable-claude-api-skill (put claude-api in the CSV). Registration-time, bundled-only, permanent.",
+    "disable-skills": "CLAUDE_CODE_DISABLED_SKILLS env var (CSV of skill names) — session/profile filter. Filters the merged, deduped command list in the RC8 loader (Y=<flatten>([...]); helper renamed ll->Ei in 2.1.170, captured not hardcoded), hiding ANY skill (bundled/project/user/plugin) by name from both skill_listing and /slash without unregistering it. The 'Claude Code Profiles' lever for per-session skill sets.",
+    "quiet-notifications": "RETIRED in 2.1.222 — obsolete and actively harmful. (a) Upstream now dedups at enqueue time: o4e() atomically claims task.notified before rjt() enqueues, so the duplicate this patch was written for (Claude 3 era, when the model poked running agents with TaskOutput before they finished) no longer occurs. (b) The globalThis.__taskOutputRead set leaked: a successful TaskOutput sets notified:!0, which makes o4e fail to claim, so rjt SKIPS the enqueue entirely and the task id is never removed from the set. Resuming that agent via SendMessage (JTe -> g4e -> s0() resets notified:!1 on the SAME task id) then produced a genuine second notification that the stale flag silently swallowed. Named/resumable agents lost reports intermittently. Patch files kept under patches/2.1.4x-2.1.209 for older CC versions; not referenced by any current index.",
+    "resume-cache-fix": "RETIRED in 2.1.90 — Anthropic fixed natively (also added agent_listing_delta + companion_intro to allow-list)",
+    "buddy-salt": "RETIRED in 2.1.97 — companion system rewritten with crypto-based name generator, hardcoded salt removed.",
+    "thinking-display-summarized": "Opus 4.7 omits thinking text by default; this injects display:\"summarized\" in the request builder so reasoning comes back populated. No-op on 4.6 (already defaults to summarized).",
+    "thinking-no-fold": "2.1.153 added a transcript grouper (XP4) that folds thinking blocks into adjacent tool groups, rendering them as a 'Thought for Ns' pill with ctrl+o-to-expand. This patch makes the helper flush the current group and push thinking as its own message so the inline thinking-visibility patch path renders the full reasoning.",
+    "auto-color": "Auto-assigns every plain session a stable random session color at startup so concurrent sessions are visually distinguishable without manually running /color. Hooks the banner CONSUMER (Mu8/useSwarmBanner), not the init path: replaces the hook's terminal `return null` — reached only by genuinely plain sessions (teammate/swarm/named-agent/--agent all return earlier) — with a banner carrying a random palette color (d3) memoized once on globalThis.__autoColorBanner. NB: patching the standaloneAgentContext constructor (UC$) does NOT work — cold launches init that context via main.tsx initialState, never through UC$, so a UC$ hook is a no-op at startup. In-memory only; resumed sessions that ran /color keep their stored color (standalone branch returns before the hook).",
+    "mode-cycle-order": "Reorders the shift+tab permission-mode cycle so bypassPermissions precedes plan: default→acceptEdits→bypassPermissions→plan→auto (stock was →plan→bypassPermissions→). Single switch (lBH in 2.1.170, `M(e,o)` in 2.1.246). 2.1.246: the bypass-availability check moved from an inline `.isBypassPermissionsModeAvailable` read into a helper call (`case\"plan\":if(p(e))return\"bypassPermissions\"`) — both the bypass gate and auto-mode gate are captured and re-emitted in their new positions, so the guard moves with bypass and acceptEdits falls through to plan when bypass is unavailable. Forward-only cycle, no reverse counterpart.",
+    "jsx-runtime-port-2.1.186": "2.1.186 switched the bundle from React.createElement(T,props,...children) to the automatic JSX runtime: RUNTIME.jsx(T,{...props,children}) / RUNTIME.jsxs(T,{children:[...]}), children in props, key as the 3rd positional arg. Reworked patches: thinking-visibility, cron-visibility (Step 4 bUD text render), keyword-highlights (Steps 3+5 rainbow loop + text line renderer), code-blocks (wrapper find + element construction). All four now live under patches/2.1.186/js-patches/. The memo-cache if/else shape (t[N]!==X ... else =t[M]) is unchanged — only the element-creation call form changed.",
+    "env-block-trim": "Drops three lines from the '# Environment' preamble: 'Platform' (shadowed by 'OS Version'), 'Shell: $SHELL' (misleading — Bash tool always resolves bash/zsh via ab5(), never the login shell, so fish/nu users got fish syntax against a bash executor), and the static 'Claude Code is available as a CLI ... IDE extensions' filler. Two builder sites each for platform/shell and the IDE line. 2.1.177 fork adds Patch 3: rewords 'Assistant knowledge cutoff is ${X}.' -> 'Your knowledge cutoff is ${X}.' for second-person voice coherence with the surrounding env bullets (3 sites: full builder, model-info builder, 'Here is useful information' context builder; matched on the trailing ${...} token, which is captured and reused).",
+    "explore-haiku": "Pin built-in Explore search agent back to haiku model (2.1.198 changed it to inherit main session model capped at opus). Explorers fan out over files and report; they don't reason.",
+    "subagent-nesting": "Gate sub-agent nesting (subagents spawning subagents, up to 5 levels deep) behind CLAUDE_CODE_NESTED_SUBAGENTS env var, default off. Replaces the hardcoded depth cap with env?cap:1.",
+    "teammate-workflow-gate": "Makes the teammate/agent-swarm feature invisible unless the Workflow tool is enabled; `name` then degrades to a plain named, resumable subagent. Predicate is gx() @115565 — the Workflow tool's OWN isEnabled (captured via the unique aliases:[\"RunWorkflow\"] anchor, never hardcoded); it folds together disableWorkflows, CLAUDE_CODE_DISABLE_WORKFLOWS, the allow_workflows policy, tengu_workflows_enabled and the plan default. 15 points: (1) dispatch S=Vc()?g.teamContext:void 0 -> Vc()&&gx(); (2) Agent `name` param description reworded to reuse/resume; (3) schema-strip call site if(!Vc()) -> if(!Vc()||!gx()); (4) Fpb Agent strip list [\"name\",\"team_name\",\"mode\"] -> [\"team_name\",\"mode\"] so only the two inert Deprecated params are removed and `name` survives (ExitPlanMode's [\"launchSwarm\",\"teammateCount\"] rides the widened condition free); (5) SendMessage prompt $Hp(Vc()) -> $Hp(Vc()&&gx()), dropping the whole Protocol-responses/team-lead block; (6,7) SendMessage to-table row + \"Messages from teammates\" sentence gated on $Hp's own flag param, which (5) already narrowed; (8) searchHint \"send messages to agent teammates\" -> \"other agents\"; (9) `to` describe \"teammate name\" -> \"agent name\"; (10) TaskCreate Ckp() both Vc() gates widened; (11) TaskStop task_id describe drops the Agent-team clause; (12,13) TaskList Fkp() lead-in + the whole '## Teammate Workflow' section gate widened (its middle Vc() ternary has identical branches — dead, left alone); (14) TaskStop's B1u description bullet about agent-team teammates DELETED rather than gated (B1u is a plain module-init const, not a builder fn, so calling gx() there would evaluate before settings load and freeze the value; the following bullet already covers named background agents); (15) /skillify kVv() 'Teammate' execution mode gated (kVv IS a builder fn, so a runtime gate is safe). ORDER DEPENDENCY: point 14 must tolerate prompt-slim, which runs 23 positions earlier and whose `killshell` pair replaces TaskStop's ENTIRE description block with a one-liner, taking the bullet with it. The point therefore asserts the invariant (no 'agent-team teammate' anywhere in the bundle) rather than a literal, and reports 'already absent' when prompt-slim got there first — so it lands 15/15 on a clean bundle and 14/15 in the real pipeline. Test new points against a prompt-slim'd bundle, not just cli.js.native.original. Verified: $Hp(false) contains zero teammate/team-lead/swarm tokens, $Hp(true) unchanged at 4; TaskStop bullets render clean. Audited and deliberately NOT patched: eCp()'s two teammate bullets (gated on cy()/qte(), only true inside a real teammate session); the team_context / Team Coordination system-reminder (nIb @561448 returns [] unless Km()+SU() are set, so it cannot reach a main session); ExitPlanMode's output schema (output_schema is never sent to the model); SendMessage validateInput error strings (surface only on malformed calls); the Vc() auto-owner assignment @520205 (behaviour, not prompt text). DO NOT patch Vc() itself — Fpb/Upb (~498212) strip [\"name\",\"team_name\",\"mode\"] from the Agent input schema when !Vc(), deleting the very parameter this preserves. SendMessage is independent: its definition (Kvb @529703) has no isEnabled, so it defaults to ()=>!0 and the resume channel survives any gate state. Motivation: CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS is often set in a committed project settings env block, leaving Vc() on for people who never run workflows.",
+    "turn-timestamp": "2.1.246 made turn-end timestamping native: the completed-turn line renders `${verb} for ${elapsed}${doneAt?` · done ${doneAt}`:\"\"}` with doneAt=Vs(msg.timestamp) reformatted to LOCALE time (\"6:05 PM\"). Since msg.timestamp is already `new Date().toISOString()`, the patch drops the Vs() reformat (doneAt:Vs(ut.timestamp) -> doneAt:ut.timestamp) so the full ISO string renders verbatim (\"Sautéed for 23s · done 2026-08-26T10:24:04.000Z\"). Cooperates with the native line rather than injecting; message var captured from the doneAt site; stays falsy mid-turn so the ${doneAt?…} guard renders nothing while running."
+  }
+}
