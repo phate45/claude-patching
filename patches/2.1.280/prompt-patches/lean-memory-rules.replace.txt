@@ -1,0 +1,1 @@
+Update an existing file that covers it rather than duplicating; delete memories that prove wrong. Skip what the repo already records (code structure, past fixes, git history, CLAUDE.md) and what matters only to this conversation; if asked to save one anyway, ask what was non-obvious and save that.
