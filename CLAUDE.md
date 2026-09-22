@@ -80,10 +80,11 @@ This runs **setup** → **init** → **flag scan** → **env scan** → **check*
 
 3. **Other patches fail** — Usually a renamed minifier variable. Search the `.pretty` file for the surrounding structure, update the regex.
 
-4. **Re-check iteratively:**
+4. **Re-check iteratively, and once more before calling the port done:**
    ```bash
    node claude-patching.js --native --check
    ```
+   `--port` skips the chunk-scope stage, so a green `--port` is not a finished port — only a green standalone `--check` is. See "Chunk Scope" below.
 
 5. **Apply when all pass:**
    ```bash
@@ -100,7 +101,7 @@ This runs **setup** → **init** → **flag scan** → **env scan** → **check*
 | `--setup` | Clones/updates the tweakcc and claude-code reference repos, creates `.original` backups from clean sources, generates `.pretty` files via js-beautify. Won't overwrite a clean backup if the source is already patched. | Yes |
 | `--init` | Creates `patches/<version>/index.json` from latest existing index, imports prompt patches by copying the latest local version ≤ target | No — errors if index already exists |
 | `--port` | Composes setup + init + check with condensed output. Init skips silently if index exists. Also runs `scan-feature-flags.js` and `scan-env-vars.js` after setup to produce `flags.json`/`env-vars.json` (plus `diff-<prev>.json`/`env-diff-<prev>.json` if a prior inventory exists), and — after check (Phase 3.5) — `scan-changelog.js` to produce `changelog-impact.json`, all under `patches/<version>/`. Finally (Phase 3.6) emits a broken-patch **work order** (`type:"port_broken"`): per broken patch, its file path + `found`/`expected` diagnostics + top changelog matches, joined for direct action. | Yes (when index exists) |
-| `--check` | Dry-runs all patches against target. Auto-falls back to latest patch version if none exists for the target version. | Yes |
+| `--check` | Dry-runs all patches against target, then scans chunk scope (see below). Auto-falls back to latest patch version if none exists for the target version. | Yes |
 | `--apply` | Applies patches, writes metadata comment, runs encoding + syntax checks, reassembles binary (native). Creates `.bak` before patching. | No |
 | `--restore` | Copies `.bak` over the live installation. | No |
 
@@ -169,6 +170,32 @@ node scan-changelog.js /tmp/claude-code-src/CHANGELOG.md --to <ver> [--from <pre
 # broken patches + their top changelog match, from the artifact
 jq -r '.patchImpacts[] | select(.broken) | "\(.id): \(.matches[0].bullet // "no match")"' patches/<ver>/changelog-impact.json
 ```
+
+## Chunk Scope
+
+Since 2.1.246 the bundle is ~1700 separately-scoped Bun chunk modules. A patch
+injecting a captured identifier into a chunk that never imported it produces a
+free variable — which passes `--check`, passes the syntax check, assembles and
+loads, then throws `ReferenceError` the first time that expression runs. See the
+cross-chunk rule in `patch-format.md` for how to write around it.
+
+`--check` catches it. After the pattern pass it shadow-applies every patch to a
+pristine extract, maps each inserted span back to the chunk that owns it, and
+reports identifiers the chunk has no binding for. Findings land in `failed`, so
+`success` goes false and the summary jq works unchanged:
+
+```bash
+node claude-patching.js --native --check 2>&1 | grep '"type":"chunk_scope"' | jq -c '.findings[]'
+```
+
+Two things to know before trusting a green result:
+
+- It needs an **unpatched** binary for chunk boundaries — patching shifts them.
+  It uses `install.path` when clean, else `install.path + '.bak'`. With neither it
+  emits `chunk_scope_skipped` with a reason rather than a false pass.
+- It roughly doubles `--check`'s runtime, which is why `--port` skips it
+  (Phase 3 stays fast, and a cross-chunk reference is only actionable once the
+  patterns match). `--no-chunk-scope` skips it on demand.
 
 ## Development Workflow
 

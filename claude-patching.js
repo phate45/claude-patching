@@ -67,6 +67,7 @@ ACTIONS
 OPTIONS
   --help                     Show this help
   --verbose, -v              Show full patch output (discoveries, modifications)
+  --no-chunk-scope           Skip the cross-chunk reference scan (with --check only)
   --patches-from <version>   Use patches from a different version (with --check only)
 
 AUTO-FALLBACK (--check only)
@@ -158,6 +159,7 @@ const wantPort = args.includes('--port');
 const wantBare = args.includes('--bare');
 const wantNative = args.includes('--native');
 const wantVerbose = args.includes('--verbose') || args.includes('-v');
+const skipChunkScope = args.includes('--no-chunk-scope');
 
 // Parse --patches-from <version>
 let patchesFromVersion = null;
@@ -323,4 +325,7 @@ if (!effectivePatchVersion && dryRun) {
   }
 }
 
-const result = applyPatches(target, dryRun, effectivePatchVersion, { verbose: wantVerbose });
+const result = applyPatches(target, dryRun, effectivePatchVersion, {
+  verbose: wantVerbose,
+  chunkScope: !skipChunkScope,
+});

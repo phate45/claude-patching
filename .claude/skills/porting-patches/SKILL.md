@@ -100,7 +100,29 @@ Do this **after** every JS patch passes — prompt patches are text, not minifie
 1. **Invoke the `upgrade-prompt-patches` skill.** It's built for exactly this: it reads prompt-slim's `diverged` / `chained` / `not found` diagnostics and walks each failing find/replace pair (placeholder engine `${var}`/`__NAME__`, whitespace/backtick gotchas, restructured array boundaries).
 2. Re-run `--check` until prompt-slim reads N/N.
 
-The port is complete only when `--check` is `success:true` **with prompt-slim at full count** — the tooling now enforces this (drift fails the check), but the *fix* is this phase, not a regex edit.
+## The completion gate — run `--check` before reporting done
+
+`--port` does **not** run the chunk-scope stage (it roughly doubles the runtime, and a cross-chunk reference is only actionable once the patterns match). So a green `--port` is not a finished port. Run the standalone check as the last act, every time:
+
+```bash
+node claude-patching.js --native --check
+```
+
+The port is done when that one command reports `success:true`, which means all three of:
+
+- every JS patch pattern matched,
+- prompt-slim at full count (N/N — any drift fails),
+- **no cross-chunk references** — no identifier injected into a Bun chunk that has no binding for it.
+
+That third one is the whole reason this gate exists. It is invisible to everything else: the pattern matched (in the wrong scope), the file parses, the binary assembles and loads, and then it throws `ReferenceError` the first time that expression is evaluated — which may be a tool description built mid-session, killing the session from that point on. See the cross-chunk rule in `.claude/rules/patch-format.md` for the `globalThis` bridge that fixes it.
+
+Findings arrive as `type:"chunk_scope"` and also land in the summary's `failed`:
+
+```bash
+node claude-patching.js --native --check 2>&1 | grep '"type":"chunk_scope"' | jq -c '.findings[]'
+```
+
+The scan needs an **unpatched** binary for chunk boundaries (patching shifts them). It uses `install.path` when clean, else `install.path + '.bak'`. With neither it emits `chunk_scope_skipped` — treat that as *not verified*, not as a pass, and re-run after `--restore`.
 
 ## New knobs / new patches
 
@@ -111,6 +133,8 @@ If the port also adds a new patch (a knob for a new upstream feature, etc.): wri
 `src/` (gitignored) is a **~2.1.120 snapshot — ~90 versions stale**. Use it for *shape* only: file layout, function intent, which subsystem owns what. Every exact detail — gate conditions, env-var names, ternary shapes, minified structure — must be verified against `cli.js.native.pretty`/`.original`. The leaked ternary tells the story; the current bytes tell the truth.
 
 ## Apply and finish
+
+Clear the completion gate above first — `--apply` does not run the chunk-scope scan, so applying on an unverified set ships the failure into the binary.
 
 ```bash
 node claude-patching.js --native --apply       # syntax-checked + auto-rollback on failure

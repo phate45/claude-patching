@@ -102,6 +102,19 @@ When a new CC version drops:
   in the same scope (e.g. the loop's own `else if(pred(x))flush(),out.push(x);`) and
   reuse the captured names. A green `--check` only proves the *pattern matched*, not
   that the *replacement's identifiers are correct in that scope*.
+- **Capture site and injection site must share a Bun chunk.** Since 2.1.246 the
+  bundle is ~1700 separately-scoped chunk modules, each with its own
+  `import{...}from"/$bunfs/root/chunk-xxxx.js"` list; patches see the flat concat
+  and cannot tell. A captured name injected into a chunk that never imported it is
+  a free variable — valid JavaScript, so it survives `--check`, the syntax check
+  and the binary load, then throws `ReferenceError` the first time that expression
+  is evaluated. Real failure: `teammate-workflow-gate` captured the Workflow gate
+  from the Workflow tool's chunk and injected it into SendMessage's prompt builder
+  in a different one; the session died on the first `ToolSearch select:SendMessage`
+  and kept dying on every event after. Fix: bridge through `globalThis` from a
+  **top-level** statement in a chunk that has the binding (module-init time, so it
+  is armed before any runtime call), and read it with `?.()` at the far site. The
+  chunk-scope stage of `--check` catches this.
 - Use word boundaries (`\b`) for regex performance
 - Always test with `--check` before `--apply`
 - Run `node --check <file>.js` after writing a patch to catch syntax errors

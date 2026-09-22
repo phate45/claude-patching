@@ -47,11 +47,15 @@ You'll need this mapping to decide: can this be a **common** patch (regex adapts
 
 ### Identify the Module Scope
 
-Functions in `cli.js` live inside closure scopes (the bundler's module wrappers). Check indentation in the pretty file — 4-space indent means top-level of a module closure. If your patch needs to access variables from another module, you cannot reference them directly. Options:
+Since 2.1.246 the bundle is ~1700 separately-scoped **Bun chunk modules**, each with its own `import{...}from"/$bunfs/root/chunk-xxxx.js"` list. You patch the flat concat, which makes every chunk look co-located — it isn't. **A name you captured at one offset may be unbound at another**, and the resulting free variable survives `--check`, the syntax check and the binary load, then throws `ReferenceError` the first time that code runs.
 
-- **`globalThis`** — cross-scope coordination via global state (preferred for simple flags/sets)
-- **Module exports** — if the target module exports the variable, it may be importable
-- **Injecting at the call site** — find where the modules interact and patch there instead
+So the first question about any injection is: *does my capture site share a chunk with my injection site?* Options when it doesn't:
+
+- **`globalThis` bridge** — the general answer (see below)
+- **Injecting at the call site** — find where the subsystems already meet and patch there instead
+- **A different capture** — the target chunk may import the same thing under the same name; check its import list before assuming
+
+Write the patch, then let the chunk-scope stage of `node claude-patching.js --check` answer the question for you — it fails the check on an unbound identifier and names the chunk.
 
 ### Verify Pattern Uniqueness
 
@@ -137,7 +141,7 @@ Use `_`-prefixed names for all locals in injected callbacks and IIFEs:
 
 ### Cross-Scope Coordination via globalThis
 
-When two patch sites live in different module closures, use `globalThis` properties to share state:
+When two patch sites live in different chunks, use `globalThis` properties to carry the value across:
 
 ```javascript
 // Site 1 (writer): Store data
@@ -147,9 +151,20 @@ When two patch sites live in different module closures, use `globalThis` propert
 !(globalThis.__myData && globalThis.__myData.has(item.key))
 ```
 
+**Publish from a top-level statement.** Module init runs before any runtime call, so a bridge armed there is ready whenever the consumer fires. A bridge armed inside a function body is only ready once *that function* has run, which is a race you will lose — in the `teammate-workflow-gate` case the consumer was a tool-description builder that a `ToolSearch` select reaches before most of the app has done anything. Look for a top-level `var X = ...` your patch already touches and ride it:
+
+```javascript
+// Publisher (top-level `var` in a chunk that has the binding)
+[toolVar,(globalThis.__wfGate=Pu,["team_name","mode"])]
+
+// Consumer (different chunk) — `?.()` so an unarmed bridge degrades, never throws
+return Je(io()&&globalThis.__wfGate?.())
+```
+
 Naming convention: `__` prefix (double underscore) for all `globalThis` patch properties. Existing examples:
-- `globalThis.__taskOutputRead` — Set of task IDs (quiet-notifications)
+- `globalThis.__wfGate` — the Workflow-enabled predicate (teammate-workflow-gate)
 - `globalThis.__instrContents` — Set of instruction file contents (worktree-dedup)
+- `globalThis.__immTools` — Set of non-deferred tool names (tool-defer-whitelist)
 
 ### String.replace() Gotcha
 
@@ -283,6 +298,8 @@ node claude-patching.js --bare --check
 ```
 
 Confirms the new patch plays nicely with all existing patches. Watch for interference — patches run sequentially, and an earlier patch may alter text that your patch targets.
+
+This is also the only stage that sees **cross-chunk references**: after the pattern pass it shadow-applies the set to a pristine extract and fails on any identifier you injected into a chunk with no binding for it. Nothing earlier can catch that, and nothing later will — a free variable is valid JavaScript right up until it is evaluated. Never call a new patch done on `patch-name.js --check` alone.
 
 ## Phase 5: Integration
 

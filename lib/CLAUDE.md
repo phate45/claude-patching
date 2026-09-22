@@ -9,6 +9,7 @@ These modules support the main `claude-patching.js` orchestrator. Individual pat
 | `shared.js` | Constants, detection, metadata, version utilities, backup discovery | Everything |
 | `output.js` | Structured output (JSON/human dual-mode) — semantic helpers + raw primitives | Patch scripts, all lib modules |
 | `patch-runner.js` | Patch index loading, execution engine, `applyPatches` | Orchestrator, `port.js` |
+| `chunk-scope.js` | Cross-chunk reference analysis — shadow-apply diff, Bun chunk lookup, free-identifier detection | `patch-runner.js` (`--check` only) |
 | `init.js` | `--init` command: create index for new CC version, import prompt patches | Orchestrator, `port.js` |
 | `port.js` | `--port` pipeline: setup + init + check with condensed formatters | Orchestrator |
 | `status.js` | `--status` command: display installations and workspace artifacts | Orchestrator |
@@ -22,7 +23,7 @@ These modules support the main `claude-patching.js` orchestrator. Individual pat
 orchestrator
 ├── shared.js
 ├── output.js
-├── patch-runner.js ──→ shared, output, bun-binary.ts (lazy)
+├── patch-runner.js ──→ shared, output, chunk-scope, bun-binary.ts (lazy)
 ├── init.js ──→ shared, output, prompt-baseline.js
 ├── port.js ──→ shared, output, patch-runner, init, setup
 ├── status.js ──→ shared, output, patch-runner
