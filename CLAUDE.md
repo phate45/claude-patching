@@ -129,7 +129,7 @@ When porting to a new CC version, use the `upgrade-prompt-patches` skill.
 
 ## Feature Flag Toggles
 
-The gate function name and enabled flags are documented in the patch file itself — see `patches/2.1.133/js-patches/patch-feature-flag-toggles.js` for the current list and retired flag history.
+The gate function name and enabled flags are documented in the patch file itself — see `patches/2.1.260/js-patches/patch-feature-flag-toggles.js` for the current list and retired flag history.
 
 For a full flag inventory for any version, run:
 
@@ -138,7 +138,7 @@ node scan-feature-flags.js cli.js.native.pretty --save patches/<version>/flags.j
 node scan-feature-flags.js cli.js.native.pretty --diff patches/<prev>/flags.json
 ```
 
-See `feature-flags-2.1.143.md` in the vault for the current flag map (as of 2.1.143).
+See `feature-flags-2.1.280.md` in the vault for the current override setup: accessor map, which flags the inventory misses, and the status of every flag we have overridden (as of 2.1.280). `feature-flags-2.1.143.md` keeps the older per-flag tables.
 
 ## Env Var Tracking
 
