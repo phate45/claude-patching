@@ -138,7 +138,9 @@ node scan-feature-flags.js cli.js.native.pretty --save patches/<version>/flags.j
 node scan-feature-flags.js cli.js.native.pretty --diff patches/<prev>/flags.json
 ```
 
-See `feature-flags-2.1.280.md` in the vault for the current override setup: accessor map, which flags the inventory misses, and the status of every flag we have overridden (as of 2.1.280). `feature-flags-2.1.143.md` keeps the older per-flag tables.
+The scanner parses `.original` with acorn + eslint-scope (js-beautify corrupts some template literals, so `.pretty` is not parseable) and reports `.pretty` line numbers. It finds the whole accessor family by structure, not just the main gate, and statically resolves indirect flag names. A read it can't name lands in `unresolved` (`jq -c 'select(.type=="unresolved")'`); a missing flag is a scanner bug, so check there before grepping. Inventories before 2.1.280 are regex-era and cover ~70% of flags, so diffs against them over-report `added`.
+
+See `feature-flags-2.1.280.md` in the vault for the current override setup: accessor map, how overrides reach each accessor, and the status of every flag we have overridden (as of 2.1.280). `feature-flags-2.1.143.md` keeps the older per-flag tables.
 
 ## Env Var Tracking
 

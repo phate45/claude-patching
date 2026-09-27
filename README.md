@@ -116,19 +116,24 @@ node claude-patching.js --native --restore     # or specify explicitly
 
 ## Feature Flag Inventory
 
-`scan-feature-flags.js` extracts all GrowthBook feature flags from a prettified bundle, detecting the gate function name dynamically (it changes every build). Run it standalone or let `--port` handle it automatically.
+`scan-feature-flags.js` extracts every GrowthBook feature flag read from the bundle. It parses each Bun chunk of the `.original` extract with acorn, resolves bindings with eslint-scope, and finds the flag accessors by what they call rather than by minified name: the main gate, its session-pinned, async and blocking variants, and any wrapper that takes the flag name in some other parameter, with a prefix, or as a property. Flag names held in constants, imported from other chunks, picked by a conditional or read out of a constant table all resolve. Line numbers point into the `.pretty` file. Run it standalone or let `--port` handle it automatically.
 
 ```bash
-# Scan the current native build
+# Scan the current native build (.pretty or .original; the scanner parses .original)
 node scan-feature-flags.js cli.js.native.pretty --save patches/<version>/flags.json
 
 # Diff against a prior version's inventory
 node scan-feature-flags.js cli.js.native.pretty --diff patches/<prev>/flags.json
+
+# Reads the scanner could not resolve statically
+node scan-feature-flags.js cli.js.native.pretty | jq -c 'select(.type=="unresolved")'
 ```
 
-`--port` generates `patches/<version>/flags.json` automatically and, when a previous version's inventory exists, writes `patches/<version>/diff-<prevVersion>.json` alongside a summary in the port output. The saved inventory includes the gate function name, per-flag defaults and line numbers, and a `defaultShapes` index grouping non-obvious default values by class.
+`--port` generates `patches/<version>/flags.json` automatically and, when a previous version's inventory exists, writes `patches/<version>/diff-<prevVersion>.json` alongside a summary in the port output. The saved inventory holds the main gate name, the full `accessors` list (name, line, what it wraps, which argument carries the flag name), per-flag defaults, line numbers and the accessors each flag is read through, a `defaultShapes` index grouping non-obvious default values by class, and an `unresolved` list: accessor calls whose flag name only exists at runtime. That list should stay short; each entry is a read the inventory cannot name.
 
-See `feature-flags-2.1.143.md` in the vault for the current flag map.
+Inventories written before 2.1.280 came from a regex scanner that only saw direct gate calls, about 70% of the flags (481 of 665 at 2.1.280). A diff against one of them lists many long-standing flags as added.
+
+See `feature-flags-2.1.280.md` in the vault for the current override setup.
 
 ## Development
 
