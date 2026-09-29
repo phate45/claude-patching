@@ -1620,6 +1620,7 @@
     }
   ],
   "reasoning": {
-    "thinking-display-summarized": "Noise. Top matches (stream-json plain-string content fix, VSCode timestamps) are unrelated. Silent break: the SDK set_max_thinking_tokens builder (now C2t) tightened its guard from `e==null` to `e===null`, so an undefined token count now falls to the enabled branch. Site 1 (session-start resolver) unchanged. Fix: regex accepts ==/=== and writes back the captured operator; replacement otherwise identical."
+    "thinking-display-summarized": "Noise. Top matches (stream-json plain-string content fix, VSCode timestamps) are unrelated. Silent break: the SDK set_max_thinking_tokens builder (now C2t) tightened its guard from `e==null` to `e===null`, so an undefined token count now falls to the enabled branch. Site 1 (session-start resolver) unchanged. Fix: regex accepts ==/=== and writes back the captured operator; replacement otherwise identical.",
+    "_tooling": "lib/chunk-scope.js insertedSpans cut spans mid-identifier: replacing fae( with Zqe( resynced on the shared e( and reported the fragment Zq as a free identifier (surfaced by the new quiet-subagent-waits patch). Fixed by widening a span edge that falls inside an identifier to the identifier boundary."
   }
 }
