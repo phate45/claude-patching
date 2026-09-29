@@ -1,0 +1,1 @@
+- `run_in_background` runs the command detached: it keeps running across turns and re-invokes you when it exits. No `&` needed. Once backgrounded, don't poll or check on it \u2014 end your turn and wait for the exit notification, then read the output file it links. Don't pipe a big-output command through `| tail`; run it plain and read that output file after it exits.

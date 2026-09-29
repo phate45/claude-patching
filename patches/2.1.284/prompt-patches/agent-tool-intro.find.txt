@@ -1,0 +1,5 @@
+${__INTROVAR__}. Each agent type has specific capabilities and tools available to it.
+
+Available agent types are listed in <system-reminder> messages in the conversation.${__PVAR__}
+
+${__SFLAG__?`When using the ${__TOOLVAR__} tool, specify a subagent_type to select an agent: \`"fork"\` forks yourself (the fork inherits your full conversation context and always runs on your model — a \`model\` override is ignored); ${__RFLAG__?"any other type — or omitting it — starts a fresh agent (general-purpose by default).":`any other type starts a fresh agent. ${__IVAR__}`}`:`When using the ${__TOOLVAR__} tool, specify a subagent_type parameter to select which agent type to use. ${__RFLAG__?"If omitted, the general-purpose agent is used.":__IVAR2__}`}
