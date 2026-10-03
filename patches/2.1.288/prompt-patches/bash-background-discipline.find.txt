@@ -1,0 +1,1 @@
+- \`run_in_background\` runs the command detached: it keeps running across turns and re-invokes you when it exits.${__TFN__()?` With it, \`timeout\` is how long the command may run in the background (default ${__TDEF__}, max ${__TMAX__()}); at that limit it is stopped and you are re-invoked.`:""} No \`&\` needed.
