@@ -14,21 +14,33 @@ For supported CC versions, see the [patches](./patches/) folder.
 
 ## Quick Start
 
+Requires [just](https://just.systems), `jq` and `npm`. Run `just` to list recipes; each one documents its exit codes.
+
 ```bash
 git clone https://github.com/phaete/claude-patching.git
 cd claude-patching
-npm install                            # node-lief dependency (needed for native binary patching)
+npm install                 # node-lief dependency
 
-node claude-patching.js --status       # detect installations, show versions
-node claude-patching.js --check        # dry run — verify all patches match
-node claude-patching.js --apply        # apply patches
+just status                 # is there a CC version newer than the last patched one?
+just fetch                  # pristine linux-x64 binary from npm -> upstream/<v>/claude
+just port                   # setup + init + pattern check; exit 3 lists broken patches
+just check                  # full gate; writes patches/<v>/check.json on success
+git commit && git push      # `just fleet-ready claude` now answers <v>
+just build                  # patched binary -> release/<v>/claude (+ sha256, manifest)
+just smoke                  # run the artifact: version, embedded patches, one headless turn
 ```
 
-If both bare and native installs exist, specify the target:
+The recipes never write to a live installation. They patch a pristine copy fetched from npm and write the result to `release/`. Install that binary however you like, e.g. symlink it as `~/.local/bin/claude`. `just live` reports the live installs' versions and patch state without modifying them.
+
+### Deprecated: patching the live installation
+
+The original flow patches the running install in place. It still works, but fails with `ETXTBSY` while any Claude session holds the binary open, and is due to be removed:
 
 ```bash
-node claude-patching.js --native --check
-node claude-patching.js --bare --apply
+node claude-patching.js --status       # detect installations, show versions
+node claude-patching.js --check        # dry run — verify all patches match
+node claude-patching.js --apply        # apply patches in place
+node claude-patching.js --native --check   # if both bare and native installs exist
 ```
 
 ## Patches
@@ -96,9 +108,9 @@ node claude-patching.js --bare --apply
 | **resume-cache-fix** | Retired in 2.1.90 — Anthropic fixed natively (added `deferred_tools_delta`, `mcp_instructions_delta`, `agent_listing_delta`, and `companion_intro` to the `isLoggableMessage` allow-list). |
 | **buddy-salt** | Retired in 2.1.97 — companion system rewritten with crypto-based random name generator for session files, hardcoded salt removed. |
 
-## After CC Updates
+## After CC Updates (deprecated live flow)
 
-CC updates replace the installation, removing patches and metadata.
+CC updates replace the installation, removing patches and metadata. With the `just` flow, run it again for the new version instead.
 
 ```bash
 node claude-patching.js --check     # verify patches still match
@@ -107,9 +119,9 @@ node claude-patching.js --apply     # re-apply
 
 If patches no longer match (new CC version), check for an updated patch set in this repo or see [DEVELOPMENT.md](./DEVELOPMENT.md) for the porting workflow.
 
-## Restoring
+## Restoring (deprecated live flow)
 
-`--apply` creates a `.bak` backup before patching. To restore:
+`--apply` on a live install creates a `.bak` backup before patching. To restore:
 
 ```bash
 node claude-patching.js --restore              # auto-detects install type

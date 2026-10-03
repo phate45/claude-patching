@@ -2,7 +2,27 @@
 
 Minimal patches for Claude Code without the full tweakcc toolchain.
 
-## CLI Usage
+## Workflow (`just`)
+
+The justfile is the primary interface. It never writes to a live install: every stage targets a pristine
+binary fetched from npm (`upstream/<v>/claude`, read-only) through `--binary`, and the build writes the
+patched result to `release/<v>/claude`. Both dirs are gitignored. Run `just` for the recipe list; the comment
+above each recipe holds its reasoning.
+
+```
+just status → just fetch → just port → just check → commit + push → just build → just smoke → (fleet rolls out)
+```
+
+Exit codes follow the fleet convention: `0` ok, `1` action needed, `2` could not ask, `3` agent needed (`just port` with broken patches).
+
+- **`patches/<v>/check.json`** is written by a full `--check` (chunk scope ran, own patch set, not the auto-fallback). It is the completion record: `just fleet-ready claude` reads it from cached `origin/master` and answers the newest version whose record shows every patch passed and none skipped.
+- **`just build`** refuses a dirty tree, a HEAD that isn't `origin/master`, or a version fleet-ready doesn't answer. It writes `claude`, `claude.sha256` and `manifest.json` (commit, npm integrity, patch IDs).
+- **`just artifact`** is what the fleet distributes from: the ready version's path, exit 1 if the patch inputs changed on origin since the build.
+- **`--binary <dir>/<version>/<file>`** replaces install detection for every stage; the version is the parent dir's name. `--binary --apply` requires `--out` and never modifies its input.
+
+## CLI Usage (deprecated live-install flow)
+
+These target the live installation in place and fail with `ETXTBSY` while a session holds the binary. Kept for existing users; prefer the `just` workflow.
 
 ```bash
 node claude-patching.js --status              # Detect installations, show versions and patch state
@@ -64,10 +84,10 @@ If only one install exists, target flags are optional. If both exist, you must s
 
 **Use the `porting-patches` skill** — it's the concise, current playbook for this whole flow (drives `--port`, reads the work order, walks each fix). What follows is the reference detail.
 
-When a new CC version drops, run `--port` against the updated target:
+When a new CC version drops, fetch it and port against the pristine binary:
 
 ```bash
-node claude-patching.js --native --port
+just fetch && just port          # equivalent to: node claude-patching.js --binary upstream/<v>/claude --port
 ```
 
 This runs **setup** → **init** → **flag scan** → **env scan** → **check** → **changelog scan** → **work order** in one pass with condensed output. Passing patches are listed by name; each broken patch ends up in a **work order** (`type:"port_broken"`) that joins its source path, the discovery lines it emitted before failing (how far it got), its `Expected:` hints, and its top changelog match — one actionable record per broken patch, no artifact cross-referencing needed.
@@ -82,16 +102,11 @@ This runs **setup** → **init** → **flag scan** → **env scan** → **check*
 
 4. **Re-check iteratively, and once more before calling the port done:**
    ```bash
-   node claude-patching.js --native --check
+   just check
    ```
-   `--port` skips the chunk-scope stage, so a green `--port` is not a finished port — only a green standalone `--check` is. See "Chunk Scope" below.
+   `--port` skips the chunk-scope stage, so a green `--port` is not a finished port — only a green standalone `--check` is. See "Chunk Scope" below. The green check writes `patches/<v>/check.json`; commit it with the port.
 
-5. **Apply when all pass:**
-   ```bash
-   node claude-patching.js --native --apply
-   ```
-
-6. **Verify with `claude --version`** — The encoding and syntax checks (built into `--apply`) catch injected raw non-ASCII and JS errors before the binary is assembled, but always confirm the binary loads.
+5. **Commit, push, then cook:** `just build && just smoke`. The encoding and syntax checks (built into `--apply`) catch injected raw non-ASCII and JS errors before the binary is assembled; `just smoke` confirms the artifact loads, carries its patches and completes a turn.
 
 ## What Each Command Does
 
@@ -194,7 +209,8 @@ Two things to know before trusting a green result:
 
 - It needs an **unpatched** binary for chunk boundaries — patching shifts them.
   It uses `install.path` when clean, else `install.path + '.bak'`. With neither it
-  emits `chunk_scope_skipped` with a reason rather than a false pass.
+  emits `chunk_scope_skipped` with a reason rather than a false pass. Under
+  `just check` the target is the pristine `upstream/<v>/claude`, so it always runs.
 - It roughly doubles `--check`'s runtime, which is why `--port` skips it
   (Phase 3 stays fast, and a cross-chunk reference is only actionable once the
   patterns match). `--no-chunk-scope` skips it on demand.

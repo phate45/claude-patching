@@ -27,3 +27,7 @@ dbg.log
 .envrc
 .nvmrc
 
+
+# Pristine upstream binaries and patched artifacts (justfile)
+upstream/
+release/

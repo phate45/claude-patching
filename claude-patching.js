@@ -7,6 +7,10 @@
  *   - native: Bun-compiled binary (~/.local/bin/claude)
  *
  * Usage:
+ *   node claude-patching.js --binary upstream/2.1.284/claude --check
+ *   node claude-patching.js --binary upstream/2.1.284/claude --apply --out release/2.1.284/claude
+ *
+ * Deprecated live-install usage (patches the running installation in place):
  *   node claude-patching.js --status              # Show detected installations
  *   node claude-patching.js --setup               # Prepare patching environment
  *   node claude-patching.js --init                # Create index for installed version
@@ -25,6 +29,7 @@ const {
   detectInstalls,
   readPatchMetadata,
   isPatched,
+  setBinaryOverride,
   formatBytes,
   listAvailableVersions,
   findFallbackVersion,
@@ -51,9 +56,11 @@ claude-patching.js - Unified Claude Code patcher
 USAGE
   node claude-patching.js [target] <action>
 
-TARGETS (optional if only one install detected)
-  --bare       Target pnpm/npm installation (Bun binary, since 2.1.117)
-  --native     Target native installation (Bun binary)
+TARGETS
+  --binary <file>  Target a standalone pristine binary at <dir>/<version>/<file>
+                   (what the justfile uses; never touches a live install)
+  --bare           DEPRECATED: target the live pnpm/npm installation in place
+  --native         DEPRECATED: target the live native installation in place
 
 ACTIONS
   --status     Show detected installations and workspace artifact versions
@@ -69,6 +76,7 @@ OPTIONS
   --verbose, -v              Show full patch output (discoveries, modifications)
   --no-chunk-scope           Skip the cross-chunk reference scan (with --check only)
   --patches-from <version>   Use patches from a different version (with --check only)
+  --out <file>               Write the patched binary here (required for --binary --apply)
 
 AUTO-FALLBACK (--check only)
   When checking a version without its own patches folder, the tool automatically
@@ -77,6 +85,11 @@ AUTO-FALLBACK (--check only)
   Example: checking 2.1.32 with only 2.1.31 patches available will use 2.1.31.
 
 EXAMPLES
+  node claude-patching.js --binary upstream/2.1.284/claude --port
+  node claude-patching.js --binary upstream/2.1.284/claude --check
+  node claude-patching.js --binary upstream/2.1.284/claude --apply --out release/2.1.284/claude
+
+  # Deprecated: these operate on the live installation in place
   node claude-patching.js --status              # Show all detected installs
   node claude-patching.js --init                # Create index for installed version
   node claude-patching.js --native --port       # Full port pipeline for native
@@ -161,16 +174,20 @@ const wantNative = args.includes('--native');
 const wantVerbose = args.includes('--verbose') || args.includes('-v');
 const skipChunkScope = args.includes('--no-chunk-scope');
 
-// Parse --patches-from <version>
-let patchesFromVersion = null;
-const patchesFromIdx = args.indexOf('--patches-from');
-if (patchesFromIdx !== -1) {
-  patchesFromVersion = args[patchesFromIdx + 1];
-  if (!patchesFromVersion || patchesFromVersion.startsWith('--')) {
-    console.error('Error: --patches-from requires a version argument');
+function argValue(flag) {
+  const idx = args.indexOf(flag);
+  if (idx === -1) return null;
+  const value = args[idx + 1];
+  if (!value || value.startsWith('--')) {
+    console.error(`Error: ${flag} requires an argument`);
     process.exit(1);
   }
+  return value;
 }
+
+const patchesFromVersion = argValue('--patches-from');
+const binaryPath = argValue('--binary');
+const outPath = argValue('--out') && path.resolve(argValue('--out'));
 
 // Validate arguments
 if (wantBare && wantNative) {
@@ -194,6 +211,36 @@ if (actionCount > 1 && !isRestoreApply) {
 
 if (patchesFromVersion && !wantCheck) {
   console.error('Error: --patches-from can only be used with --check');
+  process.exit(1);
+}
+
+// --binary never writes to its input: no restore, and --apply must name an --out.
+if (binaryPath) {
+  if (wantBare || wantNative) {
+    console.error('Error: --binary replaces --bare/--native');
+    process.exit(1);
+  }
+  if (wantRestore) {
+    console.error('Error: --restore operates on a live install; --binary inputs are never modified');
+    process.exit(1);
+  }
+  if (wantApply && !outPath) {
+    console.error('Error: --binary --apply requires --out <file>');
+    process.exit(1);
+  }
+  try {
+    const override = setBinaryOverride(binaryPath);
+    if (outPath === override.path) {
+      console.error('Error: --out must differ from --binary');
+      process.exit(1);
+    }
+  } catch (err) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+if (outPath && !(binaryPath && wantApply)) {
+  console.error('Error: --out can only be used with --binary --apply');
   process.exit(1);
 }
 
@@ -328,4 +375,6 @@ if (!effectivePatchVersion && dryRun) {
 const result = applyPatches(target, dryRun, effectivePatchVersion, {
   verbose: wantVerbose,
   chunkScope: !skipChunkScope,
+  out: outPath,
 });
+process.exit(result.success ? 0 : 1);

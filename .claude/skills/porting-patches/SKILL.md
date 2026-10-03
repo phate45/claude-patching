@@ -1,23 +1,24 @@
 ---
 name: porting-patches
 description: Port the patch set to a new Claude Code version. Use when a new CC version has dropped and patches need re-fitting to the changed bundle — drives the --port pipeline, reads its broken-patch work order, and walks each JS-patch fix. For prompt-patch (prompt-slim) failures specifically, use the upgrade-prompt-patches skill instead.
-argument-hint: "[--native|--bare]"
-allowed-tools: Bash(node *) Bash(rg *) Bash(grep *) Bash(jq *) Read Edit Write
+argument-hint: "[version]"
+allowed-tools: Bash(just *) Bash(node *) Bash(rg *) Bash(grep *) Bash(jq *) Read Edit Write
 ---
 
 # Porting Patches to a New CC Version
 
 ## Current state
 
-!`node claude-patching.js --status 2>/dev/null | tail -1 | jq -r '.installs | to_entries[] | "\(.key): v\(.value.version) — \((.value.patches // []) | length) patches applied"' 2>/dev/null || echo "run: node claude-patching.js --status"`
+!`just status 2>/dev/null; ls upstream 2>/dev/null | sed 's/^/fetched: /'`
 
 ## The one command
 
 ```bash
-node claude-patching.js --port                 # or --native / --bare if both installs exist
+just fetch [version]        # pristine binary from npm -> upstream/<v>/claude (default: latest)
+just port [version]         # exit 3 = broken patches; default: newest fetched
 ```
 
-`--port` runs **setup → init → flag scan → env scan → check → changelog scan → work order** in one pass and is idempotent. It regenerates `.pretty`/`.original` workspace files, creates `patches/<newVersion>/` (copying the latest index + prompt patches), and — crucially — ends with a **broken-patch work order**: everything you need to start fixing, per patch, in one place. No cross-referencing artifacts by hand.
+Every recipe targets the pristine `upstream/<v>/claude` through `--binary`, never the live install, so a running session can't block it (no `ETXTBSY`) and nothing needs `--restore`. `just port` runs `--port`, which runs **setup → init → flag scan → env scan → check → changelog scan → work order** in one pass and is idempotent. It regenerates `.pretty`/`.original` workspace files, creates `patches/<newVersion>/` (copying the latest index + prompt patches), and — crucially — ends with a **broken-patch work order**: everything you need to start fixing, per patch, in one place. No cross-referencing artifacts by hand.
 
 ## Reading the work order (NDJSON `type:"port_broken"`)
 
@@ -35,7 +36,7 @@ Each broken patch is one record:
 Pull it precisely with jq:
 
 ```bash
-node claude-patching.js --native --port 2>&1 | grep '"type":"port_broken"' | jq -r '.orders[] | "\(.id)  →  \(.file)\n  found: \(.found | join(" · "))\n  hint:  \(.expected[0] // "")\n  cl:    \(.changelog[0].bullet // "no match")"'
+just port 2>&1 | grep '"type":"port_broken"' | jq -r '.orders[] | "\(.id)  →  \(.file)\n  found: \(.found | join(" · "))\n  hint:  \(.expected[0] // "")\n  cl:    \(.changelog[0].bullet // "no match")"'
 ```
 
 ## prompt-slim: any drift fails the check
@@ -89,7 +90,7 @@ jq '.reasoning' patches/<version>/changelog-impact.json     # prior verdicts, if
    ```bash
    node --check patches/<newVersion>/js-patches/patch-<name>.js                          # syntax
    CLAUDECODE=1 node patches/<newVersion>/js-patches/patch-<name>.js --check cli.js.native.original   # one patch
-   node claude-patching.js --native --check                                              # whole set
+   just check                                                                            # whole set
    ```
    Repeat until every JS patch passes. (`--check` also fails on prompt-slim drift; that's fixed separately in the prompt-patch-fixing phase below, not with a regex tweak.)
 
@@ -105,7 +106,7 @@ Do this **after** every JS patch passes — prompt patches are text, not minifie
 `--port` does **not** run the chunk-scope stage (it roughly doubles the runtime, and a cross-chunk reference is only actionable once the patterns match). So a green `--port` is not a finished port. Run the standalone check as the last act, every time:
 
 ```bash
-node claude-patching.js --native --check
+just check
 ```
 
 The port is done when that one command reports `success:true`, which means all three of:
@@ -119,10 +120,12 @@ That third one is the whole reason this gate exists. It is invisible to everythi
 Findings arrive as `type:"chunk_scope"` and also land in the summary's `failed`:
 
 ```bash
-node claude-patching.js --native --check 2>&1 | grep '"type":"chunk_scope"' | jq -c '.findings[]'
+just check 2>&1 | grep '"type":"chunk_scope"' | jq -c '.findings[]'
 ```
 
-The scan needs an **unpatched** binary for chunk boundaries (patching shifts them). It uses `install.path` when clean, else `install.path + '.bak'`. With neither it emits `chunk_scope_skipped` — treat that as *not verified*, not as a pass, and re-run after `--restore`.
+The scan needs an **unpatched** binary for chunk boundaries (patching shifts them). `upstream/<v>/claude` is always pristine, so under `just check` it always runs. A `chunk_scope_skipped` line means something targeted a patched binary: treat it as *not verified*, not as a pass.
+
+A green `just check` also writes `patches/<v>/check.json`. Commit it with the port: once pushed, it is what makes `just fleet-ready claude` answer `<v>`.
 
 ## New knobs / new patches
 
@@ -132,15 +135,17 @@ If the port also adds a new patch (a knob for a new upstream feature, etc.): wri
 
 `src/` (gitignored) is a **~2.1.120 snapshot — ~90 versions stale**. Use it for *shape* only: file layout, function intent, which subsystem owns what. Every exact detail — gate conditions, env-var names, ternary shapes, minified structure — must be verified against `cli.js.native.pretty`/`.original`. The leaked ternary tells the story; the current bytes tell the truth.
 
-## Apply and finish
+## Commit, push, cook
 
-Clear the completion gate above first — `--apply` does not run the chunk-scope scan, so applying on an unverified set ships the failure into the binary.
+Clear the completion gate above first — the build does not run the chunk-scope scan, so building an unverified set ships the failure into the binary.
 
 ```bash
-node claude-patching.js --native --apply       # syntax-checked + auto-rollback on failure
+git add patches/<v> && git commit && git push   # check.json included; fleet-ready now answers <v>
+just build                                      # clean tree + HEAD == origin/master; -> release/<v>/claude
+just smoke                                      # artifact: version, embedded patches, one headless turn
 ```
 
-`--apply` fails with `ETXTBSY` if a running Claude instance holds the binary — close sessions first (or run from outside an active session). Iterating on an already-applied patch? Use `--restore --apply` to reset from `.bak` first (the metadata gate skips already-listed ids otherwise). Then confirm the binary loads: suggest the user run `! claude --version`.
+`just build` refuses a dirty tree or unpushed HEAD, so the artifact is always traceable to pushed patches. The fleet picks it up through `just artifact`; nothing installs it locally.
 
 Finally: fill the `changelog-impact.json` reasoning block, update `README.md`, and consider a work log (`writing-work-logs` skill) + memory note for anything non-obvious.
 
