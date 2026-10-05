@@ -1,0 +1,1252 @@
+{
+  "fromVersion": "2.1.288",
+  "toVersion": "2.1.289",
+  "generatedAt": "2026-10-05T17:55:11.097Z",
+  "versionCount": 1,
+  "entryCount": 27,
+  "changelog": [
+    {
+      "version": "2.1.289",
+      "bullets": [
+        "Fixed a deny or ask rule on a nested part of a compound shell command not holding over a user-installed mod's approval on managed machines",
+        "Fixed the terminal freezing on short code blocks with many unclosed `<script>` tags or deeply nested `${` substitutions",
+        "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+        "[VSCode] Reverted a 2.1.288 change to `claude auth status` that may have made sign-outs more frequent",
+        "Improved how quickly large files open in a plugin code pane by laying the highlighted view out once at its final width",
+        "Fixed `plugin list`, `plugin eval` and `plugin update` showing a stale copy of a plugin installed from a local folder marketplace, and hot reload for a symlinked `--plugin-dir`",
+        "Fixed installed mods not loading in the first session after an upgrade",
+        "Fixed a plugin's rows above the prompt showing a stale row while the Background tasks dialog was open in fullscreen",
+        "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+        "Fixed a user-installed plugin being able to rewrite the descriptions of an organization-managed MCP server's sign-in tools",
+        "Fixed a freeze or forced quit at launch when a plugin drew a Box with a border style the terminal does not know",
+        "Fixed supervised and background sessions ending when a plugin's on-screen handler threw asynchronously",
+        "Fixed sessions ending with an interface error when a plugin region with no height kept growing",
+        "Fixed Bash deny and ask rules missing a command behind an environment variable prefix with an expanded value (e.g. `TZ=\"$HOME\" rm -rf build`) when the sandbox auto-allows commands",
+        "Fixed a Bash deny or ask rule being skipped under sandbox auto-allow when a bare variable assignment came before the command",
+        "Fixed `claude plugin validate` skipping the plugin when the folder also holds a marketplace manifest",
+        "Added `agent.spawn` for teammates, one agent id across plugin hook events, and idle and waiting states in `$.agent.list()`",
+        "Fixed sessions ending with \"unrecoverable interface error\" when a value a mod's `ui.render` hook wrote made a row throw while drawn; the engine now draws its own row instead",
+        "Fixed text with a tab, a stray escape and a C1 control, or a short text with a tab and CRLF line endings, drawing over the rows below it",
+        "Fixed right-aligned content in a mod's pane or band drawing under the close mark or `[-]`, which now also keep one column in from the terminal's edge",
+        "Fixed a mod's `Client` that fails while drawn taking down everything the mod drew around it; it now fails alone and raises `ui.fault`",
+        "Fixed `claude plugin validate` failing an Anthropic marketplace's own plugin and listing a clean `plugin.json` in `--json`",
+        "Fixed a mod's band that fails to draw briefly telling the cards under it to step aside",
+        "Fixed a failed plugin component showing `Error` or nothing as its reason when the failure carried no message",
+        "Improved the line a mod's author sees when its band or pane fails to draw: it names the mod and says nothing was drawn",
+        "Fixed published artifact pages freezing or crashing the reader's browser tab on short code blocks with many unclosed `<script>` tags",
+        "Fixed a mod's Client region staying failed for the whole session after the terminal threw while drawing it"
+      ]
+    }
+  ],
+  "patchImpacts": [
+    {
+      "id": "subagent-nesting",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 17,
+          "bullet": "Fixed sessions ending with \"unrecoverable interface error\" when a value a mod's `ui.render` hook wrote made a row throw while drawn; the engine now draws its own row instead",
+          "score": -10.4861
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 16,
+          "bullet": "Added `agent.spawn` for teammates, one agent id across plugin hook events, and idle and waiting states in `$.agent.list()`",
+          "score": -9.9511
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 23,
+          "bullet": "Fixed a failed plugin component showing `Error` or nothing as its reason when the failure carried no message",
+          "score": -5.1759
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 4,
+          "bullet": "Improved how quickly large files open in a plugin code pane by laying the highlighted view out once at its final width",
+          "score": -4.7875
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 1,
+          "bullet": "Fixed the terminal freezing on short code blocks with many unclosed `<script>` tags or deeply nested `${` substitutions",
+          "score": -4.6807
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 21,
+          "bullet": "Fixed `claude plugin validate` failing an Anthropic marketplace's own plugin and listing a clean `plugin.json` in `--json`",
+          "score": -4.4946
+        }
+      ]
+    },
+    {
+      "id": "worktree-dedup",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 6,
+          "bullet": "Fixed installed mods not loading in the first session after an upgrade",
+          "score": -9.1946
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 14,
+          "bullet": "Fixed a Bash deny or ask rule being skipped under sandbox auto-allow when a bare variable assignment came before the command",
+          "score": -5.1616
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 5,
+          "bullet": "Fixed `plugin list`, `plugin eval` and `plugin update` showing a stale copy of a plugin installed from a local folder marketplace, and hot reload for a symlinked `--plugin-dir`",
+          "score": -5.0448
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -4.9903
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 26,
+          "bullet": "Fixed a mod's Client region staying failed for the whole session after the terminal threw while drawing it",
+          "score": -4.891
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -2.8012
+        }
+      ]
+    },
+    {
+      "id": "flag-env-override",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 21,
+          "bullet": "Fixed `claude plugin validate` failing an Anthropic marketplace's own plugin and listing a clean `plugin.json` in `--json`",
+          "score": -9.1632
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 26,
+          "bullet": "Fixed a mod's Client region staying failed for the whole session after the terminal threw while drawing it",
+          "score": -5.4695
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 3,
+          "bullet": "[VSCode] Reverted a 2.1.288 change to `claude auth status` that may have made sign-outs more frequent",
+          "score": -5.073
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 20,
+          "bullet": "Fixed a mod's `Client` that fails while drawn taking down everything the mod drew around it; it now fails alone and raises `ui.fault`",
+          "score": -4.8865
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 18,
+          "bullet": "Fixed text with a tab, a stray escape and a C1 control, or a short text with a tab and CRLF line endings, drawing over the rows below it",
+          "score": -4.5624
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 13,
+          "bullet": "Fixed Bash deny and ask rules missing a command behind an environment variable prefix with an expanded value (e.g. `TZ=\"$HOME\" rm -rf build`) when the sandbox auto-allows commands",
+          "score": -4.4159
+        }
+      ]
+    },
+    {
+      "id": "explore-haiku",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -8.6657
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 4,
+          "bullet": "Improved how quickly large files open in a plugin code pane by laying the highlighted view out once at its final width",
+          "score": -5.1616
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 16,
+          "bullet": "Added `agent.spawn` for teammates, one agent id across plugin hook events, and idle and waiting states in `$.agent.list()`",
+          "score": -4.5883
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -3.8814
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 23,
+          "bullet": "Fixed a failed plugin component showing `Error` or nothing as its reason when the failure carried no message",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 6,
+          "bullet": "Fixed installed mods not loading in the first session after an upgrade",
+          "score": -2.8409
+        }
+      ]
+    },
+    {
+      "id": "hook-envelope-strip",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 16,
+          "bullet": "Added `agent.spawn` for teammates, one agent id across plugin hook events, and idle and waiting states in `$.agent.list()`",
+          "score": -8.3278
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 7,
+          "bullet": "Fixed a plugin's rows above the prompt showing a stale row while the Background tasks dialog was open in fullscreen",
+          "score": -5.8166
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -5.7795
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 24,
+          "bullet": "Improved the line a mod's author sees when its band or pane fails to draw: it names the mod and says nothing was drawn",
+          "score": -4.0156
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 14,
+          "bullet": "Fixed a Bash deny or ask rule being skipped under sandbox auto-allow when a bare variable assignment came before the command",
+          "score": -2.8537
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 6,
+          "bullet": "Fixed installed mods not loading in the first session after an upgrade",
+          "score": -2.8409
+        }
+      ]
+    },
+    {
+      "id": "turn-timestamp",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 17,
+          "bullet": "Fixed sessions ending with \"unrecoverable interface error\" when a value a mod's `ui.render` hook wrote made a row throw while drawn; the engine now draws its own row instead",
+          "score": -8.2626
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 16,
+          "bullet": "Added `agent.spawn` for teammates, one agent id across plugin hook events, and idle and waiting states in `$.agent.list()`",
+          "score": -7.5533
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 18,
+          "bullet": "Fixed text with a tab, a stray escape and a C1 control, or a short text with a tab and CRLF line endings, drawing over the rows below it",
+          "score": -5.6453
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 23,
+          "bullet": "Fixed a failed plugin component showing `Error` or nothing as its reason when the failure carried no message",
+          "score": -5.1759
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 7,
+          "bullet": "Fixed a plugin's rows above the prompt showing a stale row while the Background tasks dialog was open in fullscreen",
+          "score": -4.026
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 24,
+          "bullet": "Improved the line a mod's author sees when its band or pane fails to draw: it names the mod and says nothing was drawn",
+          "score": -4.0156
+        }
+      ]
+    },
+    {
+      "id": "disable-bundled-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 14,
+          "bullet": "Fixed a Bash deny or ask rule being skipped under sandbox auto-allow when a bare variable assignment came before the command",
+          "score": -7.6412
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 7,
+          "bullet": "Fixed a plugin's rows above the prompt showing a stale row while the Background tasks dialog was open in fullscreen",
+          "score": -3.1261
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 25,
+          "bullet": "Fixed published artifact pages freezing or crashing the reader's browser tab on short code blocks with many unclosed `<script>` tags",
+          "score": -2.9083
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 6,
+          "bullet": "Fixed installed mods not loading in the first session after an upgrade",
+          "score": -2.8409
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 15,
+          "bullet": "Fixed `claude plugin validate` skipping the plugin when the folder also holds a marketplace manifest",
+          "score": -2.5499
+        }
+      ]
+    },
+    {
+      "id": "quiet-subagent-waits",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 16,
+          "bullet": "Added `agent.spawn` for teammates, one agent id across plugin hook events, and idle and waiting states in `$.agent.list()`",
+          "score": -7.5533
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 23,
+          "bullet": "Fixed a failed plugin component showing `Error` or nothing as its reason when the failure carried no message",
+          "score": -5.1759
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 26,
+          "bullet": "Fixed a mod's Client region staying failed for the whole session after the terminal threw while drawing it",
+          "score": -4.1861
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 7,
+          "bullet": "Fixed a plugin's rows above the prompt showing a stale row while the Background tasks dialog was open in fullscreen",
+          "score": -4.026
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 17,
+          "bullet": "Fixed sessions ending with \"unrecoverable interface error\" when a value a mod's `ui.render` hook wrote made a row throw while drawn; the engine now draws its own row instead",
+          "score": -3.8467
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -3.0853
+        }
+      ]
+    },
+    {
+      "id": "prefer-project-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 6,
+          "bullet": "Fixed installed mods not loading in the first session after an upgrade",
+          "score": -7.0257
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 0,
+          "bullet": "Fixed a deny or ask rule on a nested part of a compound shell command not holding over a user-installed mod's approval on managed machines",
+          "score": -6.3298
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 15,
+          "bullet": "Fixed `claude plugin validate` skipping the plugin when the folder also holds a marketplace manifest",
+          "score": -5.5113
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 13,
+          "bullet": "Fixed Bash deny and ask rules missing a command behind an environment variable prefix with an expanded value (e.g. `TZ=\"$HOME\" rm -rf build`) when the sandbox auto-allows commands",
+          "score": -4.8829
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 5,
+          "bullet": "Fixed `plugin list`, `plugin eval` and `plugin update` showing a stale copy of a plugin installed from a local folder marketplace, and hot reload for a symlinked `--plugin-dir`",
+          "score": -4.5624
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -3.0853
+        }
+      ]
+    },
+    {
+      "id": "trim-context-bloat",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -6.6825
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 6,
+          "bullet": "Fixed installed mods not loading in the first session after an upgrade",
+          "score": -5.6818
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 16,
+          "bullet": "Added `agent.spawn` for teammates, one agent id across plugin hook events, and idle and waiting states in `$.agent.list()`",
+          "score": -5.3628
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 7,
+          "bullet": "Fixed a plugin's rows above the prompt showing a stale row while the Background tasks dialog was open in fullscreen",
+          "score": -5.2603
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 3,
+          "bullet": "[VSCode] Reverted a 2.1.288 change to `claude auth status` that may have made sign-outs more frequent",
+          "score": -5.073
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 19,
+          "bullet": "Fixed right-aligned content in a mod's pane or band drawing under the close mark or `[-]`, which now also keep one column in from the terminal's edge",
+          "score": -5.0448
+        }
+      ]
+    },
+    {
+      "id": "mode-cycle-order",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -6.1706
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 14,
+          "bullet": "Fixed a Bash deny or ask rule being skipped under sandbox auto-allow when a bare variable assignment came before the command",
+          "score": -5.1616
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 13,
+          "bullet": "Fixed Bash deny and ask rules missing a command behind an environment variable prefix with an expanded value (e.g. `TZ=\"$HOME\" rm -rf build`) when the sandbox auto-allows commands",
+          "score": -4.4159
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -3.8814
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 3,
+          "bullet": "[VSCode] Reverted a 2.1.288 change to `claude auth status` that may have made sign-outs more frequent",
+          "score": -3.0239
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 18,
+          "bullet": "Fixed text with a tab, a stray escape and a C1 control, or a short text with a tab and CRLF line endings, drawing over the rows below it",
+          "score": -2.9157
+        }
+      ]
+    },
+    {
+      "id": "abbreviations",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 21,
+          "bullet": "Fixed `claude plugin validate` failing an Anthropic marketplace's own plugin and listing a clean `plugin.json` in `--json`",
+          "score": -6.1392
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 3,
+          "bullet": "[VSCode] Reverted a 2.1.288 change to `claude auth status` that may have made sign-outs more frequent",
+          "score": -5.073
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 19,
+          "bullet": "Fixed right-aligned content in a mod's pane or band drawing under the close mark or `[-]`, which now also keep one column in from the terminal's edge",
+          "score": -4.5624
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -3.8814
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 6,
+          "bullet": "Fixed installed mods not loading in the first session after an upgrade",
+          "score": -3.5128
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 10,
+          "bullet": "Fixed a freeze or forced quit at launch when a plugin drew a Box with a border style the terminal does not know",
+          "score": -2.8012
+        }
+      ]
+    },
+    {
+      "id": "tool-defer-whitelist",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 9,
+          "bullet": "Fixed a user-installed plugin being able to rewrite the descriptions of an organization-managed MCP server's sign-in tools",
+          "score": -5.8166
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 3,
+          "bullet": "[VSCode] Reverted a 2.1.288 change to `claude auth status` that may have made sign-outs more frequent",
+          "score": -5.073
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -3.8814
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 24,
+          "bullet": "Improved the line a mod's author sees when its band or pane fails to draw: it names the mod and says nothing was drawn",
+          "score": -2.7016
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 13,
+          "bullet": "Fixed Bash deny and ask rules missing a command behind an environment variable prefix with an expanded value (e.g. `TZ=\"$HOME\" rm -rf build`) when the sandbox auto-allows commands",
+          "score": -2.4414
+        }
+      ]
+    },
+    {
+      "id": "thinking-visibility",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 14,
+          "bullet": "Fixed a Bash deny or ask rule being skipped under sandbox auto-allow when a bare variable assignment came before the command",
+          "score": -5.7074
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 1,
+          "bullet": "Fixed the terminal freezing on short code blocks with many unclosed `<script>` tags or deeply nested `${` substitutions",
+          "score": -4.6807
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 21,
+          "bullet": "Fixed `claude plugin validate` failing an Anthropic marketplace's own plugin and listing a clean `plugin.json` in `--json`",
+          "score": -4.4946
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 17,
+          "bullet": "Fixed sessions ending with \"unrecoverable interface error\" when a value a mod's `ui.render` hook wrote made a row throw while drawn; the engine now draws its own row instead",
+          "score": -4.4159
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 25,
+          "bullet": "Fixed published artifact pages freezing or crashing the reader's browser tab on short code blocks with many unclosed `<script>` tags",
+          "score": -4.3227
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -3.8814
+        }
+      ]
+    },
+    {
+      "id": "disable-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 6,
+          "bullet": "Fixed installed mods not loading in the first session after an upgrade",
+          "score": -5.6818
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 4,
+          "bullet": "Improved how quickly large files open in a plugin code pane by laying the highlighted view out once at its final width",
+          "score": -5.0012
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 26,
+          "bullet": "Fixed a mod's Client region staying failed for the whole session after the terminal threw while drawing it",
+          "score": -4.891
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 1,
+          "bullet": "Fixed the terminal freezing on short code blocks with many unclosed `<script>` tags or deeply nested `${` substitutions",
+          "score": -4.6807
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 25,
+          "bullet": "Fixed published artifact pages freezing or crashing the reader's browser tab on short code blocks with many unclosed `<script>` tags",
+          "score": -4.3227
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -4.0912
+        }
+      ]
+    },
+    {
+      "id": "no-collapse-reads",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -5.5804
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 19,
+          "bullet": "Fixed right-aligned content in a mod's pane or band drawing under the close mark or `[-]`, which now also keep one column in from the terminal's edge",
+          "score": -5.0448
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -3.8814
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 23,
+          "bullet": "Fixed a failed plugin component showing `Error` or nothing as its reason when the failure carried no message",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 4,
+          "bullet": "Improved how quickly large files open in a plugin code pane by laying the highlighted view out once at its final width",
+          "score": -2.3079
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 1,
+          "bullet": "Fixed the terminal freezing on short code blocks with many unclosed `<script>` tags or deeply nested `${` substitutions",
+          "score": -2.1339
+        }
+      ]
+    },
+    {
+      "id": "feature-flag-toggles",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 26,
+          "bullet": "Fixed a mod's Client region staying failed for the whole session after the terminal threw while drawing it",
+          "score": -5.4695
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 9,
+          "bullet": "Fixed a user-installed plugin being able to rewrite the descriptions of an organization-managed MCP server's sign-in tools",
+          "score": -2.9083
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 25,
+          "bullet": "Fixed published artifact pages freezing or crashing the reader's browser tab on short code blocks with many unclosed `<script>` tags",
+          "score": -2.9083
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 6,
+          "bullet": "Fixed installed mods not loading in the first session after an upgrade",
+          "score": -2.8409
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 10,
+          "bullet": "Fixed a freeze or forced quit at launch when a plugin drew a Box with a border style the terminal does not know",
+          "score": -2.8012
+        }
+      ]
+    },
+    {
+      "id": "toolsearch-visibility",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 9,
+          "bullet": "Fixed a user-installed plugin being able to rewrite the descriptions of an organization-managed MCP server's sign-in tools",
+          "score": -5.2603
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -3.8814
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 24,
+          "bullet": "Improved the line a mod's author sees when its band or pane fails to draw: it names the mod and says nothing was drawn",
+          "score": -2.7016
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 17,
+          "bullet": "Fixed sessions ending with \"unrecoverable interface error\" when a value a mod's `ui.render` hook wrote made a row throw while drawn; the engine now draws its own row instead",
+          "score": -2.4414
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 0,
+          "bullet": "Fixed a deny or ask rule on a nested part of a compound shell command not holding over a user-installed mod's approval on managed machines",
+          "score": -2.1099
+        }
+      ]
+    },
+    {
+      "id": "auto-color",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 7,
+          "bullet": "Fixed a plugin's rows above the prompt showing a stale row while the Background tasks dialog was open in fullscreen",
+          "score": -5.2603
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 11,
+          "bullet": "Fixed supervised and background sessions ending when a plugin's on-screen handler threw asynchronously",
+          "score": -4.8829
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 10,
+          "bullet": "Fixed a freeze or forced quit at launch when a plugin drew a Box with a border style the terminal does not know",
+          "score": -4.4135
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 26,
+          "bullet": "Fixed a mod's Client region staying failed for the whole session after the terminal threw while drawing it",
+          "score": -4.1861
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 17,
+          "bullet": "Fixed sessions ending with \"unrecoverable interface error\" when a value a mod's `ui.render` hook wrote made a row throw while drawn; the engine now draws its own row instead",
+          "score": -4.0958
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -3.0853
+        }
+      ]
+    },
+    {
+      "id": "keyword-highlights",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 3,
+          "bullet": "[VSCode] Reverted a 2.1.288 change to `claude auth status` that may have made sign-outs more frequent",
+          "score": -5.073
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 13,
+          "bullet": "Fixed Bash deny and ask rules missing a command behind an environment variable prefix with an expanded value (e.g. `TZ=\"$HOME\" rm -rf build`) when the sandbox auto-allows commands",
+          "score": -4.8829
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 23,
+          "bullet": "Fixed a failed plugin component showing `Error` or nothing as its reason when the failure carried no message",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 14,
+          "bullet": "Fixed a Bash deny or ask rule being skipped under sandbox auto-allow when a bare variable assignment came before the command",
+          "score": -2.8537
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 24,
+          "bullet": "Improved the line a mod's author sees when its band or pane fails to draw: it names the mod and says nothing was drawn",
+          "score": -2.7016
+        }
+      ]
+    },
+    {
+      "id": "system-reminders",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 5,
+          "bullet": "Fixed `plugin list`, `plugin eval` and `plugin update` showing a stale copy of a plugin installed from a local folder marketplace, and hot reload for a symlinked `--plugin-dir`",
+          "score": -5.0448
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 19,
+          "bullet": "Fixed right-aligned content in a mod's pane or band drawing under the close mark or `[-]`, which now also keep one column in from the terminal's edge",
+          "score": -4.5624
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 11,
+          "bullet": "Fixed supervised and background sessions ending when a plugin's on-screen handler threw asynchronously",
+          "score": -3.2852
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -2.8012
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 0,
+          "bullet": "Fixed a deny or ask rule on a nested part of a compound shell command not holding over a user-installed mod's approval on managed machines",
+          "score": -2.609
+        }
+      ]
+    },
+    {
+      "id": "spinner",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 4,
+          "bullet": "Improved how quickly large files open in a plugin code pane by laying the highlighted view out once at its final width",
+          "score": -4.7875
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -3.8814
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 9,
+          "bullet": "Fixed a user-installed plugin being able to rewrite the descriptions of an organization-managed MCP server's sign-in tools",
+          "score": -2.9083
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 24,
+          "bullet": "Improved the line a mod's author sees when its band or pane fails to draw: it names the mod and says nothing was drawn",
+          "score": -2.7016
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 17,
+          "bullet": "Fixed sessions ending with \"unrecoverable interface error\" when a value a mod's `ui.render` hook wrote made a row throw while drawn; the engine now draws its own row instead",
+          "score": -2.4414
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 15,
+          "bullet": "Fixed `claude plugin validate` skipping the plugin when the folder also holds a marketplace manifest",
+          "score": -2.2261
+        }
+      ]
+    },
+    {
+      "id": "env-block-trim",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 13,
+          "bullet": "Fixed Bash deny and ask rules missing a command behind an environment variable prefix with an expanded value (e.g. `TZ=\"$HOME\" rm -rf build`) when the sandbox auto-allows commands",
+          "score": -4.4159
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 7,
+          "bullet": "Fixed a plugin's rows above the prompt showing a stale row while the Background tasks dialog was open in fullscreen",
+          "score": -2.9083
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 0,
+          "bullet": "Fixed a deny or ask rule on a nested part of a compound shell command not holding over a user-installed mod's approval on managed machines",
+          "score": -2.609
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 5,
+          "bullet": "Fixed `plugin list`, `plugin eval` and `plugin update` showing a stale copy of a plugin installed from a local folder marketplace, and hot reload for a symlinked `--plugin-dir`",
+          "score": -2.5224
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 14,
+          "bullet": "Fixed a Bash deny or ask rule being skipped under sandbox auto-allow when a bare variable assignment came before the command",
+          "score": -2.3079
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 15,
+          "bullet": "Fixed `claude plugin validate` skipping the plugin when the folder also holds a marketplace manifest",
+          "score": -2.2261
+        }
+      ]
+    },
+    {
+      "id": "ghostty-term",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 1,
+          "bullet": "Fixed the terminal freezing on short code blocks with many unclosed `<script>` tags or deeply nested `${` substitutions",
+          "score": -3.9466
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -3.8814
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 15,
+          "bullet": "Fixed `claude plugin validate` skipping the plugin when the folder also holds a marketplace manifest",
+          "score": -2.2261
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 3,
+          "bullet": "[VSCode] Reverted a 2.1.288 change to `claude auth status` that may have made sign-outs more frequent",
+          "score": -2.0491
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 21,
+          "bullet": "Fixed `claude plugin validate` failing an Anthropic marketplace's own plugin and listing a clean `plugin.json` in `--json`",
+          "score": -2.0491
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 25,
+          "bullet": "Fixed published artifact pages freezing or crashing the reader's browser tab on short code blocks with many unclosed `<script>` tags",
+          "score": -1.9707
+        }
+      ]
+    },
+    {
+      "id": "read-summary",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -3.8814
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 14,
+          "bullet": "Fixed a Bash deny or ask rule being skipped under sandbox auto-allow when a bare variable assignment came before the command",
+          "score": -2.8537
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 6,
+          "bullet": "Fixed installed mods not loading in the first session after an upgrade",
+          "score": -2.8409
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 26,
+          "bullet": "Fixed a mod's Client region staying failed for the whole session after the terminal threw while drawing it",
+          "score": -2.4455
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 13,
+          "bullet": "Fixed Bash deny and ask rules missing a command behind an environment variable prefix with an expanded value (e.g. `TZ=\"$HOME\" rm -rf build`) when the sandbox auto-allows commands",
+          "score": -2.4414
+        }
+      ]
+    },
+    {
+      "id": "prompt-slim",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 8,
+          "bullet": "Fixed plugin panes drawing nothing when a link used a localhost address, an `@` in its path, an uppercase host or a `file:` path",
+          "score": -3.8814
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 6,
+          "bullet": "Fixed installed mods not loading in the first session after an upgrade",
+          "score": -3.5128
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 7,
+          "bullet": "Fixed a plugin's rows above the prompt showing a stale row while the Background tasks dialog was open in fullscreen",
+          "score": -2.9083
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 14,
+          "bullet": "Fixed a Bash deny or ask rule being skipped under sandbox auto-allow when a bare variable assignment came before the command",
+          "score": -2.8537
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 5,
+          "bullet": "Fixed `plugin list`, `plugin eval` and `plugin update` showing a stale copy of a plugin installed from a local folder marketplace, and hot reload for a symlinked `--plugin-dir`",
+          "score": -2.5224
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 15,
+          "bullet": "Fixed `claude plugin validate` skipping the plugin when the folder also holds a marketplace manifest",
+          "score": -2.2261
+        }
+      ]
+    },
+    {
+      "id": "thinking-display-summarized",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 18,
+          "bullet": "Fixed text with a tab, a stray escape and a C1 control, or a short text with a tab and CRLF line endings, drawing over the rows below it",
+          "score": -3.6054
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 22,
+          "bullet": "Fixed a mod's band that fails to draw briefly telling the cards under it to step aside",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 23,
+          "bullet": "Fixed a failed plugin component showing `Error` or nothing as its reason when the failure carried no message",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 3,
+          "bullet": "[VSCode] Reverted a 2.1.288 change to `claude auth status` that may have made sign-outs more frequent",
+          "score": -3.0239
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 21,
+          "bullet": "Fixed `claude plugin validate` failing an Anthropic marketplace's own plugin and listing a clean `plugin.json` in `--json`",
+          "score": -3.0239
+        }
+      ]
+    },
+    {
+      "id": "thinking-no-fold",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 6,
+          "bullet": "Fixed installed mods not loading in the first session after an upgrade",
+          "score": -3.5128
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 2,
+          "bullet": "Fixed `Read` deny rules not applying to files @-mentioned, changed, or selected in the IDE through a symlink",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 23,
+          "bullet": "Fixed a failed plugin component showing `Error` or nothing as its reason when the failure carried no message",
+          "score": -3.0853
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 3,
+          "bullet": "[VSCode] Reverted a 2.1.288 change to `claude auth status` that may have made sign-outs more frequent",
+          "score": -3.0239
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 16,
+          "bullet": "Added `agent.spawn` for teammates, one agent id across plugin hook events, and idle and waiting states in `$.agent.list()`",
+          "score": -2.965
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 14,
+          "bullet": "Fixed a Bash deny or ask rule being skipped under sandbox auto-allow when a bare variable assignment came before the command",
+          "score": -2.8537
+        }
+      ]
+    },
+    {
+      "id": "teammate-workflow-gate",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.289",
+          "bulletIndex": 16,
+          "bullet": "Added `agent.spawn` for teammates, one agent id across plugin hook events, and idle and waiting states in `$.agent.list()`",
+          "score": -2.965
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 25,
+          "bullet": "Fixed published artifact pages freezing or crashing the reader's browser tab on short code blocks with many unclosed `<script>` tags",
+          "score": -2.9083
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 14,
+          "bullet": "Fixed a Bash deny or ask rule being skipped under sandbox auto-allow when a bare variable assignment came before the command",
+          "score": -2.8537
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 11,
+          "bullet": "Fixed supervised and background sessions ending when a plugin's on-screen handler threw asynchronously",
+          "score": -2.6568
+        },
+        {
+          "version": "2.1.289",
+          "bulletIndex": 7,
+          "bullet": "Fixed a plugin's rows above the prompt showing a stale row while the Background tasks dialog was open in fullscreen",
+          "score": -2.352
+        }
+      ]
+    }
+  ],
+  "reasoning": {
+    "_port": "Zero-touch port: 29/29 JS, 74/74 prompts, chunk scope clean. 2.1.289 is a bugfix release dominated by plugin/mod fixes (pane drawing, hot reload, validate) and Bash/Read deny-rule fixes; no entry touches a patched subsystem. Flag diff: tengu_fresh_heron added (default true), a kill switch inside the hooks-module loader; not worth overriding."
+  }
+}
