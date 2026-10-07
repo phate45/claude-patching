@@ -1,0 +1,1 @@
+For broad codebase exploration or research that'll take more than ${$2K} queries, spawn ${TK} with subagent_type=${wQ.agentType}. Otherwise use ${_} directly.
