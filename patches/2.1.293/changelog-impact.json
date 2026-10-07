@@ -1,0 +1,1296 @@
+{
+  "fromVersion": "2.1.292",
+  "toVersion": "2.1.293",
+  "generatedAt": "2026-10-07T18:21:08.140Z",
+  "versionCount": 1,
+  "entryCount": 56,
+  "changelog": [
+    {
+      "version": "2.1.293",
+      "bullets": [
+        "Added Claude Haiku 5.5 (`claude-haiku-5-5`), now the default Haiku model on the Anthropic API — 1M context, $0.10/$0.50 per Mtok ($0.50/$2.50 for prompts over 100K)",
+        "Added `agentType` to the `subagentStatusLine` payload, so scripts can tell custom subagent types apart",
+        "Added `isDeferred` to `$.tool.register` for mods: `false` lists the tool's schema in the prompt from the start instead of behind tool search",
+        "Fixed Claude sometimes treating its own last actions before a context compaction as done after it, and retracting or redoing finished work",
+        "Fixed a memory leak where an HTTP MCP connection kept every request it had sent until it closed",
+        "Fixed a message sent while Claude was working being lost when `←` moved the session to the background; if a queued message can't move, `←` now stays put and says so",
+        "Fixed `/model` effort ←/→ wrapping past the highest or lowest level, which could accidentally save Low as a model's default effort",
+        "Fixed `/tui` disconnecting Claude in Chrome in a session started with `--chrome`, and ignoring `--no-chrome`",
+        "Fixed Claude being told to continue or message subagents with `SendMessage` in sessions, including resumed ones, where a host, a permission rule or a `--tools` list removed that tool",
+        "Fixed subagents and `--agent` sessions being told a built-in tool was disabled for the whole session when only their own tool list left it out",
+        "Fixed a claude.ai-synced skill's edited description sometimes not reaching the model until a new conversation or `/clear`",
+        "Fixed `claude logs`, `stop`, `kill`, `rm` and `claude daemon status`, `stop`, `uninstall` sometimes signing you out when your login had expired or was about to",
+        "Fixed the footer's agents count disappearing after a momentary failure to read the sessions folder (for example, too many open files)",
+        "Fixed a custom agent named `worker` being shown as \"Agent\" when it starts, and the agent detail dialog's title losing the agent type once the agent finishes",
+        "Fixed the Artifact tool's transcript row briefly reading `Artifact(\"(unprintable path)\")` while a publish call was still streaming in",
+        "Fixed the `/ultrareview` upload on Linux wrongly refusing some repositories, such as one inside another checkout, over a settings file that \"could not be parsed\" while a sandboxed command was running",
+        "Fixed the `/ultrareview` upload's refusal over split-index files advising a git command that could leave git unable to read its index",
+        "Fixed replies in very long Remote Control and cloud sessions that could still appear a block at a time instead of streaming in",
+        "Fixed Remote Control uploading a session's starting history again after every credential recovery",
+        "Fixed PushNotification reporting \"Remote Control inactive\" in sessions started with `claude remote-control`",
+        "Fixed a mod's hooks on `classic.*` events being skipped while the plugin hooks worker restarts, which left settings hooks to answer without them",
+        "Fixed `claude plugin test` failing for mods that call `$.session.append`; tests can read the appended rows back with the new `mock.session`",
+        "Fixed `claude plugin eval` refusing every Bash-granting run on Macs with Docker Desktop (links under `~/.docker/bin`); the refusal now names which part of a credential store held the link",
+        "Fixed the Claude apps gateway refusing to start when a `desktop` policy sets Claude Desktop's built-in browser keys, such as `builtinBrowserEnabled`",
+        "Fixed `claude agents` offering bypass permissions that background sessions then ignored when consent was saved only in `.claude/settings.local.json` or a `--settings` file; it now asks for consent first, and a session that ignores bypass shows a short notice that stays",
+        "Fixed `←` backgrounding a session after 10 seconds while the prompt held unsent text (it now cancels the move) or a question was waiting for your answer",
+        "Fixed Esc, or No without feedback, on a permission prompt not stopping the turn when `←` had just been pressed to move the session to the background",
+        "Fixed the agents view briefly replacing the session list with placeholder rows when the sessions folder could not be read (for example, too many open files)",
+        "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+        "Fixed pasted text that begins and ends with the same words sometimes being sent to Claude as if it had been typed",
+        "Fixed a skill name in pasted text being treated as typed when an accent typed or pasted right after the paste merged into its last letter",
+        "Fixed `/feedback` returning to the drafts list after Ctrl+O or Ctrl+Z while a report was sending, leaving the send impossible to cancel",
+        "Fixed `claude purge` stopping silently (exit 0, or a hang in a terminal) when a file or folder could not be deleted; it now deletes the rest, lists what it could not delete, and exits 1",
+        "Fixed keybindings.json checks: a lone \" \" (space key) is no longer reported as an error, and keys like \"ctrl+ k\" now get a warning",
+        "Fixed vim mode `>>` and `<<` on a line of only spaces leaving the cursor past the end of the line, where a following `x` deleted nothing",
+        "Fixed vim mode: after deleting whole lines in Visual mode (`V` then `d`) the cursor lands on the first non-blank, and `.` after it acts on the cursor's line",
+        "Windows: Fixed stopping a status line, hook, or shell command sometimes terminating an unrelated process that had been given the same process ID",
+        "Reverted the auto mode denial message change from 2.1.281 that told Claude a denial covers the outcome, not only the exact command",
+        "Reverted the 2.1.290 fix for cloud sessions staying asleep after a container restart lost a pending `/loop` wakeup or scheduled task; Claude is no longer told, and the session stays asleep",
+        "Improved startup for Team and Enterprise organizations: policy and managed settings are fetched earlier, and a stalled request is retried after 3 seconds",
+        "Improved Claude in Chrome: fewer page actions are refused when the browser is slow to report its tabs",
+        "Improved the Claude in Chrome message in cloud sessions when the browser can't be reached: if you belong to more than one organization, it now says the extension must be signed in to the same one, and how to change that",
+        "Improved the Bash edit diff note to say the listed files changed while the command ran, which can include writes by other processes",
+        "Improved artifacts: Claude pins libraries to exact versions two weeks old or older",
+        "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+        "Changed the order of agent lists and of MCP servers announced to the model: names with non-ASCII characters now sort after ASCII names",
+        "Changed OpenTelemetry `claude_code.at_mention` logging to emit at most 100 agent and 100 MCP-resource events each time a prompt is read",
+        "Self-hosted runner: Changed the orchestrator to sleep 4 to 6 seconds between polls instead of a constant 5, so several replicas for one environment stop polling at the same moment",
+        "[Claude Tag] Fixed Claude in Slack saying a workspace isn't set up in Enterprise Grid channels shared across workspaces when Slack labels a message with a workspace that isn't connected",
+        "[Claude Tag] Fixed Claude in Slack stopping mid-task in a channel when an admin changed the channel's connectors, plugins, skills or rules; the change now applies once Claude finishes",
+        "[Claude Tag] Fixed asking Claude in Slack to run a thread's routine now with extra notes starting a separate run that couldn't post back; the run now continues in that thread",
+        "[Claude Tag] Fixed an access bundle's Add a connector dialog in Claude Tag admin settings showing every Google connector as connected after one Google sign-in",
+        "[Claude Tag] Improved Claude Tag admin settings to list an Enterprise Grid that isn't connected yet, with a Connect button",
+        "[Claude Tag] Changed Claude in Slack to join announcement channels, where only admins can post, without posting its intro",
+        "[Claude Tag] Changed the limit on channel rules in Claude Tag admin settings from 20 to 50 for each workspace and for the organization-wide Slack page",
+        "[Code Review] Improved Code Review's Add a repository dialog to list each repository that couldn't be added and why, such as missing GitHub write access"
+      ]
+    }
+  ],
+  "patchImpacts": [
+    {
+      "id": "quiet-subagent-waits",
+      "broken": true,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 31,
+          "bullet": "Fixed `/feedback` returning to the drafts list after Ctrl+O or Ctrl+Z while a report was sending, leaving the send impossible to cancel",
+          "score": -10.0209
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 9,
+          "bullet": "Fixed subagents and `--agent` sessions being told a built-in tool was disabled for the whole session when only their own tool list left it out",
+          "score": -9.0477
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 33,
+          "bullet": "Fixed keybindings.json checks: a lone \" \" (space key) is no longer reported as an error, and keys like \"ctrl+ k\" now get a warning",
+          "score": -7.3773
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -7.2887
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 13,
+          "bullet": "Fixed a custom agent named `worker` being shown as \"Agent\" when it starts, and the agent detail dialog's title losing the agent type once the agent finishes",
+          "score": -7.2455
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 5,
+          "bullet": "Fixed a message sent while Claude was working being lost when `←` moved the session to the background; if a queued message can't move, `←` now stays put and says so",
+          "score": -7.0761
+        }
+      ]
+    },
+    {
+      "id": "prompt-slim",
+      "broken": true,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 24,
+          "bullet": "Fixed `claude agents` offering bypass permissions that background sessions then ignored when consent was saved only in `.claude/settings.local.json` or a `--settings` file; it now asks for consent first, and a session that ignores bypass shows a short notice that stays",
+          "score": -5.204
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -3.7506
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 14,
+          "bullet": "Fixed the Artifact tool's transcript row briefly reading `Artifact(\"(unprintable path)\")` while a publish call was still streaming in",
+          "score": -3.371
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 49,
+          "bullet": "[Claude Tag] Fixed Claude in Slack stopping mid-task in a channel when an admin changed the channel's connectors, plugins, skills or rules; the change now applies once Claude finishes",
+          "score": -3.3064
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 23,
+          "bullet": "Fixed the Claude apps gateway refusing to start when a `desktop` policy sets Claude Desktop's built-in browser keys, such as `builtinBrowserEnabled`",
+          "score": -3.2011
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 9,
+          "bullet": "Fixed subagents and `--agent` sessions being told a built-in tool was disabled for the whole session when only their own tool list left it out",
+          "score": -3.0476
+        }
+      ]
+    },
+    {
+      "id": "teammate-workflow-gate",
+      "broken": true,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 19,
+          "bullet": "Fixed PushNotification reporting \"Remote Control inactive\" in sessions started with `claude remote-control`",
+          "score": -4.5075
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 1,
+          "bullet": "Added `agentType` to the `subagentStatusLine` payload, so scripts can tell custom subagent types apart",
+          "score": -4.4184
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 10,
+          "bullet": "Fixed a claude.ai-synced skill's edited description sometimes not reaching the model until a new conversation or `/clear`",
+          "score": -3.9496
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 34,
+          "bullet": "Fixed vim mode `>>` and `<<` on a line of only spaces leaving the cursor past the end of the line, where a following `x` deleted nothing",
+          "score": -3.6287
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 8,
+          "bullet": "Fixed Claude being told to continue or message subagents with `SendMessage` in sessions, including resumed ones, where a host, a permission rule or a `--tools` list removed that tool",
+          "score": -3.4073
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 26,
+          "bullet": "Fixed Esc, or No without feedback, on a permission prompt not stopping the turn when `←` had just been pressed to move the session to the background",
+          "score": -2.6966
+        }
+      ]
+    },
+    {
+      "id": "subagent-nesting",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 9,
+          "bullet": "Fixed subagents and `--agent` sessions being told a built-in tool was disabled for the whole session when only their own tool list left it out",
+          "score": -16.5029
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -10.7037
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 47,
+          "bullet": "Self-hosted runner: Changed the orchestrator to sleep 4 to 6 seconds between polls instead of a constant 5, so several replicas for one environment stop polling at the same moment",
+          "score": -7.6042
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 28,
+          "bullet": "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+          "score": -7.5096
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 12,
+          "bullet": "Fixed the footer's agents count disappearing after a momentary failure to read the sessions folder (for example, too many open files)",
+          "score": -6.6954
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 11,
+          "bullet": "Fixed `claude logs`, `stop`, `kill`, `rm` and `claude daemon status`, `stop`, `uninstall` sometimes signing you out when your login had expired or was about to",
+          "score": -6.1942
+        }
+      ]
+    },
+    {
+      "id": "no-collapse-reads",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 28,
+          "bullet": "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+          "score": -14.9922
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 14,
+          "bullet": "Fixed the Artifact tool's transcript row briefly reading `Artifact(\"(unprintable path)\")` while a publish call was still streaming in",
+          "score": -9.1885
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 31,
+          "bullet": "Fixed `/feedback` returning to the drafts list after Ctrl+O or Ctrl+Z while a report was sending, leaving the send impossible to cancel",
+          "score": -7.9886
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 2,
+          "bullet": "Added `isDeferred` to `$.tool.register` for mods: `false` lists the tool's schema in the prompt from the start instead of behind tool search",
+          "score": -7.2429
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 21,
+          "bullet": "Fixed `claude plugin test` failing for mods that call `$.session.append`; tests can read the appended rows back with the new `mock.session`",
+          "score": -5.3306
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 12,
+          "bullet": "Fixed the footer's agents count disappearing after a momentary failure to read the sessions folder (for example, too many open files)",
+          "score": -4.5289
+        }
+      ]
+    },
+    {
+      "id": "disable-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 55,
+          "bullet": "[Code Review] Improved Code Review's Add a repository dialog to list each repository that couldn't be added and why, such as missing GitHub write access",
+          "score": -13.6819
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 30,
+          "bullet": "Fixed a skill name in pasted text being treated as typed when an accent typed or pasted right after the paste merged into its last letter",
+          "score": -11.198
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 28,
+          "bullet": "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+          "score": -10.3893
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 45,
+          "bullet": "Changed the order of agent lists and of MCP servers announced to the model: names with non-ASCII characters now sort after ASCII names",
+          "score": -8.2145
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -8.0116
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 9,
+          "bullet": "Fixed subagents and `--agent` sessions being told a built-in tool was disabled for the whole session when only their own tool list left it out",
+          "score": -6.435
+        }
+      ]
+    },
+    {
+      "id": "prefer-project-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 55,
+          "bullet": "[Code Review] Improved Code Review's Add a repository dialog to list each repository that couldn't be added and why, such as missing GitHub write access",
+          "score": -13.0372
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -12.9406
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 24,
+          "bullet": "Fixed `claude agents` offering bypass permissions that background sessions then ignored when consent was saved only in `.claude/settings.local.json` or a `--settings` file; it now asks for consent first, and a session that ignores bypass shows a short notice that stays",
+          "score": -8.0116
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 45,
+          "bullet": "Changed the order of agent lists and of MCP servers announced to the model: names with non-ASCII characters now sort after ASCII names",
+          "score": -7.9886
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 10,
+          "bullet": "Fixed a claude.ai-synced skill's edited description sometimes not reaching the model until a new conversation or `/clear`",
+          "score": -6.9322
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 11,
+          "bullet": "Fixed `claude logs`, `stop`, `kill`, `rm` and `claude daemon status`, `stop`, `uninstall` sometimes signing you out when your login had expired or was about to",
+          "score": -6.7258
+        }
+      ]
+    },
+    {
+      "id": "explore-haiku",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 0,
+          "bullet": "Added Claude Haiku 5.5 (`claude-haiku-5-5`), now the default Haiku model on the Anthropic API — 1M context, $0.10/$0.50 per Mtok ($0.50/$2.50 for prompts over 100K)",
+          "score": -12.5318
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 16,
+          "bullet": "Fixed the `/ultrareview` upload's refusal over split-index files advising a git command that could leave git unable to read its index",
+          "score": -11.0358
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 9,
+          "bullet": "Fixed subagents and `--agent` sessions being told a built-in tool was disabled for the whole session when only their own tool list left it out",
+          "score": -9.8846
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -9.3114
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 1,
+          "bullet": "Added `agentType` to the `subagentStatusLine` payload, so scripts can tell custom subagent types apart",
+          "score": -8.8367
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 28,
+          "bullet": "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+          "score": -8.0782
+        }
+      ]
+    },
+    {
+      "id": "spinner",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 45,
+          "bullet": "Changed the order of agent lists and of MCP servers announced to the model: names with non-ASCII characters now sort after ASCII names",
+          "score": -12.4862
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 35,
+          "bullet": "Fixed vim mode: after deleting whole lines in Visual mode (`V` then `d`) the cursor lands on the first non-blank, and `.` after it acts on the cursor's line",
+          "score": -6.4279
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 13,
+          "bullet": "Fixed a custom agent named `worker` being shown as \"Agent\" when it starts, and the agent detail dialog's title losing the agent type once the agent finishes",
+          "score": -5.9063
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 28,
+          "bullet": "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+          "score": -5.6285
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 36,
+          "bullet": "Windows: Fixed stopping a status line, hook, or shell command sometimes terminating an unrelated process that had been given the same process ID",
+          "score": -5.0955
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 43,
+          "bullet": "Improved artifacts: Claude pins libraries to exact versions two weeks old or older",
+          "score": -4.5075
+        }
+      ]
+    },
+    {
+      "id": "thinking-no-fold",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 2,
+          "bullet": "Added `isDeferred` to `$.tool.register` for mods: `false` lists the tool's schema in the prompt from the start instead of behind tool search",
+          "score": -12.0375
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -9.8246
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 28,
+          "bullet": "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+          "score": -7.6396
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 14,
+          "bullet": "Fixed the Artifact tool's transcript row briefly reading `Artifact(\"(unprintable path)\")` while a publish call was still streaming in",
+          "score": -6.3962
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 17,
+          "bullet": "Fixed replies in very long Remote Control and cloud sessions that could still appear a block at a time instead of streaming in",
+          "score": -6.074
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 24,
+          "bullet": "Fixed `claude agents` offering bypass permissions that background sessions then ignored when consent was saved only in `.claude/settings.local.json` or a `--settings` file; it now asks for consent first, and a session that ignores bypass shows a short notice that stays",
+          "score": -5.204
+        }
+      ]
+    },
+    {
+      "id": "tool-defer-whitelist",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 9,
+          "bullet": "Fixed subagents and `--agent` sessions being told a built-in tool was disabled for the whole session when only their own tool list left it out",
+          "score": -11.6977
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 8,
+          "bullet": "Fixed Claude being told to continue or message subagents with `SendMessage` in sessions, including resumed ones, where a host, a permission rule or a `--tools` list removed that tool",
+          "score": -10.8598
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 45,
+          "bullet": "Changed the order of agent lists and of MCP servers announced to the model: names with non-ASCII characters now sort after ASCII names",
+          "score": -10.2338
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 2,
+          "bullet": "Added `isDeferred` to `$.tool.register` for mods: `false` lists the tool's schema in the prompt from the start instead of behind tool search",
+          "score": -7.2429
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 6,
+          "bullet": "Fixed `/model` effort ←/→ wrapping past the highest or lowest level, which could accidentally save Low as a model's default effort",
+          "score": -6.6248
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 55,
+          "bullet": "[Code Review] Improved Code Review's Add a repository dialog to list each repository that couldn't be added and why, such as missing GitHub write access",
+          "score": -6.1546
+        }
+      ]
+    },
+    {
+      "id": "abbreviations",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 47,
+          "bullet": "Self-hosted runner: Changed the orchestrator to sleep 4 to 6 seconds between polls instead of a constant 5, so several replicas for one environment stop polling at the same moment",
+          "score": -11.1119
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 33,
+          "bullet": "Fixed keybindings.json checks: a lone \" \" (space key) is no longer reported as an error, and keys like \"ctrl+ k\" now get a warning",
+          "score": -9.9852
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 16,
+          "bullet": "Fixed the `/ultrareview` upload's refusal over split-index files advising a git command that could leave git unable to read its index",
+          "score": -8.8461
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 43,
+          "bullet": "Improved artifacts: Claude pins libraries to exact versions two weeks old or older",
+          "score": -8.3547
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 55,
+          "bullet": "[Code Review] Improved Code Review's Add a repository dialog to list each repository that couldn't be added and why, such as missing GitHub write access",
+          "score": -7.8728
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 24,
+          "bullet": "Fixed `claude agents` offering bypass permissions that background sessions then ignored when consent was saved only in `.claude/settings.local.json` or a `--settings` file; it now asks for consent first, and a session that ignores bypass shows a short notice that stays",
+          "score": -7.6003
+        }
+      ]
+    },
+    {
+      "id": "thinking-visibility",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 14,
+          "bullet": "Fixed the Artifact tool's transcript row briefly reading `Artifact(\"(unprintable path)\")` while a publish call was still streaming in",
+          "score": -10.6915
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -7.5012
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 3,
+          "bullet": "Fixed Claude sometimes treating its own last actions before a context compaction as done after it, and retracting or redoing finished work",
+          "score": -7.0705
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 9,
+          "bullet": "Fixed subagents and `--agent` sessions being told a built-in tool was disabled for the whole session when only their own tool list left it out",
+          "score": -6.0952
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 51,
+          "bullet": "[Claude Tag] Fixed an access bundle's Add a connector dialog in Claude Tag admin settings showing every Google connector as connected after one Google sign-in",
+          "score": -5.9057
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 15,
+          "bullet": "Fixed the `/ultrareview` upload on Linux wrongly refusing some repositories, such as one inside another checkout, over a settings file that \"could not be parsed\" while a sandboxed command was running",
+          "score": -5.556
+        }
+      ]
+    },
+    {
+      "id": "worktree-dedup",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 28,
+          "bullet": "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+          "score": -10.2004
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 3,
+          "bullet": "Fixed Claude sometimes treating its own last actions before a context compaction as done after it, and retracting or redoing finished work",
+          "score": -8.5234
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -8.3356
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 24,
+          "bullet": "Fixed `claude agents` offering bypass permissions that background sessions then ignored when consent was saved only in `.claude/settings.local.json` or a `--settings` file; it now asks for consent first, and a session that ignores bypass shows a short notice that stays",
+          "score": -8.1836
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 4,
+          "bullet": "Fixed a memory leak where an HTTP MCP connection kept every request it had sent until it closed",
+          "score": -6.6307
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 18,
+          "bullet": "Fixed Remote Control uploading a session's starting history again after every credential recovery",
+          "score": -6.1029
+        }
+      ]
+    },
+    {
+      "id": "turn-timestamp",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 5,
+          "bullet": "Fixed a message sent while Claude was working being lost when `←` moved the session to the background; if a queued message can't move, `←` now stays put and says so",
+          "score": -9.6106
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 29,
+          "bullet": "Fixed pasted text that begins and ends with the same words sometimes being sent to Claude as if it had been typed",
+          "score": -9.2908
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 24,
+          "bullet": "Fixed `claude agents` offering bypass permissions that background sessions then ignored when consent was saved only in `.claude/settings.local.json` or a `--settings` file; it now asks for consent first, and a session that ignores bypass shows a short notice that stays",
+          "score": -9.1685
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 36,
+          "bullet": "Windows: Fixed stopping a status line, hook, or shell command sometimes terminating an unrelated process that had been given the same process ID",
+          "score": -8.5853
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 25,
+          "bullet": "Fixed `←` backgrounding a session after 10 seconds while the prompt held unsent text (it now cancels the move) or a question was waiting for your answer",
+          "score": -7.9894
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -7.8828
+        }
+      ]
+    },
+    {
+      "id": "hook-envelope-strip",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 46,
+          "bullet": "Changed OpenTelemetry `claude_code.at_mention` logging to emit at most 100 agent and 100 MCP-resource events each time a prompt is read",
+          "score": -9.3465
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 1,
+          "bullet": "Added `agentType` to the `subagentStatusLine` payload, so scripts can tell custom subagent types apart",
+          "score": -7.4245
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 34,
+          "bullet": "Fixed vim mode `>>` and `<<` on a line of only spaces leaving the cursor past the end of the line, where a following `x` deleted nothing",
+          "score": -7.3909
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 36,
+          "bullet": "Windows: Fixed stopping a status line, hook, or shell command sometimes terminating an unrelated process that had been given the same process ID",
+          "score": -6.583
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 47,
+          "bullet": "Self-hosted runner: Changed the orchestrator to sleep 4 to 6 seconds between polls instead of a constant 5, so several replicas for one environment stop polling at the same moment",
+          "score": -6.1284
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 3,
+          "bullet": "Fixed Claude sometimes treating its own last actions before a context compaction as done after it, and retracting or redoing finished work",
+          "score": -5.2676
+        }
+      ]
+    },
+    {
+      "id": "toolsearch-visibility",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 8,
+          "bullet": "Fixed Claude being told to continue or message subagents with `SendMessage` in sessions, including resumed ones, where a host, a permission rule or a `--tools` list removed that tool",
+          "score": -8.9253
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 14,
+          "bullet": "Fixed the Artifact tool's transcript row briefly reading `Artifact(\"(unprintable path)\")` while a publish call was still streaming in",
+          "score": -5.8176
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 28,
+          "bullet": "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+          "score": -5.3136
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 7,
+          "bullet": "Fixed `/tui` disconnecting Claude in Chrome in a session started with `--chrome`, and ignoring `--no-chrome`",
+          "score": -4.2502
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -3.7506
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 2,
+          "bullet": "Added `isDeferred` to `$.tool.register` for mods: `false` lists the tool's schema in the prompt from the start instead of behind tool search",
+          "score": -3.5543
+        }
+      ]
+    },
+    {
+      "id": "system-reminders",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 28,
+          "bullet": "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+          "score": -8.7479
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 47,
+          "bullet": "Self-hosted runner: Changed the orchestrator to sleep 4 to 6 seconds between polls instead of a constant 5, so several replicas for one environment stop polling at the same moment",
+          "score": -6.0938
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 42,
+          "bullet": "Improved the Bash edit diff note to say the listed files changed while the command ran, which can include writes by other processes",
+          "score": -5.5595
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -5.5595
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 8,
+          "bullet": "Fixed Claude being told to continue or message subagents with `SendMessage` in sessions, including resumed ones, where a host, a permission rule or a `--tools` list removed that tool",
+          "score": -5.518
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 36,
+          "bullet": "Windows: Fixed stopping a status line, hook, or shell command sometimes terminating an unrelated process that had been given the same process ID",
+          "score": -5.3842
+        }
+      ]
+    },
+    {
+      "id": "read-summary",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 35,
+          "bullet": "Fixed vim mode: after deleting whole lines in Visual mode (`V` then `d`) the cursor lands on the first non-blank, and `.` after it acts on the cursor's line",
+          "score": -8.7169
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 2,
+          "bullet": "Added `isDeferred` to `$.tool.register` for mods: `false` lists the tool's schema in the prompt from the start instead of behind tool search",
+          "score": -7.2429
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 28,
+          "bullet": "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+          "score": -7.0377
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 12,
+          "bullet": "Fixed the footer's agents count disappearing after a momentary failure to read the sessions folder (for example, too many open files)",
+          "score": -6.8746
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 14,
+          "bullet": "Fixed the Artifact tool's transcript row briefly reading `Artifact(\"(unprintable path)\")` while a publish call was still streaming in",
+          "score": -5.8176
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 3,
+          "bullet": "Fixed Claude sometimes treating its own last actions before a context compaction as done after it, and retracting or redoing finished work",
+          "score": -5.2676
+        }
+      ]
+    },
+    {
+      "id": "trim-context-bloat",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 3,
+          "bullet": "Fixed Claude sometimes treating its own last actions before a context compaction as done after it, and retracting or redoing finished work",
+          "score": -8.5234
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 30,
+          "bullet": "Fixed a skill name in pasted text being treated as typed when an accent typed or pasted right after the paste merged into its last letter",
+          "score": -8.5015
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -8.3356
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 0,
+          "bullet": "Added Claude Haiku 5.5 (`claude-haiku-5-5`), now the default Haiku model on the Anthropic API — 1M context, $0.10/$0.50 per Mtok ($0.50/$2.50 for prompts over 100K)",
+          "score": -7.5579
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 26,
+          "bullet": "Fixed Esc, or No without feedback, on a permission prompt not stopping the turn when `←` had just been pressed to move the session to the background",
+          "score": -7.3601
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 6,
+          "bullet": "Fixed `/model` effort ←/→ wrapping past the highest or lowest level, which could accidentally save Low as a model's default effort",
+          "score": -6.8601
+        }
+      ]
+    },
+    {
+      "id": "thinking-display-summarized",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -8.3356
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 5,
+          "bullet": "Fixed a message sent while Claude was working being lost when `←` moved the session to the background; if a queued message can't move, `←` now stays put and says so",
+          "score": -7.5575
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 2,
+          "bullet": "Added `isDeferred` to `$.tool.register` for mods: `false` lists the tool's schema in the prompt from the start instead of behind tool search",
+          "score": -6.8369
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 4,
+          "bullet": "Fixed a memory leak where an HTTP MCP connection kept every request it had sent until it closed",
+          "score": -6.0309
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 50,
+          "bullet": "[Claude Tag] Fixed asking Claude in Slack to run a thread's routine now with extra notes starting a separate run that couldn't post back; the run now continues in that thread",
+          "score": -5.9522
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 0,
+          "bullet": "Added Claude Haiku 5.5 (`claude-haiku-5-5`), now the default Haiku model on the Anthropic API — 1M context, $0.10/$0.50 per Mtok ($0.50/$2.50 for prompts over 100K)",
+          "score": -5.8678
+        }
+      ]
+    },
+    {
+      "id": "keyword-highlights",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 37,
+          "bullet": "Reverted the auto mode denial message change from 2.1.281 that told Claude a denial covers the outcome, not only the exact command",
+          "score": -8.2189
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 18,
+          "bullet": "Fixed Remote Control uploading a session's starting history again after every credential recovery",
+          "score": -4.4184
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 45,
+          "bullet": "Changed the order of agent lists and of MCP servers announced to the model: names with non-ASCII characters now sort after ASCII names",
+          "score": -4.2999
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 41,
+          "bullet": "Improved the Claude in Chrome message in cloud sessions when the browser can't be reached: if you belong to more than one organization, it now says the extension must be signed in to the same one, and how to change that",
+          "score": -3.9087
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 43,
+          "bullet": "Improved artifacts: Claude pins libraries to exact versions two weeks old or older",
+          "score": -3.8472
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 16,
+          "bullet": "Fixed the `/ultrareview` upload's refusal over split-index files advising a git command that could leave git unable to read its index",
+          "score": -3.7506
+        }
+      ]
+    },
+    {
+      "id": "feature-flag-toggles",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 9,
+          "bullet": "Fixed subagents and `--agent` sessions being told a built-in tool was disabled for the whole session when only their own tool list left it out",
+          "score": -7.9784
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 2,
+          "bullet": "Added `isDeferred` to `$.tool.register` for mods: `false` lists the tool's schema in the prompt from the start instead of behind tool search",
+          "score": -7.3773
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 8,
+          "bullet": "Fixed Claude being told to continue or message subagents with `SendMessage` in sessions, including resumed ones, where a host, a permission rule or a `--tools` list removed that tool",
+          "score": -6.8146
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 35,
+          "bullet": "Fixed vim mode: after deleting whole lines in Visual mode (`V` then `d`) the cursor lands on the first non-blank, and `.` after it acts on the cursor's line",
+          "score": -6.2205
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 21,
+          "bullet": "Fixed `claude plugin test` failing for mods that call `$.session.append`; tests can read the appended rows back with the new `mock.session`",
+          "score": -5.6914
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 0,
+          "bullet": "Added Claude Haiku 5.5 (`claude-haiku-5-5`), now the default Haiku model on the Anthropic API — 1M context, $0.10/$0.50 per Mtok ($0.50/$2.50 for prompts over 100K)",
+          "score": -5.404
+        }
+      ]
+    },
+    {
+      "id": "mode-cycle-order",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 28,
+          "bullet": "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+          "score": -7.9217
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 37,
+          "bullet": "Reverted the auto mode denial message change from 2.1.281 that told Claude a denial covers the outcome, not only the exact command",
+          "score": -6.4743
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 54,
+          "bullet": "[Claude Tag] Changed the limit on channel rules in Claude Tag admin settings from 20 to 50 for each workspace and for the organization-wide Slack page",
+          "score": -5.3082
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 0,
+          "bullet": "Added Claude Haiku 5.5 (`claude-haiku-5-5`), now the default Haiku model on the Anthropic API — 1M context, $0.10/$0.50 per Mtok ($0.50/$2.50 for prompts over 100K)",
+          "score": -5.0928
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 15,
+          "bullet": "Fixed the `/ultrareview` upload on Linux wrongly refusing some repositories, such as one inside another checkout, over a settings file that \"could not be parsed\" while a sandboxed command was running",
+          "score": -4.7465
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 24,
+          "bullet": "Fixed `claude agents` offering bypass permissions that background sessions then ignored when consent was saved only in `.claude/settings.local.json` or a `--settings` file; it now asks for consent first, and a session that ignores bypass shows a short notice that stays",
+          "score": -4.1489
+        }
+      ]
+    },
+    {
+      "id": "flag-env-override",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 24,
+          "bullet": "Fixed `claude agents` offering bypass permissions that background sessions then ignored when consent was saved only in `.claude/settings.local.json` or a `--settings` file; it now asks for consent first, and a session that ignores bypass shows a short notice that stays",
+          "score": -7.6003
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 30,
+          "bullet": "Fixed a skill name in pasted text being treated as typed when an accent typed or pasted right after the paste merged into its last letter",
+          "score": -7.1414
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 47,
+          "bullet": "Self-hosted runner: Changed the orchestrator to sleep 4 to 6 seconds between polls instead of a constant 5, so several replicas for one environment stop polling at the same moment",
+          "score": -6.6128
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 15,
+          "bullet": "Fixed the `/ultrareview` upload on Linux wrongly refusing some repositories, such as one inside another checkout, over a settings file that \"could not be parsed\" while a sandboxed command was running",
+          "score": -5.8034
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 35,
+          "bullet": "Fixed vim mode: after deleting whole lines in Visual mode (`V` then `d`) the cursor lands on the first non-blank, and `.` after it acts on the cursor's line",
+          "score": -5.7288
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 28,
+          "bullet": "Fixed path-scoped rules and nested CLAUDE.md files not loading when Claude views a file with a single-file cat, head, tail, sed -n or grep command in the Bash tool instead of the Read tool",
+          "score": -5.6285
+        }
+      ]
+    },
+    {
+      "id": "auto-color",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 39,
+          "bullet": "Improved startup for Team and Enterprise organizations: policy and managed settings are fetched earlier, and a stalled request is retried after 3 seconds",
+          "score": -7.5012
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 3,
+          "bullet": "Fixed Claude sometimes treating its own last actions before a context compaction as done after it, and retracting or redoing finished work",
+          "score": -7.0705
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 4,
+          "bullet": "Fixed a memory leak where an HTTP MCP connection kept every request it had sent until it closed",
+          "score": -6.6307
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 26,
+          "bullet": "Fixed Esc, or No without feedback, on a permission prompt not stopping the turn when `←` had just been pressed to move the session to the background",
+          "score": -6.486
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 0,
+          "bullet": "Added Claude Haiku 5.5 (`claude-haiku-5-5`), now the default Haiku model on the Anthropic API — 1M context, $0.10/$0.50 per Mtok ($0.50/$2.50 for prompts over 100K)",
+          "score": -5.404
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 8,
+          "bullet": "Fixed Claude being told to continue or message subagents with `SendMessage` in sessions, including resumed ones, where a host, a permission rule or a `--tools` list removed that tool",
+          "score": -4.926
+        }
+      ]
+    },
+    {
+      "id": "ghostty-term",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 55,
+          "bullet": "[Code Review] Improved Code Review's Add a repository dialog to list each repository that couldn't be added and why, such as missing GitHub write access",
+          "score": -7.1588
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 6,
+          "bullet": "Fixed `/model` effort ←/→ wrapping past the highest or lowest level, which could accidentally save Low as a model's default effort",
+          "score": -3.8809
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -3.7506
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 14,
+          "bullet": "Fixed the Artifact tool's transcript row briefly reading `Artifact(\"(unprintable path)\")` while a publish call was still streaming in",
+          "score": -3.371
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 46,
+          "bullet": "Changed OpenTelemetry `claude_code.at_mention` logging to emit at most 100 agent and 100 MCP-resource events each time a prompt is read",
+          "score": -3.1483
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 32,
+          "bullet": "Fixed `claude purge` stopping silently (exit 0, or a hang in a terminal) when a file or folder could not be deleted; it now deletes the rest, lists what it could not delete, and exits 1",
+          "score": -3.0785
+        }
+      ]
+    },
+    {
+      "id": "disable-bundled-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 3,
+          "bullet": "Fixed Claude sometimes treating its own last actions before a context compaction as done after it, and retracting or redoing finished work",
+          "score": -7.0705
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 20,
+          "bullet": "Fixed a mod's hooks on `classic.*` events being skipped while the plugin hooks worker restarts, which left settings hooks to answer without them",
+          "score": -6.4743
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 2,
+          "bullet": "Added `isDeferred` to `$.tool.register` for mods: `false` lists the tool's schema in the prompt from the start instead of behind tool search",
+          "score": -6.1983
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 9,
+          "bullet": "Fixed subagents and `--agent` sessions being told a built-in tool was disabled for the whole session when only their own tool list left it out",
+          "score": -4.9308
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 21,
+          "bullet": "Fixed `claude plugin test` failing for mods that call `$.session.append`; tests can read the appended rows back with the new `mock.session`",
+          "score": -4.7732
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 44,
+          "bullet": "Changed claude.ai skill syncing to check for changes about every 40 minutes, instead of every 10, while no session is in use",
+          "score": -4.261
+        }
+      ]
+    },
+    {
+      "id": "env-block-trim",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.293",
+          "bulletIndex": 34,
+          "bullet": "Fixed vim mode `>>` and `<<` on a line of only spaces leaving the cursor past the end of the line, where a following `x` deleted nothing",
+          "score": -3.6287
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 47,
+          "bullet": "Self-hosted runner: Changed the orchestrator to sleep 4 to 6 seconds between polls instead of a constant 5, so several replicas for one environment stop polling at the same moment",
+          "score": -3.3064
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 3,
+          "bullet": "Fixed Claude sometimes treating its own last actions before a context compaction as done after it, and retracting or redoing finished work",
+          "score": -3.2558
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 50,
+          "bullet": "[Claude Tag] Fixed asking Claude in Slack to run a thread's routine now with extra notes starting a separate run that couldn't post back; the run now continues in that thread",
+          "score": -3.2113
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 0,
+          "bullet": "Added Claude Haiku 5.5 (`claude-haiku-5-5`), now the default Haiku model on the Anthropic API — 1M context, $0.10/$0.50 per Mtok ($0.50/$2.50 for prompts over 100K)",
+          "score": -2.702
+        },
+        {
+          "version": "2.1.293",
+          "bulletIndex": 46,
+          "bullet": "Changed OpenTelemetry `claude_code.at_mention` logging to emit at most 100 agent and 100 MCP-resource events each time a prompt is read",
+          "score": -2.5096
+        }
+      ]
+    }
+  ],
+  "reasoning": {
+    "_port": "Port 2.1.292 -> 2.1.293. 29/29 JS, 74/74 prompts. Two JS forks, one prompt pair edited in both arms. Flags: +15 / -1 (tengu_cobalt_plinth_woad, not toggled by our set) / 1 changed. Haiku 5.5 lands: the `haiku` alias now resolves to claude-haiku-5-5 on first-party (4.5 on 3P), and its catalog entry carries lean_prompt, so Haiku subagents take the lean arm.",
+    "quiet-subagent-waits": "Noise. Silent: the completed-notification call gained `callerCanContinueAgents:` between maxTurnsReached and usage (the new can-the-caller-continue-agents plumbing). Fix: optional `(?:callerCanContinueAgents:[$\\w.]+,)?` in point 2.",
+    "teammate-workflow-gate": "Noise. Silent: the Agent `name` param description became a template literal, `${PREFIX} Makes it addressable via ${SENDMSG}({to: name}) while running.`. Fix: point 4 captures the SendMessage name var by regex and rewrites the tail of the template; the var is already bound in that template, so no chunk-scope risk.",
+    "prompt-slim": "Semi. agent-usage-notes: both arms gated their \"continue a previously spawned agent\" bullet on a new can-continue var (`${g?`Use SendMessage…`:`A previously spawned agent cannot be continued from here…`}`), tied to the same callerCanContinueAgents change. Find text takes a __CONTVAR__ placeholder; the replacement wraps our resume/name bullets in the same ternary and keeps upstream's cannot-continue fallback."
+  }
+}
