@@ -252,6 +252,9 @@ replaceExact('teammate dispatch gate',
 // Stock copy sells `name` as a live-addressing handle. Its real value is
 // resume/reuse. ASCII only (bundle encoding invariant, lib/shared.js).
 // Minified: `${PREFIX} Makes it addressable via ${SENDMSG}({to: name}) while running.`
+// The template sits in a small constants chunk whose bytecode region is
+// smaller than the chunk, so the native repack has zero growth headroom
+// there: the replacement must not be longer than the stock text.
 
 const nameDescMatch = content.match(/ Makes it addressable via \$\{([$\w]+)\}\(\{to: name\}\) while running\.`/);
 if (!nameDescMatch) {
@@ -264,7 +267,7 @@ if (!nameDescMatch) {
 const sendMsgVar = nameDescMatch[1];
 replaceExact('Agent name param description',
   nameDescMatch[0],
-  ` Give it a name if you might want to reuse or resume it later: \${${sendMsgVar}}({to: name}) then targets it, resuming it with its full context. Omit it for one-and-done work.\``);
+  ` Set it only to resume it later via \${${sendMsgVar}}({to: name}).\``);
 
 // ── Patch Point 5: widen the schema-strip condition ──
 //
