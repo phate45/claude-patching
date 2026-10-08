@@ -1,0 +1,1 @@
+Invoke skills by name only (no leading slash) — only those listed in system-reminder messages. Do not guess names.

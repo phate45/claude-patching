@@ -1,0 +1,382 @@
+{
+  "fromVersion": "2.1.293",
+  "toVersion": "2.1.294",
+  "generatedAt": "2026-10-08T13:24:23.662Z",
+  "versionCount": 1,
+  "entryCount": 2,
+  "changelog": [
+    {
+      "version": "2.1.294",
+      "bullets": [
+        "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+        "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early"
+      ]
+    }
+  ],
+  "patchImpacts": [
+    {
+      "id": "ghostty-term",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "system-reminders",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "no-collapse-reads",
+      "broken": false,
+      "matches": []
+    },
+    {
+      "id": "read-summary",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "prompt-slim",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        },
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "feature-flag-toggles",
+      "broken": false,
+      "matches": []
+    },
+    {
+      "id": "toolsearch-visibility",
+      "broken": false,
+      "matches": []
+    },
+    {
+      "id": "flag-env-override",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "keyword-highlights",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "tool-defer-whitelist",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "abbreviations",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "worktree-dedup",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "disable-bundled-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        },
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "disable-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "spinner",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "thinking-display-summarized",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "thinking-visibility",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "thinking-no-fold",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "trim-context-bloat",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        },
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "hook-envelope-strip",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        },
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "env-block-trim",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        },
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "auto-color",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        },
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "mode-cycle-order",
+      "broken": false,
+      "matches": []
+    },
+    {
+      "id": "explore-haiku",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "subagent-nesting",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        },
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "quiet-subagent-waits",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "teammate-workflow-gate",
+      "broken": false,
+      "matches": []
+    },
+    {
+      "id": "turn-timestamp",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "prefer-project-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.294",
+          "bulletIndex": 0,
+          "bullet": "Fixed `prompt` and `agent` hooks written as instructions (such as \"Block commands that...\") allowing what they should block",
+          "score": 0
+        },
+        {
+          "version": "2.1.294",
+          "bulletIndex": 1,
+          "bullet": "Improved how `prompt` hooks on Stop and SubagentStop written as instructions (such as \"Carry on if the build is broken\") are judged, so Claude is less likely to stop early",
+          "score": 0
+        }
+      ]
+    }
+  ],
+  "reasoning": {
+    "_port": "Port 2.1.293 -> 2.1.294 (npm `next` tag; `latest` still 2.1.293). 29/29 JS, 74/74 prompts, zero forks, index unchanged. Flags and env vars: no adds, removes or default changes. The changelog covers only prompt/agent hook judging fixes, and no patch touches hooks, so every match is noise."
+  }
+}
