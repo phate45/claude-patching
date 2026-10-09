@@ -1,0 +1,1382 @@
+{
+  "fromVersion": "2.1.294",
+  "toVersion": "2.1.295",
+  "generatedAt": "2026-10-09T06:07:52.283Z",
+  "versionCount": 1,
+  "entryCount": 143,
+  "changelog": [
+    {
+      "version": "2.1.295",
+      "bullets": [
+        "Added `onFailure: \"block\"` for command and HTTP hooks: a hook that can't start, times out, or exits with an unexpected code blocks the action instead of letting it through",
+        "Added Program Status Protocol (OSC 7501) support: terminals that implement it can show whether Claude Code is working, waiting on you, or done",
+        "Added quoted text to the `/copy` picker, so a drafted message copies without its `>` markers",
+        "Added a warning to `claude plugin install`, `enable`, `disable` and `marketplace add` when the settings file they write to does not load",
+        "Added a line on stderr, when it is a terminal, that says what a `claude -p` run is waiting for when it stays open after its last turn",
+        "Added support for `timeouts.upstream_ttfb_ms` on the Claude apps gateway's Bedrock, Vertex, Foundry and other cloud upstreams: a value you set now limits how long a stream may take to start there, after which it fails over or gets a 502",
+        "Added a \"Backgrounding cancelled\" message when you stop the turn while `←` is waiting for the current tool to finish",
+        "Added an optional `models` list to every Claude apps gateway upstream: only the listed models are sent there, on failover too, and one `*` in an entry is a wildcard",
+        "Added support for `forceLoginMethod: \"gateway\"` and `forceLoginGatewayUrl` in your own user settings on machines with no managed settings, so `/login` opens on that Claude apps gateway",
+        "Added advice to `claude plugin validate` when a plugin's README has no install line: it prints the line to paste and never changes the exit code, even with `--strict`",
+        "Added `upstream_request_id` to the Claude apps gateway's `inference` audit event: the request ID from Amazon Bedrock, the Anthropic API or another upstream, for support cases",
+        "Added `$.ui.notify` for mods: raises a native notification through your own notification setting and says which channel sent it",
+        "Added children to a mod's `Button`: strings and `Text`, so a row of a list is one pressable with a chip or a dim detail inside",
+        "Added `CLAUDE_CODE_RETRY_WATCHDOG_MAX_WAIT_MS` to limit how long unattended retry mode (`CLAUDE_CODE_RETRY_WATCHDOG`) waits out 429 and 529 errors",
+        "Added a `request-id` header to the Claude apps gateway's successful inference responses, so `request_id` in Claude Code telemetry matches the gateway's audit log",
+        "Fixed every request failing on a `[1m]` model when a gateway, Bedrock, Vertex or Foundry refuses the context-1m beta; Claude Code now resends without it",
+        "Fixed `claude -p` text output dropping earlier responses when background work started another turn; each turn's response now prints when the turn ends",
+        "Fixed remote MCP servers in headless and SDK sessions staying disconnected after an outage longer than 15 seconds, or reconnecting in a tight loop to a server that drops each connection right after it connects; repeated drops now back off, up to 30s",
+        "Fixed remote MCP connections being dropped when a server's error reply happened to contain a network error name",
+        "Fixed MCP servers that repeat a pagination cursor being asked for the same page up to 20 times at every connect",
+        "Fixed CSS, JavaScript and XML files returned by MCP tools being saved as .bin, which the Read tool refuses; font and icon files now get their own extension too",
+        "Fixed Bash tool calls failing when the model passes `command_description` instead of `description`",
+        "Fixed Claude in Chrome not applying a site deny rule written with port 80 (`host:80`) to plain `http://` pages on that host",
+        "Fixed `/plugin`'s Errors tab removing a marketplace that failed to load, and uninstalling its plugins, on Enter without asking first",
+        "Fixed `claude plugin marketplace add` reporting success for a marketplace whose name no plugin can be installed under; such an add is now refused",
+        "Fixed `CLAUDE_AUTO_BACKGROUND_TASKS` moving a subagent to the background while an edit or shell command waited behind it, which started that call before the subagent finished",
+        "Fixed PushNotification saying a push was not sent in `claude remote-control` sessions right after a phone message, without the `/config` toggle, or when started from inside Claude Code",
+        "Fixed files sent from remote sessions being refused as \"could not be vouched for\" when more than 256 were sent at once",
+        "Fixed a rare failure to load managed settings at startup right after a login refresh",
+        "Fixed `/tui` exiting without a message, or with a raw system error, when Claude Code could not be started again",
+        "Fixed a link address shown as text being hidden by a colour or conceal style a reply left on, including where it wraps in a table or a question preview",
+        "Fixed Fable models listed in `availableModels` not appearing in the `/model` picker for sessions signed in to a Claude apps gateway; such a model now shows its built-in row in place of a `modelPicker` row added for the same model",
+        "Fixed the Claude apps gateway's admin spend view showing a developer's old groups and group cap after their session stopped carrying groups",
+        "Fixed `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` hiding the Claude apps gateway spend limit in `/usage` and the status line. The spend limit request goes to the gateway the session is signed in to",
+        "Fixed subagents in their own linked worktree being shown the parent session's git branch, status and recent commits",
+        "Fixed Claude stopping at the end of the current tool when text typed in the prompt cancelled backgrounding with `←`; Claude now keeps working in the foreground",
+        "Fixed `--tools` and `--restricted` not applying to built-in tools that register after launch, and deprecated tool names reaching tools outside the caller's tool set",
+        "Fixed an interrupt not ending the turn until a timeout while Claude waited for an MCP server's resource list",
+        "Fixed a mod's hook being handed a deeply nested tool input cut short with no error, so a guard could pass content it never saw",
+        "Fixed Esc not stopping a self-paced `/loop` that was moved to the background with `←`; cancelling a pending wakeup now shows a notice",
+        "Fixed commands and hooks in background sessions inheriting `FORCE_COLOR=3`, which put color escape codes into the output Claude reads",
+        "Fixed `claude agents` starting a new background service as it exited when both were stopped with a session open (for example at a reboot), which could delay shutdown and restart an interrupted session",
+        "Fixed a custom agent named `worker` being shown as \"Agent\" in auto-mode denial notices and in the activity lists of task detail views",
+        "Fixed Bash permission checks for for-loops over glob patterns, improving permission-check accuracy",
+        "Fixed forked skills invoked from Workflow subagents delivering their results to the main conversation instead of the invoking agent",
+        "Fixed in-process agent teammates failing their first SendMessage call until they loaded the tool through tool search",
+        "Fixed Claude being told on resume that an unfinished background workflow may have been stopped by `TaskStop`, which can never be the cause",
+        "Fixed Claude not being told when you stop a long-running MCP tool call from the tasks panel or a connected client",
+        "Fixed a background session's `/loop` stopping without notice when its next wakeup came due while the session's process was down; the session now says so and Claude is told",
+        "Fixed raw terminal hyperlink bytes in a reply or a teammate's message being drawn as a clickable link with a hidden address",
+        "Fixed plugin marketplaces whose repository has large git submodules failing to add or refresh: only the submodules that hold plugin files are now fetched",
+        "Fixed the `/advisor` dialog showing a checkmark on a saved advisor model that is no longer available; it now opens on \"No advisor\"",
+        "Fixed the notification for an MCP tool call that moved to the background showing a shortened task id",
+        "Fixed vim mode's `~` moving the cursor past the last character of a line, so `x` after it did nothing, and `3~` running on into the next line",
+        "Fixed the cursor landing one character too far after pasting accented text copied from macOS (such as a file name) into the middle of the prompt",
+        "Fixed the terminal freezing, with ctrl+c ignored, when a response ran to tens of thousands of lines",
+        "Fixed calls a mod makes while it reloads during a plugin hooks worker restart getting past another mod's guard hook that has a `.catch`; such calls are now refused",
+        "Fixed plugins whose hooks module nests code thousands of levels deep failing to load or validate with a bare stack-overflow message",
+        "Fixed `claude plugin test` passing a `session.append` hook that removes tool call, tool result or thinking blocks that a real session keeps",
+        "Fixed Claude not being told it can resume background subagents with SendMessage after a session was killed and resumed a second time",
+        "Fixed a file being treated as already read after a Bash command such as `cat` ran without printing it",
+        "Fixed plugin options named `constructor` or `prototype` always reading as their default and never reloading the plugin when edited",
+        "Fixed a mod's hot reload missing a save made while `/reload-plugins` or session start was reading the mod's files",
+        "Fixed the mod hot-reloading question being asked again every turn for the whole session when it is approved without picking an answer",
+        "Fixed `/model`, `/fast` and `/output-style` saving their setting without asking a plugin's `config.set` hook",
+        "Fixed bold text being drawn faint in piped output when it directly follows dim text",
+        "Fixed replies whose quotes nest deeper every few lines freezing the terminal for seconds and using gigabytes of memory",
+        "Fixed a mod's hot reload missing a save made within a few milliseconds of its last reload, which left the mod on its old version until the next save",
+        "Fixed `claude mcp serve` background Bash results not naming the output file, and its tool description promising a notification that never arrives",
+        "Fixed an async SessionStart hook's unchanged context being added to the conversation again on every resume",
+        "Fixed variables a SessionStart hook writes to `CLAUDE_ENV_FILE` not reaching the Bash tool after an in-app `/resume` or `/branch`",
+        "Fixed a skill's `allowed-tools` and `effort` being dropped when the Skill tool finished before the response stream ended, which denied the skill's Bash commands in `-p` runs",
+        "Fixed a tampered cache of server-managed settings making a person's own plugin count as organization-managed on machines whose managed settings list or enable plugins",
+        "Fixed Claude 3 Opus and Claude 3.x Sonnet sessions being offered tool search, which those models reject, where feature flags are unavailable",
+        "Fixed generated type files being written into a `--plugin-dir` plugin's folder in `-p` and SDK sessions; they are now written only where a mod is being developed",
+        "Fixed text with tabs or bidirectional control characters losing its end at the edge of the screen or drawing over nearby rows",
+        "Fixed `/model` saying a Max effort pick was saved as your default for new sessions; Max applies to the current session only",
+        "Fixed an async hook's JSON output being ignored when it is printed over several lines",
+        "Fixed the Read tool rejecting calls with an empty `pages` parameter instead of treating it as omitted",
+        "Fixed project-scope plugins not loading in VS Code on Windows due to drive-letter casing (anthropics/claude-code#74612)",
+        "Fixed `plugin install` and `uninstall` at project or local scope on Windows missing the install record, or adding a second one, when only the drive letter's case differs",
+        "Fixed a queued message being lost when pulled back into the prompt with `↑` or `Esc` just after `←`: prompt history now keeps it",
+        "Fixed mod hot-reloading turning off for the whole session when an SDK host closed its enable question before anyone answered; the question is now asked up to three times",
+        "Fixed a prompt that a mod's `prompt.submit` hook rewrote or dropped still being saved as typed to prompt history and to the transcript's queued-prompt records",
+        "Fixed non-interactive sessions telling you about MCP servers that need authentication when your request doesn't use them",
+        "Fixed the `claude_code.auth` OpenTelemetry login event not being emitted on Claude apps gateway sign-in. The event is exported when OpenTelemetry is configured on the machine or the session is already signed in to the gateway",
+        "Fixed a plugin that adds very large interfaces getting another plugin unloaded when the plugin hooks worker stalls",
+        "Fixed Edit treating a file as fully read when its contents changed without its modification time advancing",
+        "Fixed short command output with Windows line endings (CRLF) being drawn on a single line",
+        "Fixed a stopped scheduled task coming back on resume after a rewind, and a scheduled task being lost on resume after Esc or a rewind following a compaction",
+        "Fixed the terminal freezing for seconds or minutes while syntax highlighting code with very long lines, long runs of blank lines, or unclosed strings and heredocs",
+        "Fixed temporary files left under `~/.claude/seed-admin` by an interrupted `/ultrareview` upload never being removed by the retention cleanup",
+        "Fixed Desktop and SDK sessions refusing to switch back to auto mode until restart after `disableAutoMode` was removed from settings",
+        "Fixed claude.ai-synced plugin hooks failing with \"Plugin directory does not exist\" in long-running sessions after another session synced a plugin update",
+        "Fixed the prompt sent after a `/rewind` being lost, and the removed turns coming back, when the session was moved to the background or resumed after being killed",
+        "Fixed cloud sessions hanging when a mod's `session.receive` hook asked for permission before passing a message on",
+        "Fixed macOS background sessions that restart together after an update sometimes running outside the stable app wrapper, so folder-access prompts could reappear",
+        "Fixed an MCP sign-in or reconnect that finishes late in headless and SDK sessions relisting a server set with `setMcpServers()` as your own",
+        "Fixed changing the auto-update channel in `/config` saving before a plugin's `config.set` hook was asked",
+        "macOS: Fixed a file count at session start that could reach other apps' data and raise the \"access data from other apps\" prompt when a session starts in the home folder or above it",
+        "Improved token counts behind a Claude apps gateway on Amazon Bedrock, which `/context` and large file reads use: the gateway now gets them from AWS's CountTokens API instead of a one-token model request. Grant `bedrock:CountTokens` to use it",
+        "Improved the Claude apps gateway to log a warning every 30 seconds while its PostgreSQL database is read-only, saying what fails and how to recover",
+        "Improved the status shown in Remote Control, claude.ai and the desktop app for a session waiting on a permission prompt to name an MCP tool by its server and readable name instead of its `mcp__server__tool` identifier",
+        "Improved background requests behind a Claude apps gateway to use Haiku 4.5 instead of the session's model, falling back to the session's model where the gateway does not serve Haiku 4.5",
+        "Improved how the Claude apps gateway handles models not listed under `models:` in Amazon Bedrock regions outside AWS's US geography. AWS always refused those requests; the gateway now tries the model in your own region, and a refusal names the model to add",
+        "Improved headless `rate_limit_event` usage-limit warnings to say whether the account has extra usage turned on",
+        "Improved the built-in `plugin-authoring` skill: it no longer tells a session with no terminal to run terminal commands, and explains sharing a mod only when asked",
+        "Improved Grep input handling: a search sent with grep's `-l`, `-c` or `-r` flag now runs instead of failing the call",
+        "Improved `claude plugin validate` and plugin loading: when a hooks module is refused over a rebound top-level `var`, the error now names the line that rebinds it, the cause, and a fix",
+        "Improved the Workflow tool's `scriptPath` refusal: it now says to pass the script inline via `script`, the route that works in sessions without a Read tool",
+        "Improved what Claude is told when a large file it sends fails to upload with no reason given, so it reports the failure instead of shrinking the file",
+        "Changed MCP tool descriptions the model loads through tool search to be cut at 16,384 characters instead of 2,048",
+        "Changed subagents to preload at most 32 skills from the `skills` field, each once; a subagent with the Skill tool can still invoke the rest",
+        "Changed Ctrl+C at the idle prompt of an attached background session to leave a pending `/loop` wakeup alone, so pressing it twice detaches and the loop keeps running; press Esc to stop it",
+        "Changed `claude agents` stopped with its background service (macOS, or Linux without the service installed): running sessions now stop in about a minute unless it is run again, and a notice says so",
+        "Changed claude.ai connectors to negotiate MCP protocol version 2026-07-28 by default on installs that fetch no flags; `MCP_PROTOCOL_NEGOTIATION=legacy` opts out",
+        "Changed Artifact pages with no background of their own to show on white instead of off-white",
+        "Changed what Claude and you read when a mod denies a tool call after the tool ran: it now says the tool ran and a plugin withheld its result",
+        "Changed tab stops to count from where a text starts instead of from the screen's left edge: an answer indented by 2 has its first stop 8 cells in, where it was 6",
+        "Changed the Artifact tool's permission prompts with telemetry disabled to the same five questions other installs get, instead of asking before each read of someone else's artifact and each data edit",
+        "Changed scheduled and Run now routine runs in installs with telemetry disabled to publish new private artifacts, and update your own, without asking, as in other installs",
+        "Changed toasts from your organization's mods to show ahead of other mods' toasts instead of waiting behind them",
+        "Changed the Claude apps gateway to start with a warning and serve a `desktop` policy key its bundled Claude Desktop schema doesn't know, so new Desktop settings need no gateway upgrade",
+        "Changed WebSocket (`ws`) MCP servers: a message over 16 MiB is no longer parsed and closes the connection, the limit the other transports already have",
+        "[VSCode] Added a chat row for files Claude sends you: click a file's name to open it in the editor; Claude's caption shows underneath, and the row stays visible in Focus view",
+        "[VSCode] Fixed \"Fork conversation from here\" and Rewind's conversation restore failing with \"Message not found in session\" after a background agent's activity or one of the panel's own status lines",
+        "[VSCode] Fixed Ctrl+Shift+Tab, Cmd+Shift+Tab and Alt+Shift+Tab in the chat input also switching the permission mode, and Ctrl+Tab accepting the suggested prompt",
+        "[VSCode] Fixed keyboard focus bouncing between two Claude views visible at once, which could send typed text to the wrong conversation",
+        "Self-hosted runner: Changed the runner to stop passing `CCR_AUTO_MODE_ALLOW`, `CCR_AUTO_MODE_ENVIRONMENT` and `CCR_AUTO_MODE_SOFT_DENY` into a session's environment",
+        "Self-hosted runner: Fixed git fetches being cut off while the git server was still reporting progress on a large repository; `CLAUDE_RUNNER_FETCH_SERVER_PROGRESS_CAP_MS` tunes or turns off the wait",
+        "[Cloud sessions] Fixed a message sent right after unarchiving a cloud session sometimes getting no reply because no container could start for it",
+        "[Cloud sessions] Fixed some older routines starting their runs without ever giving Claude their saved prompt; those routines now run their prompt again",
+        "[Cloud sessions] Improved how quickly a cloud session catches up after its connection drops: activity you missed now appears all at once instead of row by row",
+        "[Cloud sessions] Improved the setup script box in the cloud environment form: it starts taller, grows with your script, and can be resized by dragging",
+        "[Claude Tag] Changed the settings confirmation cards Claude posts in a Slack channel to stay open for 30 minutes instead of 10",
+        "[Claude Tag] Changed Claude's notice that a channel shared across Enterprise Grid workspaces uses organization defaults to post only when someone mentions Claude, at most once a month",
+        "[Claude Tag] Fixed channel links and @-mentions in a forked thread's \"Continued from\" card showing as raw Slack codes",
+        "[Claude Tag] Fixed Slack's Working status spinning on under a thread after `@Claude !restart` had already confirmed the restart",
+        "[Claude Tag] Fixed another app's or bot's @Claude going unanswered in a busy channel where Claude had stopped reading untagged messages",
+        "[Claude Tag] Added a confirmation in Claude Tag admin settings before adding a channel manager moves that member to Custom roles, which can remove their other access",
+        "[Code Review] Fixed Code Review re-reviews saying no issues were found while earlier findings were still open; the comment now says how many remain open",
+        "[Code Review] Fixed Code Review still skipping a large CLAUDE.md's rules when the pull request edits that file",
+        "Fixed web searches and `agent` hook evaluations taking much longer at `xhigh` and `max` effort"
+      ]
+    }
+  ],
+  "patchImpacts": [
+    {
+      "id": "tool-defer-whitelist",
+      "broken": true,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 36,
+          "bullet": "Fixed `--tools` and `--restricted` not applying to built-in tools that register after launch, and deprecated tool names reaching tools outside the caller's tool set",
+          "score": -15.3739
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 121,
+          "bullet": "Changed toasts from your organization's mods to show ahead of other mods' toasts instead of waiting behind them",
+          "score": -12.9419
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 108,
+          "bullet": "Improved `claude plugin validate` and plugin loading: when a hooks module is refused over a rebound top-level `var`, the error now names the line that rebinds it, the cause, and a fix",
+          "score": -11.6416
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 84,
+          "bullet": "Fixed non-interactive sessions telling you about MCP servers that need authentication when your request doesn't use them",
+          "score": -11.5631
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 132,
+          "bullet": "[Cloud sessions] Improved how quickly a cloud session catches up after its connection drops: activity you missed now appears all at once instead of row by row",
+          "score": -8.8107
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 102,
+          "bullet": "Improved the status shown in Remote Control, claude.ai and the desktop app for a session waiting on a permission prompt to name an MCP tool by its server and readable name instead of its `mcp__server__tool` identifier",
+          "score": -8.8015
+        }
+      ]
+    },
+    {
+      "id": "prompt-slim",
+      "broken": true,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 105,
+          "bullet": "Improved headless `rate_limit_event` usage-limit warnings to say whether the account has extra usage turned on",
+          "score": -6.0209
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 100,
+          "bullet": "Improved token counts behind a Claude apps gateway on Amazon Bedrock, which `/context` and large file reads use: the gateway now gets them from AWS's CountTokens API instead of a one-token model request. Grant `bedrock:CountTokens` to use it",
+          "score": -5.6022
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 43,
+          "bullet": "Fixed Bash permission checks for for-loops over glob patterns, improving permission-check accuracy",
+          "score": -5.55
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 29,
+          "bullet": "Fixed `/tui` exiting without a message, or with a raw system error, when Claude Code could not be started again",
+          "score": -5.3687
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 11,
+          "bullet": "Added `$.ui.notify` for mods: raises a native notification through your own notification setting and says which channel sent it",
+          "score": -4.9557
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 57,
+          "bullet": "Fixed plugins whose hooks module nests code thousands of levels deep failing to load or validate with a bare stack-overflow message",
+          "score": -4.7849
+        }
+      ]
+    },
+    {
+      "id": "mode-cycle-order",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 126,
+          "bullet": "[VSCode] Fixed Ctrl+Shift+Tab, Cmd+Shift+Tab and Alt+Shift+Tab in the chat input also switching the permission mode, and Ctrl+Tab accepting the suggested prompt",
+          "score": -19.0704
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 43,
+          "bullet": "Fixed Bash permission checks for for-loops over glob patterns, improving permission-check accuracy",
+          "score": -14.3298
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 92,
+          "bullet": "Fixed Desktop and SDK sessions refusing to switch back to auto mode until restart after `disableAutoMode` was removed from settings",
+          "score": -11.7876
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 128,
+          "bullet": "Self-hosted runner: Changed the runner to stop passing `CCR_AUTO_MODE_ALLOW`, `CCR_AUTO_MODE_ENVIRONMENT` and `CCR_AUTO_MODE_SOFT_DENY` into a session's environment",
+          "score": -9.613
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 76,
+          "bullet": "Fixed `/model` saying a Max effort pick was saved as your default for new sessions; Max applies to the current session only",
+          "score": -7.7595
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 119,
+          "bullet": "Changed the Artifact tool's permission prompts with telemetry disabled to the same five questions other installs get, instead of asking before each read of someone else's artifact and each data edit",
+          "score": -7.1782
+        }
+      ]
+    },
+    {
+      "id": "prefer-project-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 45,
+          "bullet": "Fixed in-process agent teammates failing their first SendMessage call until they loaded the tool through tool search",
+          "score": -17.7362
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 80,
+          "bullet": "Fixed `plugin install` and `uninstall` at project or local scope on Windows missing the install record, or adding a second one, when only the drive letter's case differs",
+          "score": -15.3006
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 79,
+          "bullet": "Fixed project-scope plugins not loading in VS Code on Windows due to drive-letter casing (anthropics/claude-code#74612)",
+          "score": -13.5894
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 112,
+          "bullet": "Changed subagents to preload at most 32 skills from the `skills` field, each once; a subagent with the Skill tool can still invoke the rest",
+          "score": -12.6659
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 71,
+          "bullet": "Fixed a skill's `allowed-tools` and `effort` being dropped when the Skill tool finished before the response stream ended, which denied the skill's Bash commands in `-p` runs",
+          "score": -12.3803
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 108,
+          "bullet": "Improved `claude plugin validate` and plugin loading: when a hooks module is refused over a rebound top-level `var`, the error now names the line that rebinds it, the cause, and a fix",
+          "score": -9.8574
+        }
+      ]
+    },
+    {
+      "id": "turn-timestamp",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 6,
+          "bullet": "Added a \"Backgrounding cancelled\" message when you stop the turn while `←` is waiting for the current tool to finish",
+          "score": -17.7206
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 16,
+          "bullet": "Fixed `claude -p` text output dropping earlier responses when background work started another turn; each turn's response now prints when the turn ends",
+          "score": -14.3284
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 4,
+          "bullet": "Added a line on stderr, when it is a terminal, that says what a `claude -p` run is waiting for when it stays open after its last turn",
+          "score": -12.8939
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 2,
+          "bullet": "Added quoted text to the `/copy` picker, so a drafted message copies without its `>` markers",
+          "score": -11.4
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 53,
+          "bullet": "Fixed vim mode's `~` moving the cursor past the last character of a line, so `x` after it did nothing, and `3~` running on into the next line",
+          "score": -11.2992
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 113,
+          "bullet": "Changed Ctrl+C at the idle prompt of an attached background session to leave a pending `/loop` wakeup alone, so pressing it twice detaches and the loop keeps running; press Esc to stop it",
+          "score": -10.8834
+        }
+      ]
+    },
+    {
+      "id": "subagent-nesting",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 44,
+          "bullet": "Fixed forked skills invoked from Workflow subagents delivering their results to the main conversation instead of the invoking agent",
+          "score": -17.5083
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 116,
+          "bullet": "Changed Artifact pages with no background of their own to show on white instead of off-white",
+          "score": -14.4211
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 13,
+          "bullet": "Added `CLAUDE_CODE_RETRY_WATCHDOG_MAX_WAIT_MS` to limit how long unattended retry mode (`CLAUDE_CODE_RETRY_WATCHDOG`) waits out 429 and 529 errors",
+          "score": -13.5968
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 114,
+          "bullet": "Changed `claude agents` stopped with its background service (macOS, or Linux without the service installed): running sessions now stop in about a minute unless it is run again, and a notice says so",
+          "score": -12.062
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 57,
+          "bullet": "Fixed plugins whose hooks module nests code thousands of levels deep failing to load or validate with a bare stack-overflow message",
+          "score": -11.7922
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 33,
+          "bullet": "Fixed `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` hiding the Claude apps gateway spend limit in `/usage` and the status line. The spend limit request goes to the gateway the session is signed in to",
+          "score": -11.6399
+        }
+      ]
+    },
+    {
+      "id": "thinking-visibility",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 58,
+          "bullet": "Fixed `claude plugin test` passing a `session.append` hook that removes tool call, tool result or thinking blocks that a real session keeps",
+          "score": -16.9656
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 57,
+          "bullet": "Fixed plugins whose hooks module nests code thousands of levels deep failing to load or validate with a bare stack-overflow message",
+          "score": -11.2481
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 0,
+          "bullet": "Added `onFailure: \"block\"` for command and HTTP hooks: a hook that can't start, times out, or exits with an unexpected code blocks the action instead of letting it through",
+          "score": -8.8512
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 83,
+          "bullet": "Fixed a prompt that a mod's `prompt.submit` hook rewrote or dropped still being saved as typed to prompt history and to the transcript's queued-prompt records",
+          "score": -7.732
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 139,
+          "bullet": "[Claude Tag] Added a confirmation in Claude Tag admin settings before adding a channel manager moves that member to Custom roles, which can remove their other access",
+          "score": -7.7221
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 34,
+          "bullet": "Fixed subagents in their own linked worktree being shown the parent session's git branch, status and recent commits",
+          "score": -7.2893
+        }
+      ]
+    },
+    {
+      "id": "explore-haiku",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 103,
+          "bullet": "Improved background requests behind a Claude apps gateway to use Haiku 4.5 instead of the session's model, falling back to the session's model where the gateway does not serve Haiku 4.5",
+          "score": -16.7942
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 45,
+          "bullet": "Fixed in-process agent teammates failing their first SendMessage call until they loaded the tool through tool search",
+          "score": -16.2378
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 113,
+          "bullet": "Changed Ctrl+C at the idle prompt of an attached background session to leave a pending `/loop` wakeup alone, so pressing it twice detaches and the loop keeps running; press Esc to stop it",
+          "score": -15.4114
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 40,
+          "bullet": "Fixed commands and hooks in background sessions inheriting `FORCE_COLOR=3`, which put color escape codes into the output Claude reads",
+          "score": -11.2988
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 44,
+          "bullet": "Fixed forked skills invoked from Workflow subagents delivering their results to the main conversation instead of the invoking agent",
+          "score": -10.886
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 111,
+          "bullet": "Changed MCP tool descriptions the model loads through tool search to be cut at 16,384 characters instead of 2,048",
+          "score": -10.691
+        }
+      ]
+    },
+    {
+      "id": "quiet-subagent-waits",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 44,
+          "bullet": "Fixed forked skills invoked from Workflow subagents delivering their results to the main conversation instead of the invoking agent",
+          "score": -16.5538
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 45,
+          "bullet": "Fixed in-process agent teammates failing their first SendMessage call until they loaded the tool through tool search",
+          "score": -14.2609
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 11,
+          "bullet": "Added `$.ui.notify` for mods: raises a native notification through your own notification setting and says which channel sent it",
+          "score": -14.0696
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 25,
+          "bullet": "Fixed `CLAUDE_AUTO_BACKGROUND_TASKS` moving a subagent to the background while an edit or shell command waited behind it, which started that call before the subagent finished",
+          "score": -13.1782
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 46,
+          "bullet": "Fixed Claude being told on resume that an unfinished background workflow may have been stopped by `TaskStop`, which can never be the cause",
+          "score": -12.3419
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 69,
+          "bullet": "Fixed an async SessionStart hook's unchanged context being added to the conversation again on every resume",
+          "score": -11.6861
+        }
+      ]
+    },
+    {
+      "id": "trim-context-bloat",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 69,
+          "bullet": "Fixed an async SessionStart hook's unchanged context being added to the conversation again on every resume",
+          "score": -15.5235
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 33,
+          "bullet": "Fixed `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` hiding the Claude apps gateway spend limit in `/usage` and the status line. The spend limit request goes to the gateway the session is signed in to",
+          "score": -11.3337
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 28,
+          "bullet": "Fixed a rare failure to load managed settings at startup right after a login refresh",
+          "score": -10.1595
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 16,
+          "bullet": "Fixed `claude -p` text output dropping earlier responses when background work started another turn; each turn's response now prints when the turn ends",
+          "score": -10.122
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 94,
+          "bullet": "Fixed the prompt sent after a `/rewind` being lost, and the removed turns coming back, when the session was moved to the background or resumed after being killed",
+          "score": -9.6194
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 7,
+          "bullet": "Added an optional `models` list to every Claude apps gateway upstream: only the listed models are sent there, on failover too, and one `*` in an entry is a wildcard",
+          "score": -9.5747
+        }
+      ]
+    },
+    {
+      "id": "system-reminders",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 80,
+          "bullet": "Fixed `plugin install` and `uninstall` at project or local scope on Windows missing the install record, or adding a second one, when only the drive letter's case differs",
+          "score": -15.1855
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 7,
+          "bullet": "Added an optional `models` list to every Claude apps gateway upstream: only the listed models are sent there, on failover too, and one `*` in an entry is a wildcard",
+          "score": -10.5935
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 87,
+          "bullet": "Fixed Edit treating a file as fully read when its contents changed without its modification time advancing",
+          "score": -10.3208
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 88,
+          "bullet": "Fixed short command output with Windows line endings (CRLF) being drawn on a single line",
+          "score": -10.1674
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 100,
+          "bullet": "Improved token counts behind a Claude apps gateway on Amazon Bedrock, which `/context` and large file reads use: the gateway now gets them from AWS's CountTokens API instead of a one-token model request. Grant `bedrock:CountTokens` to use it",
+          "score": -9.6523
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 9,
+          "bullet": "Added advice to `claude plugin validate` when a plugin's README has no install line: it prints the line to paste and never changes the exit code, even with `--strict`",
+          "score": -8.1751
+        }
+      ]
+    },
+    {
+      "id": "thinking-no-fold",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 0,
+          "bullet": "Added `onFailure: \"block\"` for command and HTTP hooks: a hook that can't start, times out, or exits with an unexpected code blocks the action instead of letting it through",
+          "score": -14.7033
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 58,
+          "bullet": "Fixed `claude plugin test` passing a `session.append` hook that removes tool call, tool result or thinking blocks that a real session keeps",
+          "score": -11.319
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 32,
+          "bullet": "Fixed the Claude apps gateway's admin spend view showing a developer's old groups and group cap after their session stopped carrying groups",
+          "score": -10.9544
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 6,
+          "bullet": "Added a \"Backgrounding cancelled\" message when you stop the turn while `←` is waiting for the current tool to finish",
+          "score": -10.7817
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 45,
+          "bullet": "Fixed in-process agent teammates failing their first SendMessage call until they loaded the tool through tool search",
+          "score": -10.6382
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 7,
+          "bullet": "Added an optional `models` list to every Claude apps gateway upstream: only the listed models are sent there, on failover too, and one `*` in an entry is a wildcard",
+          "score": -9.7924
+        }
+      ]
+    },
+    {
+      "id": "keyword-highlights",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 11,
+          "bullet": "Added `$.ui.notify` for mods: raises a native notification through your own notification setting and says which channel sent it",
+          "score": -14.0696
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 40,
+          "bullet": "Fixed commands and hooks in background sessions inheriting `FORCE_COLOR=3`, which put color escape codes into the output Claude reads",
+          "score": -11.2739
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 83,
+          "bullet": "Fixed a prompt that a mod's `prompt.submit` hook rewrote or dropped still being saved as typed to prompt history and to the transcript's queued-prompt records",
+          "score": -7.2464
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 108,
+          "bullet": "Improved `claude plugin validate` and plugin loading: when a hooks module is refused over a rebound top-level `var`, the error now names the line that rebinds it, the cause, and a fix",
+          "score": -7.1617
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 57,
+          "bullet": "Fixed plugins whose hooks module nests code thousands of levels deep failing to load or validate with a bare stack-overflow message",
+          "score": -6.809
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 81,
+          "bullet": "Fixed a queued message being lost when pulled back into the prompt with `↑` or `Esc` just after `←`: prompt history now keeps it",
+          "score": -6.809
+        }
+      ]
+    },
+    {
+      "id": "flag-env-override",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 77,
+          "bullet": "Fixed an async hook's JSON output being ignored when it is printed over several lines",
+          "score": -13.6429
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 108,
+          "bullet": "Improved `claude plugin validate` and plugin loading: when a hooks module is refused over a rebound top-level `var`, the error now names the line that rebinds it, the cause, and a fix",
+          "score": -10.3148
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 73,
+          "bullet": "Fixed Claude 3 Opus and Claude 3.x Sonnet sessions being offered tool search, which those models reject, where feature flags are unavailable",
+          "score": -9.4063
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 43,
+          "bullet": "Fixed Bash permission checks for for-loops over glob patterns, improving permission-check accuracy",
+          "score": -9.2694
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 11,
+          "bullet": "Added `$.ui.notify` for mods: raises a native notification through your own notification setting and says which channel sent it",
+          "score": -8.6927
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 45,
+          "bullet": "Fixed in-process agent teammates failing their first SendMessage call until they loaded the tool through tool search",
+          "score": -8.0423
+        }
+      ]
+    },
+    {
+      "id": "no-collapse-reads",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 107,
+          "bullet": "Improved Grep input handling: a search sent with grep's `-l`, `-c` or `-r` flag now runs instead of failing the call",
+          "score": -13.1334
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 43,
+          "bullet": "Fixed Bash permission checks for for-loops over glob patterns, improving permission-check accuracy",
+          "score": -11.1001
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 38,
+          "bullet": "Fixed a mod's hook being handed a deeply nested tool input cut short with no error, so a guard could pass content it never saw",
+          "score": -10.1541
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 45,
+          "bullet": "Fixed in-process agent teammates failing their first SendMessage call until they loaded the tool through tool search",
+          "score": -9.7455
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 78,
+          "bullet": "Fixed the Read tool rejecting calls with an empty `pages` parameter instead of treating it as omitted",
+          "score": -9.43
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 20,
+          "bullet": "Fixed CSS, JavaScript and XML files returned by MCP tools being saved as .bin, which the Read tool refuses; font and icon files now get their own extension too",
+          "score": -8.0427
+        }
+      ]
+    },
+    {
+      "id": "feature-flag-toggles",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 3,
+          "bullet": "Added a warning to `claude plugin install`, `enable`, `disable` and `marketplace add` when the settings file they write to does not load",
+          "score": -12.9055
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 82,
+          "bullet": "Fixed mod hot-reloading turning off for the whole session when an SDK host closed its enable question before anyone answered; the question is now asked up to three times",
+          "score": -12.8052
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 61,
+          "bullet": "Fixed plugin options named `constructor` or `prototype` always reading as their default and never reloading the plugin when edited",
+          "score": -11.9447
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 58,
+          "bullet": "Fixed `claude plugin test` passing a `session.append` hook that removes tool call, tool result or thinking blocks that a real session keeps",
+          "score": -11.6354
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 105,
+          "bullet": "Improved headless `rate_limit_event` usage-limit warnings to say whether the account has extra usage turned on",
+          "score": -11.1601
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 36,
+          "bullet": "Fixed `--tools` and `--restricted` not applying to built-in tools that register after launch, and deprecated tool names reaching tools outside the caller's tool set",
+          "score": -10.2266
+        }
+      ]
+    },
+    {
+      "id": "disable-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 112,
+          "bullet": "Changed subagents to preload at most 32 skills from the `skills` field, each once; a subagent with the Skill tool can still invoke the rest",
+          "score": -12.6659
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 58,
+          "bullet": "Fixed `claude plugin test` passing a `session.append` hook that removes tool call, tool result or thinking blocks that a real session keeps",
+          "score": -12.3133
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 0,
+          "bullet": "Added `onFailure: \"block\"` for command and HTTP hooks: a hook that can't start, times out, or exits with an unexpected code blocks the action instead of letting it through",
+          "score": -12.0689
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 17,
+          "bullet": "Fixed remote MCP servers in headless and SDK sessions staying disconnected after an outage longer than 15 seconds, or reconnecting in a tight loop to a server that drops each connection right after it connects; repeated drops now back off, up to 30s",
+          "score": -11.6168
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 132,
+          "bullet": "[Cloud sessions] Improved how quickly a cloud session catches up after its connection drops: activity you missed now appears all at once instead of row by row",
+          "score": -11.424
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 33,
+          "bullet": "Fixed `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` hiding the Claude apps gateway spend limit in `/usage` and the status line. The spend limit request goes to the gateway the session is signed in to",
+          "score": -11.3337
+        }
+      ]
+    },
+    {
+      "id": "thinking-display-summarized",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 64,
+          "bullet": "Fixed `/model`, `/fast` and `/output-style` saving their setting without asking a plugin's `config.set` hook",
+          "score": -12.2223
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 130,
+          "bullet": "[Cloud sessions] Fixed a message sent right after unarchiving a cloud session sometimes getting no reply because no container could start for it",
+          "score": -12.0177
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 0,
+          "bullet": "Added `onFailure: \"block\"` for command and HTTP hooks: a hook that can't start, times out, or exits with an unexpected code blocks the action instead of letting it through",
+          "score": -10.1944
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 70,
+          "bullet": "Fixed variables a SessionStart hook writes to `CLAUDE_ENV_FILE` not reaching the Bash tool after an in-app `/resume` or `/branch`",
+          "score": -9.0257
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 88,
+          "bullet": "Fixed short command output with Windows line endings (CRLF) being drawn on a single line",
+          "score": -8.9081
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 84,
+          "bullet": "Fixed non-interactive sessions telling you about MCP servers that need authentication when your request doesn't use them",
+          "score": -8.2606
+        }
+      ]
+    },
+    {
+      "id": "auto-color",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 59,
+          "bullet": "Fixed Claude not being told it can resume background subagents with SendMessage after a session was killed and resumed a second time",
+          "score": -11.7727
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 96,
+          "bullet": "Fixed macOS background sessions that restart together after an update sometimes running outside the stable app wrapper, so folder-access prompts could reappear",
+          "score": -11.7543
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 66,
+          "bullet": "Fixed replies whose quotes nest deeper every few lines freezing the terminal for seconds and using gigabytes of memory",
+          "score": -11.642
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 69,
+          "bullet": "Fixed an async SessionStart hook's unchanged context being added to the conversation again on every resume",
+          "score": -11.291
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 40,
+          "bullet": "Fixed commands and hooks in background sessions inheriting `FORCE_COLOR=3`, which put color escape codes into the output Claude reads",
+          "score": -10.9936
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 94,
+          "bullet": "Fixed the prompt sent after a `/rewind` being lost, and the removed turns coming back, when the session was moved to the background or resumed after being killed",
+          "score": -9.6574
+        }
+      ]
+    },
+    {
+      "id": "worktree-dedup",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 38,
+          "bullet": "Fixed a mod's hook being handed a deeply nested tool input cut short with no error, so a guard could pass content it never saw",
+          "score": -11.4435
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 43,
+          "bullet": "Fixed Bash permission checks for for-loops over glob patterns, improving permission-check accuracy",
+          "score": -11.1001
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 45,
+          "bullet": "Fixed in-process agent teammates failing their first SendMessage call until they loaded the tool through tool search",
+          "score": -9.3062
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 66,
+          "bullet": "Fixed replies whose quotes nest deeper every few lines freezing the terminal for seconds and using gigabytes of memory",
+          "score": -8.2606
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 141,
+          "bullet": "[Code Review] Fixed Code Review still skipping a large CLAUDE.md's rules when the pull request edits that file",
+          "score": -8.0286
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 62,
+          "bullet": "Fixed a mod's hot reload missing a save made while `/reload-plugins` or session start was reading the mod's files",
+          "score": -7.9203
+        }
+      ]
+    },
+    {
+      "id": "spinner",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 108,
+          "bullet": "Improved `claude plugin validate` and plugin loading: when a hooks module is refused over a rebound top-level `var`, the error now names the line that rebinds it, the cause, and a fix",
+          "score": -11.1842
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 22,
+          "bullet": "Fixed Claude in Chrome not applying a site deny rule written with port 80 (`host:80`) to plain `http://` pages on that host",
+          "score": -9.7997
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 127,
+          "bullet": "[VSCode] Fixed keyboard focus bouncing between two Claude views visible at once, which could send typed text to the wrong conversation",
+          "score": -8.7238
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 132,
+          "bullet": "[Cloud sessions] Improved how quickly a cloud session catches up after its connection drops: activity you missed now appears all at once instead of row by row",
+          "score": -7.5262
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 36,
+          "bullet": "Fixed `--tools` and `--restricted` not applying to built-in tools that register after launch, and deprecated tool names reaching tools outside the caller's tool set",
+          "score": -7.2592
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 42,
+          "bullet": "Fixed a custom agent named `worker` being shown as \"Agent\" in auto-mode denial notices and in the activity lists of task detail views",
+          "score": -7.1993
+        }
+      ]
+    },
+    {
+      "id": "read-summary",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 105,
+          "bullet": "Improved headless `rate_limit_event` usage-limit warnings to say whether the account has extra usage turned on",
+          "score": -11.1438
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 33,
+          "bullet": "Fixed `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` hiding the Claude apps gateway spend limit in `/usage` and the status line. The spend limit request goes to the gateway the session is signed in to",
+          "score": -8.3719
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 121,
+          "bullet": "Changed toasts from your organization's mods to show ahead of other mods' toasts instead of waiting behind them",
+          "score": -7.8962
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 20,
+          "bullet": "Fixed CSS, JavaScript and XML files returned by MCP tools being saved as .bin, which the Read tool refuses; font and icon files now get their own extension too",
+          "score": -7.6899
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 58,
+          "bullet": "Fixed `claude plugin test` passing a `session.append` hook that removes tool call, tool result or thinking blocks that a real session keeps",
+          "score": -7.542
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 117,
+          "bullet": "Changed what Claude and you read when a mod denies a tool call after the tool ran: it now says the tool ran and a plugin withheld its result",
+          "score": -7.127
+        }
+      ]
+    },
+    {
+      "id": "abbreviations",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 43,
+          "bullet": "Fixed Bash permission checks for for-loops over glob patterns, improving permission-check accuracy",
+          "score": -11.1001
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 127,
+          "bullet": "[VSCode] Fixed keyboard focus bouncing between two Claude views visible at once, which could send typed text to the wrong conversation",
+          "score": -10.1434
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 77,
+          "bullet": "Fixed an async hook's JSON output being ignored when it is printed over several lines",
+          "score": -10.0665
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 100,
+          "bullet": "Improved token counts behind a Claude apps gateway on Amazon Bedrock, which `/context` and large file reads use: the gateway now gets them from AWS's CountTokens API instead of a one-token model request. Grant `bedrock:CountTokens` to use it",
+          "score": -8.0179
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 38,
+          "bullet": "Fixed a mod's hook being handed a deeply nested tool input cut short with no error, so a guard could pass content it never saw",
+          "score": -7.5969
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 34,
+          "bullet": "Fixed subagents in their own linked worktree being shown the parent session's git branch, status and recent commits",
+          "score": -7.4727
+        }
+      ]
+    },
+    {
+      "id": "teammate-workflow-gate",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 16,
+          "bullet": "Fixed `claude -p` text output dropping earlier responses when background work started another turn; each turn's response now prints when the turn ends",
+          "score": -10.7341
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 68,
+          "bullet": "Fixed `claude mcp serve` background Bash results not naming the output file, and its tool description promising a notification that never arrives",
+          "score": -10.1989
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 45,
+          "bullet": "Fixed in-process agent teammates failing their first SendMessage call until they loaded the tool through tool search",
+          "score": -9.6939
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 25,
+          "bullet": "Fixed `CLAUDE_AUTO_BACKGROUND_TASKS` moving a subagent to the background while an edit or shell command waited behind it, which started that call before the subagent finished",
+          "score": -7.9939
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 96,
+          "bullet": "Fixed macOS background sessions that restart together after an update sometimes running outside the stable app wrapper, so folder-access prompts could reappear",
+          "score": -6.747
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 52,
+          "bullet": "Fixed the notification for an MCP tool call that moved to the background showing a shortened task id",
+          "score": -6.3993
+        }
+      ]
+    },
+    {
+      "id": "hook-envelope-strip",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 99,
+          "bullet": "macOS: Fixed a file count at session start that could reach other apps' data and raise the \"access data from other apps\" prompt when a session starts in the home folder or above it",
+          "score": -10.1439
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 53,
+          "bullet": "Fixed vim mode's `~` moving the cursor past the last character of a line, so `x` after it did nothing, and `3~` running on into the next line",
+          "score": -9.9497
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 69,
+          "bullet": "Fixed an async SessionStart hook's unchanged context being added to the conversation again on every resume",
+          "score": -9.478
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 81,
+          "bullet": "Fixed a queued message being lost when pulled back into the prompt with `↑` or `Esc` just after `←`: prompt history now keeps it",
+          "score": -9.2136
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 70,
+          "bullet": "Fixed variables a SessionStart hook writes to `CLAUDE_ENV_FILE` not reaching the Bash tool after an in-app `/resume` or `/branch`",
+          "score": -8.431
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 131,
+          "bullet": "[Cloud sessions] Fixed some older routines starting their runs without ever giving Claude their saved prompt; those routines now run their prompt again",
+          "score": -8.2785
+        }
+      ]
+    },
+    {
+      "id": "disable-bundled-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 69,
+          "bullet": "Fixed an async SessionStart hook's unchanged context being added to the conversation again on every resume",
+          "score": -9.4816
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 112,
+          "bullet": "Changed subagents to preload at most 32 skills from the `skills` field, each once; a subagent with the Skill tool can still invoke the rest",
+          "score": -9.2351
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 71,
+          "bullet": "Fixed a skill's `allowed-tools` and `effort` being dropped when the Skill tool finished before the response stream ended, which denied the skill's Bash commands in `-p` runs",
+          "score": -8.2401
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 23,
+          "bullet": "Fixed `/plugin`'s Errors tab removing a marketplace that failed to load, and uninstalling its plugins, on Enter without asking first",
+          "score": -6.9157
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 106,
+          "bullet": "Improved the built-in `plugin-authoring` skill: it no longer tells a session with no terminal to run terminal commands, and explains sharing a mod only when asked",
+          "score": -6.8484
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 3,
+          "bullet": "Added a warning to `claude plugin install`, `enable`, `disable` and `marketplace add` when the settings file they write to does not load",
+          "score": -6.6512
+        }
+      ]
+    },
+    {
+      "id": "env-block-trim",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 90,
+          "bullet": "Fixed the terminal freezing for seconds or minutes while syntax highlighting code with very long lines, long runs of blank lines, or unclosed strings and heredocs",
+          "score": -8.4437
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 113,
+          "bullet": "Changed Ctrl+C at the idle prompt of an attached background session to leave a pending `/loop` wakeup alone, so pressing it twice detaches and the loop keeps running; press Esc to stop it",
+          "score": -6.1789
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 102,
+          "bullet": "Improved the status shown in Remote Control, claude.ai and the desktop app for a session waiting on a permission prompt to name an MCP tool by its server and readable name instead of its `mcp__server__tool` identifier",
+          "score": -6.0755
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 128,
+          "bullet": "Self-hosted runner: Changed the runner to stop passing `CCR_AUTO_MODE_ALLOW`, `CCR_AUTO_MODE_ENVIRONMENT` and `CCR_AUTO_MODE_SOFT_DENY` into a session's environment",
+          "score": -5.3647
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 44,
+          "bullet": "Fixed forked skills invoked from Workflow subagents delivering their results to the main conversation instead of the invoking agent",
+          "score": -5.0458
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 51,
+          "bullet": "Fixed the `/advisor` dialog showing a checkmark on a saved advisor model that is no longer available; it now opens on \"No advisor\"",
+          "score": -4.7039
+        }
+      ]
+    },
+    {
+      "id": "toolsearch-visibility",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 36,
+          "bullet": "Fixed `--tools` and `--restricted` not applying to built-in tools that register after launch, and deprecated tool names reaching tools outside the caller's tool set",
+          "score": -8.1147
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 61,
+          "bullet": "Fixed plugin options named `constructor` or `prototype` always reading as their default and never reloading the plugin when edited",
+          "score": -7.8534
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 45,
+          "bullet": "Fixed in-process agent teammates failing their first SendMessage call until they loaded the tool through tool search",
+          "score": -7.735
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 91,
+          "bullet": "Fixed temporary files left under `~/.claude/seed-admin` by an interrupted `/ultrareview` upload never being removed by the retention cleanup",
+          "score": -7.3394
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 94,
+          "bullet": "Fixed the prompt sent after a `/rewind` being lost, and the removed turns coming back, when the session was moved to the background or resumed after being killed",
+          "score": -7.0324
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 109,
+          "bullet": "Improved the Workflow tool's `scriptPath` refusal: it now says to pass the script inline via `script`, the route that works in sessions without a Read tool",
+          "score": -6.7437
+        }
+      ]
+    },
+    {
+      "id": "ghostty-term",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.295",
+          "bulletIndex": 14,
+          "bullet": "Added a `request-id` header to the Claude apps gateway's successful inference responses, so `request_id` in Claude Code telemetry matches the gateway's audit log",
+          "score": -6.9614
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 40,
+          "bullet": "Fixed commands and hooks in background sessions inheriting `FORCE_COLOR=3`, which put color escape codes into the output Claude reads",
+          "score": -6.9587
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 1,
+          "bullet": "Added Program Status Protocol (OSC 7501) support: terminals that implement it can show whether Claude Code is working, waiting on you, or done",
+          "score": -6.1238
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 105,
+          "bullet": "Improved headless `rate_limit_event` usage-limit warnings to say whether the account has extra usage turned on",
+          "score": -6.0209
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 5,
+          "bullet": "Added support for `timeouts.upstream_ttfb_ms` on the Claude apps gateway's Bedrock, Vertex, Foundry and other cloud upstreams: a value you set now limits how long a stream may take to start there, after which it fails over or gets a 502",
+          "score": -5.9805
+        },
+        {
+          "version": "2.1.295",
+          "bulletIndex": 33,
+          "bullet": "Fixed `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` hiding the Claude apps gateway spend limit in `/usage` and the status line. The spend limit request goes to the gateway the session is signed in to",
+          "score": -5.9116
+        }
+      ]
+    }
+  ],
+  "reasoning": {
+    "_port": "Port 2.1.294 -> 2.1.295. 29/29 JS, 74/74 prompts, one JS fork (tool-defer-whitelist), two prompt pairs re-fitted. Flags: +36/-3, 2 defaults flipped (doorbell_agave, mcp_protocol_negotiation_claudeai), none in our override or toggle set. Env: +7/-2 (incl. CLAUDE_CODE_WEBSEARCH_CITATIONS, CLAUDE_CODE_SLEEP_COMPACT).",
+    "tool-defer-whitelist": "Semi-signal. The top match (--tools/--restricted applying to built-ins registered after launch) is the right subsystem: isDeferredTool gained a second param (nonDeferrableBuiltins set) threaded through from the caller. The MCP gate had already moved to a separate helper in 2.1.294, and the old lazy `.*?` was matching across the function boundary by luck (both functions named their param `e`). Fork anchors on the head only.",
+    "prompt-slim": "Noise for the changelog; silent restructures. websearch-critical: template now closes right after the Sources example (one trailing newline gone). askuserquestion: usage notes and plan-mode note split into two templates (`elo`, `sps=`${elo}\\nPlan mode note...``), chosen by `Knr(tools)?elo:sps`; find/replace now span the boundary and keep both arms."
+  }
+}
