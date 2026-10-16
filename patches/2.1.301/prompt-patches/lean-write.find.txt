@@ -1,0 +1,3 @@
+Writes a file to the local filesystem, overwriting if one exists.
+
+When to use: creating a new file, or fully replacing one you've already ${HK}. Overwriting an existing file you haven't ${HK} will fail. For partial changes, use ${l7} instead.
