@@ -1,0 +1,15 @@
+{"type":"diff_meta","fromVersion":"2.1.301","toVersion":"2.1.302","addedCount":11,"removedCount":1,"changedCount":2}
+{"type":"diff_removed","flags":["tengu_sprightly_lagoon"]}
+{"type":"flag","name":"tengu_cached_pebble","default":"!1","occurrences":1,"lines":[228928],"change":"added"}
+{"type":"flag","name":"tengu_ccr_external_event_record","default":"!1","occurrences":1,"lines":[1117313],"change":"added"}
+{"type":"flag","name":"tengu_fancy_milner","default":"!0","occurrences":1,"lines":[229799],"change":"added"}
+{"type":"flag","name":"tengu_federated_ullman","default":"!1","occurrences":1,"lines":[506290],"change":"added"}
+{"type":"flag","name":"tengu_glittery_mitten","default":"!0","occurrences":1,"lines":[770383],"change":"added"}
+{"type":"flag","name":"tengu_joyful_otter","default":"r","occurrences":1,"lines":[1554483],"change":"added"}
+{"type":"flag","name":"tengu_moss_anchor","default":"!1","occurrences":1,"lines":[178865],"change":"default_changed","previousDefault":"!0"}
+{"type":"flag","name":"tengu_radiant_fox","default":"!1","occurrences":1,"lines":[1326146],"change":"added"}
+{"type":"flag","name":"tengu_serialized_petal","default":"0","occurrences":1,"lines":[502809],"change":"added"}
+{"type":"flag","name":"tengu_snug_storm","default":"null","occurrences":1,"lines":[1326133],"change":"added"}
+{"type":"flag","name":"tengu_sunny_locket","default":"null","occurrences":2,"lines":[465938,465948],"change":"occurrences_changed","previousOccurrences":1}
+{"type":"flag","name":"tengu_violin_colophony","default":"!1","occurrences":1,"lines":[1354753],"change":"added"}
+{"type":"flag","name":"tengu_vivid_crayon","default":"!0","occurrences":1,"lines":[445125],"change":"added"}

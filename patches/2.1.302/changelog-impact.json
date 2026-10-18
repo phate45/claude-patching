@@ -1,0 +1,1302 @@
+{
+  "fromVersion": "2.1.301",
+  "toVersion": "2.1.302",
+  "generatedAt": "2026-10-18T07:50:40.299Z",
+  "versionCount": 1,
+  "entryCount": 63,
+  "changelog": [
+    {
+      "version": "2.1.302",
+      "bullets": [
+        "Added `CLAUDE_CODE_AUTO_MODE_MODEL` to choose the model the client-side auto mode classifier uses; it does not change the model for server-side auto mode",
+        "Added an `Idle compaction` row to `/config` for turning idle compaction off or back on; the notices shown after an idle compaction now say how to turn it off",
+        "Added a notice to `/design-sync` and `/design-login` that standalone Claude Design (claude.ai/design) closes by December 14, 2026",
+        "Fixed a \"Prompt is too long\" error when stopping a turn while the conversation was being compacted",
+        "Fixed requests failing with \"diagnostics: Extra inputs are not permitted\" after switching to Vertex or Bedrock mid-session",
+        "Fixed the Read tool loading an image file of any size, or a pipe or device named like an image, entirely into memory; image sources over 128 MB are now refused",
+        "Fixed `/autocompact` and `/effort` saving to the wrong model when a gateway names Opus 4 or 4.1 with a prefix, such as `anthropic/claude-opus-4-1`",
+        "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+        "Fixed `claude plugin` and other subcommands sometimes exiting before a queued settings or config write finished, which could lose the change or leave a `.tmp` file behind",
+        "Fixed plugin marketplaces re-cloning on every refresh, and newly installed git plugins showing version \"unknown\", when git defaults to the reftable ref format",
+        "Fixed the PowerShell tool not finding commands in a plugin's `bin/` folder, and reporting an error when a search that finds nothing (rg, grep, findstr, git grep) is piped into `Select-Object` or another formatting cmdlet",
+        "Fixed Claude in the desktop app pointing you to claude.ai settings or `/mcp` to authorize or reconnect an MCP server where that option isn't available",
+        "Fixed artifact publishes sometimes failing when Claude sent an empty list of edits, and Claude retrying an artifact update the wrong way after a newer version of the artifact turned it away",
+        "Fixed `classifier_category` missing from OpenTelemetry `tool_decision` events for most auto mode classifier blocks, and new `tool_decision` attributes pushing out `tool_use_id`, `tool_source` and `tool_parameters` when `OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT` is low",
+        "Fixed rows in the agents view staying blank after moving down a long list or folding a section",
+        "Fixed `claude remote-control --help` not printing its usage and exiting when not signed in",
+        "Fixed `/design consent` and `/design revoke` suggesting `/design-login` when they fail in a cloud session, where it isn't available; the message now points to claude.ai/design/settings",
+        "Fixed MCP servers showing no tools, or every tool call failing, when the server negotiates protocol version 2026-07-28 but omits `resultType`, `ttlMs` or `cacheScope`",
+        "Fixed prompt suggestions spending usage credits on models your plan pays for only with credits: they are now skipped after a reply billed to credits",
+        "Fixed URLs written in backticks being clickable only on their first row when they wrap; the whole URL is now one link in terminals that support hyperlinks",
+        "Fixed `claude plugin details <name>@builtin` suggesting `claude plugin list`, which never shows built-in plugins, when the plugin isn't found; it now points to `/plugin`",
+        "Fixed an emoji that a link starts inside wrapping one column too wide, which hid it in question previews and turned tables into lists",
+        "Fixed worktree isolation refusing to create or resume worktrees under git 2.56 or later when a stray `.git` file points at a directory that doesn't exist",
+        "Fixed a cloud session's cost and usage restarting from zero after the session resumed in a new process",
+        "Self-hosted runner: Fixed git fetches failing with \"bad object refs/heads\" in sessions that reuse a checkout stored in git's reftable format",
+        "Windows: Fixed every file write being refused or asked about for projects on exFAT or FAT32 drives, including in sessions started with `--plugin-dir`",
+        "Improved startup time with many plugins enabled: plugin command and agent files now take far fewer file system calls to load, most of all on Windows",
+        "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+        "Improved the message when a background session reopened from another folder has no LLM gateway: it now says why, instead of \"Not logged in\"",
+        "Changed `claude -p` and Agent SDK sessions with no permission mode to start in `default` mode on third-party providers, with telemetry off or on a fresh install; `--permission-mode auto` keeps auto",
+        "Changed fork subagents (`subagent_type: \"fork\"`) to be on by default in `claude -p`, the Agent SDK, the desktop app and VS Code, as they already are in the terminal; `CLAUDE_CODE_FORK_SUBAGENT=0` turns them off, and `claude mcp serve` never offers them",
+        "Changed the desktop app and VS Code to always run the main conversation's subagents in the background, as the terminal does, rather than let Claude choose; a subagent's own Agent calls in `claude -p`, the Agent SDK, the desktop app and VS Code now run in the foreground by default",
+        "Changed the `← for agents` footer hint to hide 10 seconds after a session opens; the count of agents waiting on you still shows",
+        "Changed where the Claude in Chrome instructions sit in the system prompt so that new conversations can read them from the shared prompt cache",
+        "Changed prompt and agent hooks so that at most 12 of one event run at a time; the rest wait their turn",
+        "Changed the message shown when your organization's policy turns off `/feedback`: it now points to GitHub issues instead of an organization admin",
+        "[VSCode] Fixed text after an unclosed code block in a list showing as plain text while a reply streams, then turning into code",
+        "[VSCode] Fixed MCP server sign-in from the panel opening a broken authorization page when the server URL contains a query string",
+        "[VSCode] Fixed the `@browser` banner saying \"Browser connected\" when no browser with the Claude extension can be reached",
+        "[Cloud sessions] Added a banner on a routine's page that says why its last run didn't start, such as your organization reaching its limit on concurrent cloud sessions",
+        "[Cloud sessions] Fixed \"Rewind to here\" failing on every message except the newest in cloud sessions; self-hosted runners need Claude Code v2.1.246 or later",
+        "[Cloud sessions] Fixed the pull request status bar in cloud sessions flipping a pull request with merge conflicts back to ready while GitHub rechecked it",
+        "[Cloud sessions] Fixed routine runs showing as Completed after their cloud session stopped unexpectedly, and as Cancelled when archived before they started, instead of failed",
+        "[Cloud sessions] Fixed the diff view in cloud sessions missing changes or failing to load after the session's GitHub repository was renamed or moved",
+        "[Cloud sessions] Fixed a scheduled routine run that failed partway being run again from the start an hour or more later, which could repeat work such as posting the same report twice",
+        "[Cloud sessions] Fixed an open cloud session sometimes not showing messages sent from another device until you reloaded the page or clicked away and back",
+        "[Cloud sessions] Improved the error shown when a cloud session fails to start: it now says \"Connection lost\" or \"Server error\" instead of \"Something went wrong\"",
+        "[Remote Control] Fixed a subagent's pane spinning forever in a Remote Control session after your computer goes offline; it now says Remote Control is disconnected",
+        "[Claude Tag] Fixed \"is thinking…\" staying up under a mention in a Slack channel or DM after Claude answered it by editing one of its earlier messages",
+        "[Claude Tag] Fixed URLs in code blocks under a numbered or bulleted step of Claude's Slack replies being wrapped in angle brackets, which broke copied commands",
+        "[Claude Tag] Fixed HEIC, SVG, TIFF and BMP images attached in Slack never reaching Claude; they now arrive as files in its working files, like other file types",
+        "[Claude Tag] Fixed new channel managers losing access to Claude in Slack in organizations that restrict Claude Tag by role; the manager role now also grants Claude Tag in Slack",
+        "[Claude Tag] Fixed custom connectors whose MCP servers share one host showing as a single connector in Claude Tag admin settings; each server is now its own connector",
+        "[Claude Tag] Fixed Claude in Slack sometimes answering a direct message with \"DMs are temporarily unavailable\" and dropping it when a single Slack lookup stalled; it now retries first",
+        "[Claude Tag] Fixed direct messages with Claude on a Slack Enterprise Grid ignoring Slack's workspace dropdown; they now run under the connected workspace you last opened Claude in",
+        "[Claude Tag] Fixed Claude in Slack's notice for a channel's monthly spend limit saying a channel manager can raise it; it now names an organization owner and links the usage page",
+        "[Claude Tag] Fixed links in Claude's Slack replies absorbing the closing bold or italic marks, or full-width punctuation, right after them, which broke the link and the formatting",
+        "[Claude Tag] Improved repository search in Claude Tag admin settings to cover up to 100 connected GitHub accounts and find private repositories past the first 5,000 of a GitHub App install",
+        "[Claude Tag] Improved Add place in Claude Tag admin settings to list a channel you type or paste right away, instead of only after your organization's full channel list has loaded",
+        "[Claude Tag] Improved Add > Domain on a workspace's or channel's page in Claude Tag admin settings to be available once that page loads, not only after every channel has loaded",
+        "[Claude Tag] Changed Claude Tag admin settings to organize Claude's access into four tabs: Bundles, Connectors, Skills and plugins, and Channels",
+        "[Claude Tag] Changed the Roles page in organization settings to group the roles created for Claude Tag channel managers in a collapsed section below your organization's own roles",
+        "[Code Review] Fixed Code Review setup not resuming after you leave to connect GitHub; back in admin settings, it now reopens at the repository picker"
+      ]
+    }
+  ],
+  "patchImpacts": [
+    {
+      "id": "prompt-slim",
+      "broken": true,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 33,
+          "bullet": "Changed where the Claude in Chrome instructions sit in the system prompt so that new conversations can read them from the shared prompt cache",
+          "score": -6.8724
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 57,
+          "bullet": "[Claude Tag] Improved repository search in Claude Tag admin settings to cover up to 100 connected GitHub accounts and find private repositories past the first 5,000 of a GitHub App install",
+          "score": -6.3175
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 18,
+          "bullet": "Fixed prompt suggestions spending usage credits on models your plan pays for only with credits: they are now skipped after a reply billed to credits",
+          "score": -5.0984
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 4,
+          "bullet": "Fixed requests failing with \"diagnostics: Extra inputs are not permitted\" after switching to Vertex or Bedrock mid-session",
+          "score": -4.317
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 20,
+          "bullet": "Fixed `claude plugin details <name>@builtin` suggesting `claude plugin list`, which never shows built-in plugins, when the plugin isn't found; it now points to `/plugin`",
+          "score": -3.9431
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 27,
+          "bullet": "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+          "score": -3.7279
+        }
+      ]
+    },
+    {
+      "id": "subagent-nesting",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 31,
+          "bullet": "Changed the desktop app and VS Code to always run the main conversation's subagents in the background, as the terminal does, rather than let Claude choose; a subagent's own Agent calls in `claude -p`, the Agent SDK, the desktop app and VS Code now run in the foreground by default",
+          "score": -21.1962
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 30,
+          "bullet": "Changed fork subagents (`subagent_type: \"fork\"`) to be on by default in `claude -p`, the Agent SDK, the desktop app and VS Code, as they already are in the terminal; `CLAUDE_CODE_FORK_SUBAGENT=0` turns them off, and `claude mcp serve` never offers them",
+          "score": -14.4871
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 23,
+          "bullet": "Fixed a cloud session's cost and usage restarting from zero after the session resumed in a new process",
+          "score": -13.699
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 29,
+          "bullet": "Changed `claude -p` and Agent SDK sessions with no permission mode to start in `default` mode on third-party providers, with telemetry off or on a fresh install; `--permission-mode auto` keeps auto",
+          "score": -11.1577
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 28,
+          "bullet": "Improved the message when a background session reopened from another folder has no LLM gateway: it now says why, instead of \"Not logged in\"",
+          "score": -10.2108
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 27,
+          "bullet": "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+          "score": -8.4875
+        }
+      ]
+    },
+    {
+      "id": "quiet-subagent-waits",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 42,
+          "bullet": "[Cloud sessions] Fixed routine runs showing as Completed after their cloud session stopped unexpectedly, and as Cancelled when archived before they started, instead of failed",
+          "score": -17.1823
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 31,
+          "bullet": "Changed the desktop app and VS Code to always run the main conversation's subagents in the background, as the terminal does, rather than let Claude choose; a subagent's own Agent calls in `claude -p`, the Agent SDK, the desktop app and VS Code now run in the foreground by default",
+          "score": -9.2861
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 28,
+          "bullet": "Improved the message when a background session reopened from another folder has no LLM gateway: it now says why, instead of \"Not logged in\"",
+          "score": -8.1123
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 30,
+          "bullet": "Changed fork subagents (`subagent_type: \"fork\"`) to be on by default in `claude -p`, the Agent SDK, the desktop app and VS Code, as they already are in the terminal; `CLAUDE_CODE_FORK_SUBAGENT=0` turns them off, and `claude mcp serve` never offers them",
+          "score": -7.6697
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 52,
+          "bullet": "[Claude Tag] Fixed custom connectors whose MCP servers share one host showing as a single connector in Claude Tag admin settings; each server is now its own connector",
+          "score": -6.8256
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 9,
+          "bullet": "Fixed plugin marketplaces re-cloning on every refresh, and newly installed git plugins showing version \"unknown\", when git defaults to the reftable ref format",
+          "score": -6.1883
+        }
+      ]
+    },
+    {
+      "id": "explore-haiku",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 31,
+          "bullet": "Changed the desktop app and VS Code to always run the main conversation's subagents in the background, as the terminal does, rather than let Claude choose; a subagent's own Agent calls in `claude -p`, the Agent SDK, the desktop app and VS Code now run in the foreground by default",
+          "score": -15.7029
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 50,
+          "bullet": "[Claude Tag] Fixed HEIC, SVG, TIFF and BMP images attached in Slack never reaching Claude; they now arrive as files in its working files, like other file types",
+          "score": -12.6519
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 30,
+          "bullet": "Changed fork subagents (`subagent_type: \"fork\"`) to be on by default in `claude -p`, the Agent SDK, the desktop app and VS Code, as they already are in the terminal; `CLAUDE_CODE_FORK_SUBAGENT=0` turns them off, and `claude mcp serve` never offers them",
+          "score": -10.3499
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 5,
+          "bullet": "Fixed the Read tool loading an image file of any size, or a pipe or device named like an image, entirely into memory; image sources over 128 MB are now refused",
+          "score": -9.5511
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 23,
+          "bullet": "Fixed a cloud session's cost and usage restarting from zero after the session resumed in a new process",
+          "score": -9.4565
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 6,
+          "bullet": "Fixed `/autocompact` and `/effort` saving to the wrong model when a gateway names Opus 4 or 4.1 with a prefix, such as `anthropic/claude-opus-4-1`",
+          "score": -8.2271
+        }
+      ]
+    },
+    {
+      "id": "mode-cycle-order",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 29,
+          "bullet": "Changed `claude -p` and Agent SDK sessions with no permission mode to start in `default` mode on third-party providers, with telemetry off or on a fresh install; `--permission-mode auto` keeps auto",
+          "score": -14.6475
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 52,
+          "bullet": "[Claude Tag] Fixed custom connectors whose MCP servers share one host showing as a single connector in Claude Tag admin settings; each server is now its own connector",
+          "score": -9.1535
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 27,
+          "bullet": "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+          "score": -8.8892
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 0,
+          "bullet": "Added `CLAUDE_CODE_AUTO_MODE_MODEL` to choose the model the client-side auto mode classifier uses; it does not change the model for server-side auto mode",
+          "score": -8.0486
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 5,
+          "bullet": "Fixed the Read tool loading an image file of any size, or a pipe or device named like an image, entirely into memory; image sources over 128 MB are now refused",
+          "score": -7.0295
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 18,
+          "bullet": "Fixed prompt suggestions spending usage credits on models your plan pays for only with credits: they are now skipped after a reply billed to credits",
+          "score": -6.5058
+        }
+      ]
+    },
+    {
+      "id": "thinking-display-summarized",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 36,
+          "bullet": "[VSCode] Fixed text after an unclosed code block in a list showing as plain text while a reply streams, then turning into code",
+          "score": -13.2869
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 9,
+          "bullet": "Fixed plugin marketplaces re-cloning on every refresh, and newly installed git plugins showing version \"unknown\", when git defaults to the reftable ref format",
+          "score": -9.5421
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 6,
+          "bullet": "Fixed `/autocompact` and `/effort` saving to the wrong model when a gateway names Opus 4 or 4.1 with a prefix, such as `anthropic/claude-opus-4-1`",
+          "score": -8.746
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 41,
+          "bullet": "[Cloud sessions] Fixed the pull request status bar in cloud sessions flipping a pull request with merge conflicts back to ready while GitHub rechecked it",
+          "score": -7.8972
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 8,
+          "bullet": "Fixed `claude plugin` and other subcommands sometimes exiting before a queued settings or config write finished, which could lose the change or leave a `.tmp` file behind",
+          "score": -6.4024
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 17,
+          "bullet": "Fixed MCP servers showing no tools, or every tool call failing, when the server negotiates protocol version 2026-07-28 but omits `resultType`, `ttlMs` or `cacheScope`",
+          "score": -5.9978
+        }
+      ]
+    },
+    {
+      "id": "thinking-no-fold",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 7,
+          "bullet": "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+          "score": -13.0547
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 53,
+          "bullet": "[Claude Tag] Fixed Claude in Slack sometimes answering a direct message with \"DMs are temporarily unavailable\" and dropping it when a single Slack lookup stalled; it now retries first",
+          "score": -8.1653
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 27,
+          "bullet": "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+          "score": -8.0858
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 61,
+          "bullet": "[Claude Tag] Changed the Roles page in organization settings to group the roles created for Claude Tag channel managers in a collapsed section below your organization's own roles",
+          "score": -7.2364
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 8,
+          "bullet": "Fixed `claude plugin` and other subcommands sometimes exiting before a queued settings or config write finished, which could lose the change or leave a `.tmp` file behind",
+          "score": -6.9291
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 2,
+          "bullet": "Added a notice to `/design-sync` and `/design-login` that standalone Claude Design (claude.ai/design) closes by December 14, 2026",
+          "score": -6.7006
+        }
+      ]
+    },
+    {
+      "id": "disable-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 20,
+          "bullet": "Fixed `claude plugin details <name>@builtin` suggesting `claude plugin list`, which never shows built-in plugins, when the plugin isn't found; it now points to `/plugin`",
+          "score": -12.8432
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 13,
+          "bullet": "Fixed `classifier_category` missing from OpenTelemetry `tool_decision` events for most auto mode classifier blocks, and new `tool_decision` attributes pushing out `tool_use_id`, `tool_source` and `tool_parameters` when `OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT` is low",
+          "score": -9.1337
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 62,
+          "bullet": "[Code Review] Fixed Code Review setup not resuming after you leave to connect GitHub; back in admin settings, it now reopens at the repository picker",
+          "score": -9.0779
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 0,
+          "bullet": "Added `CLAUDE_CODE_AUTO_MODE_MODEL` to choose the model the client-side auto mode classifier uses; it does not change the model for server-side auto mode",
+          "score": -7.1343
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 52,
+          "bullet": "[Claude Tag] Fixed custom connectors whose MCP servers share one host showing as a single connector in Claude Tag admin settings; each server is now its own connector",
+          "score": -7.0386
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 6,
+          "bullet": "Fixed `/autocompact` and `/effort` saving to the wrong model when a gateway names Opus 4 or 4.1 with a prefix, such as `anthropic/claude-opus-4-1`",
+          "score": -6.4609
+        }
+      ]
+    },
+    {
+      "id": "prefer-project-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 20,
+          "bullet": "Fixed `claude plugin details <name>@builtin` suggesting `claude plugin list`, which never shows built-in plugins, when the plugin isn't found; it now points to `/plugin`",
+          "score": -12.356
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 5,
+          "bullet": "Fixed the Read tool loading an image file of any size, or a pipe or device named like an image, entirely into memory; image sources over 128 MB are now refused",
+          "score": -10.5442
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 53,
+          "bullet": "[Claude Tag] Fixed Claude in Slack sometimes answering a direct message with \"DMs are temporarily unavailable\" and dropping it when a single Slack lookup stalled; it now retries first",
+          "score": -10.2119
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 25,
+          "bullet": "Windows: Fixed every file write being refused or asked about for projects on exFAT or FAT32 drives, including in sessions started with `--plugin-dir`",
+          "score": -10.0939
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 52,
+          "bullet": "[Claude Tag] Fixed custom connectors whose MCP servers share one host showing as a single connector in Claude Tag admin settings; each server is now its own connector",
+          "score": -7.5574
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 7,
+          "bullet": "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+          "score": -7.4842
+        }
+      ]
+    },
+    {
+      "id": "turn-timestamp",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 36,
+          "bullet": "[VSCode] Fixed text after an unclosed code block in a list showing as plain text while a reply streams, then turning into code",
+          "score": -12.3508
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 42,
+          "bullet": "[Cloud sessions] Fixed routine runs showing as Completed after their cloud session stopped unexpectedly, and as Cancelled when archived before they started, instead of failed",
+          "score": -9.3929
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 27,
+          "bullet": "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+          "score": -9.108
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 34,
+          "bullet": "Changed prompt and agent hooks so that at most 12 of one event run at a time; the rest wait their turn",
+          "score": -9.103
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 32,
+          "bullet": "Changed the `← for agents` footer hint to hide 10 seconds after a session opens; the count of agents waiting on you still shows",
+          "score": -8.5625
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 28,
+          "bullet": "Improved the message when a background session reopened from another folder has no LLM gateway: it now says why, instead of \"Not logged in\"",
+          "score": -8.1123
+        }
+      ]
+    },
+    {
+      "id": "read-summary",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 27,
+          "bullet": "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+          "score": -11.336
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 13,
+          "bullet": "Fixed `classifier_category` missing from OpenTelemetry `tool_decision` events for most auto mode classifier blocks, and new `tool_decision` attributes pushing out `tool_use_id`, `tool_source` and `tool_parameters` when `OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT` is low",
+          "score": -8.304
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 8,
+          "bullet": "Fixed `claude plugin` and other subcommands sometimes exiting before a queued settings or config write finished, which could lose the change or leave a `.tmp` file behind",
+          "score": -7.0856
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 55,
+          "bullet": "[Claude Tag] Fixed Claude in Slack's notice for a channel's monthly spend limit saying a channel manager can raise it; it now names an organization owner and links the usage page",
+          "score": -5.179
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 5,
+          "bullet": "Fixed the Read tool loading an image file of any size, or a pipe or device named like an image, entirely into memory; image sources over 128 MB are now refused",
+          "score": -5.0725
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 32,
+          "bullet": "Changed the `← for agents` footer hint to hide 10 seconds after a session opens; the count of agents waiting on you still shows",
+          "score": -4.4477
+        }
+      ]
+    },
+    {
+      "id": "tool-defer-whitelist",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 7,
+          "bullet": "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+          "score": -10.9647
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 20,
+          "bullet": "Fixed `claude plugin details <name>@builtin` suggesting `claude plugin list`, which never shows built-in plugins, when the plugin isn't found; it now points to `/plugin`",
+          "score": -10.0342
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 30,
+          "bullet": "Changed fork subagents (`subagent_type: \"fork\"`) to be on by default in `claude -p`, the Agent SDK, the desktop app and VS Code, as they already are in the terminal; `CLAUDE_CODE_FORK_SUBAGENT=0` turns them off, and `claude mcp serve` never offers them",
+          "score": -9.9449
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 17,
+          "bullet": "Fixed MCP servers showing no tools, or every tool call failing, when the server negotiates protocol version 2026-07-28 but omits `resultType`, `ttlMs` or `cacheScope`",
+          "score": -8.3973
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 31,
+          "bullet": "Changed the desktop app and VS Code to always run the main conversation's subagents in the background, as the terminal does, rather than let Claude choose; a subagent's own Agent calls in `claude -p`, the Agent SDK, the desktop app and VS Code now run in the foreground by default",
+          "score": -7.1413
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 8,
+          "bullet": "Fixed `claude plugin` and other subcommands sometimes exiting before a queued settings or config write finished, which could lose the change or leave a `.tmp` file behind",
+          "score": -7.0856
+        }
+      ]
+    },
+    {
+      "id": "trim-context-bloat",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 56,
+          "bullet": "[Claude Tag] Fixed links in Claude's Slack replies absorbing the closing bold or italic marks, or full-width punctuation, right after them, which broke the link and the formatting",
+          "score": -10.8325
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 18,
+          "bullet": "Fixed prompt suggestions spending usage credits on models your plan pays for only with credits: they are now skipped after a reply billed to credits",
+          "score": -9.9502
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 0,
+          "bullet": "Added `CLAUDE_CODE_AUTO_MODE_MODEL` to choose the model the client-side auto mode classifier uses; it does not change the model for server-side auto mode",
+          "score": -8.2995
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 58,
+          "bullet": "[Claude Tag] Improved Add place in Claude Tag admin settings to list a channel you type or paste right away, instead of only after your organization's full channel list has loaded",
+          "score": -7.0637
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 33,
+          "bullet": "Changed where the Claude in Chrome instructions sit in the system prompt so that new conversations can read them from the shared prompt cache",
+          "score": -6.8724
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 20,
+          "bullet": "Fixed `claude plugin details <name>@builtin` suggesting `claude plugin list`, which never shows built-in plugins, when the plugin isn't found; it now points to `/plugin`",
+          "score": -6.7916
+        }
+      ]
+    },
+    {
+      "id": "flag-env-override",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 5,
+          "bullet": "Fixed the Read tool loading an image file of any size, or a pipe or device named like an image, entirely into memory; image sources over 128 MB are now refused",
+          "score": -10.5442
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 58,
+          "bullet": "[Claude Tag] Improved Add place in Claude Tag admin settings to list a channel you type or paste right away, instead of only after your organization's full channel list has loaded",
+          "score": -8.8036
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 7,
+          "bullet": "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+          "score": -7.8856
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 15,
+          "bullet": "Fixed `claude remote-control --help` not printing its usage and exiting when not signed in",
+          "score": -7.2591
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 8,
+          "bullet": "Fixed `claude plugin` and other subcommands sometimes exiting before a queued settings or config write finished, which could lose the change or leave a `.tmp` file behind",
+          "score": -7.0856
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 0,
+          "bullet": "Added `CLAUDE_CODE_AUTO_MODE_MODEL` to choose the model the client-side auto mode classifier uses; it does not change the model for server-side auto mode",
+          "score": -6.9798
+        }
+      ]
+    },
+    {
+      "id": "toolsearch-visibility",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 7,
+          "bullet": "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+          "score": -9.9639
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 5,
+          "bullet": "Fixed the Read tool loading an image file of any size, or a pipe or device named like an image, entirely into memory; image sources over 128 MB are now refused",
+          "score": -9.0838
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 26,
+          "bullet": "Improved startup time with many plugins enabled: plugin command and agent files now take far fewer file system calls to load, most of all on Windows",
+          "score": -7.0358
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 17,
+          "bullet": "Fixed MCP servers showing no tools, or every tool call failing, when the server negotiates protocol version 2026-07-28 but omits `resultType`, `ttlMs` or `cacheScope`",
+          "score": -5.9978
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 27,
+          "bullet": "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+          "score": -5.9068
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 10,
+          "bullet": "Fixed the PowerShell tool not finding commands in a plugin's `bin/` folder, and reporting an error when a search that finds nothing (rg, grep, findstr, git grep) is piped into `Select-Object` or another formatting cmdlet",
+          "score": -4.6718
+        }
+      ]
+    },
+    {
+      "id": "disable-bundled-skills",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 26,
+          "bullet": "Improved startup time with many plugins enabled: plugin command and agent files now take far fewer file system calls to load, most of all on Windows",
+          "score": -9.7831
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 7,
+          "bullet": "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+          "score": -8.6591
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 20,
+          "bullet": "Fixed `claude plugin details <name>@builtin` suggesting `claude plugin list`, which never shows built-in plugins, when the plugin isn't found; it now points to `/plugin`",
+          "score": -7.6316
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 16,
+          "bullet": "Fixed `/design consent` and `/design revoke` suggesting `/design-login` when they fail in a cloud session, where it isn't available; the message now points to claude.ai/design/settings",
+          "score": -6.918
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 18,
+          "bullet": "Fixed prompt suggestions spending usage credits on models your plan pays for only with credits: they are now skipped after a reply billed to credits",
+          "score": -6.2815
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 2,
+          "bullet": "Added a notice to `/design-sync` and `/design-login` that standalone Claude Design (claude.ai/design) closes by December 14, 2026",
+          "score": -5.8655
+        }
+      ]
+    },
+    {
+      "id": "worktree-dedup",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 50,
+          "bullet": "[Claude Tag] Fixed HEIC, SVG, TIFF and BMP images attached in Slack never reaching Claude; they now arrive as files in its working files, like other file types",
+          "score": -9.5222
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 22,
+          "bullet": "Fixed worktree isolation refusing to create or resume worktrees under git 2.56 or later when a stray `.git` file points at a directory that doesn't exist",
+          "score": -9.4908
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 23,
+          "bullet": "Fixed a cloud session's cost and usage restarting from zero after the session resumed in a new process",
+          "score": -6.3256
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 53,
+          "bullet": "[Claude Tag] Fixed Claude in Slack sometimes answering a direct message with \"DMs are temporarily unavailable\" and dropping it when a single Slack lookup stalled; it now retries first",
+          "score": -6.0825
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 7,
+          "bullet": "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+          "score": -6.0806
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 27,
+          "bullet": "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+          "score": -5.9068
+        }
+      ]
+    },
+    {
+      "id": "thinking-visibility",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 27,
+          "bullet": "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+          "score": -9.5098
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 61,
+          "bullet": "[Claude Tag] Changed the Roles page in organization settings to group the roles created for Claude Tag channel managers in a collapsed section below your organization's own roles",
+          "score": -6.5937
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 21,
+          "bullet": "Fixed an emoji that a link starts inside wrapping one column too wide, which hid it in question previews and turned tables into lists",
+          "score": -6.3813
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 48,
+          "bullet": "[Claude Tag] Fixed \"is thinking…\" staying up under a mention in a Slack channel or DM after Claude answered it by editing one of its earlier messages",
+          "score": -6.3063
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 0,
+          "bullet": "Added `CLAUDE_CODE_AUTO_MODE_MODEL` to choose the model the client-side auto mode classifier uses; it does not change the model for server-side auto mode",
+          "score": -6.1667
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 49,
+          "bullet": "[Claude Tag] Fixed URLs in code blocks under a numbered or bulleted step of Claude's Slack replies being wrapped in angle brackets, which broke copied commands",
+          "score": -5.4348
+        }
+      ]
+    },
+    {
+      "id": "no-collapse-reads",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 10,
+          "bullet": "Fixed the PowerShell tool not finding commands in a plugin's `bin/` folder, and reporting an error when a search that finds nothing (rg, grep, findstr, git grep) is piped into `Select-Object` or another formatting cmdlet",
+          "score": -9.3144
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 27,
+          "bullet": "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+          "score": -9.108
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 13,
+          "bullet": "Fixed `classifier_category` missing from OpenTelemetry `tool_decision` events for most auto mode classifier blocks, and new `tool_decision` attributes pushing out `tool_use_id`, `tool_source` and `tool_parameters` when `OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT` is low",
+          "score": -6.8459
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 26,
+          "bullet": "Improved startup time with many plugins enabled: plugin command and agent files now take far fewer file system calls to load, most of all on Windows",
+          "score": -6.501
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 17,
+          "bullet": "Fixed MCP servers showing no tools, or every tool call failing, when the server negotiates protocol version 2026-07-28 but omits `resultType`, `ttlMs` or `cacheScope`",
+          "score": -5.463
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 5,
+          "bullet": "Fixed the Read tool loading an image file of any size, or a pipe or device named like an image, entirely into memory; image sources over 128 MB are now refused",
+          "score": -5.0725
+        }
+      ]
+    },
+    {
+      "id": "abbreviations",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 58,
+          "bullet": "[Claude Tag] Improved Add place in Claude Tag admin settings to list a channel you type or paste right away, instead of only after your organization's full channel list has loaded",
+          "score": -9.1314
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 24,
+          "bullet": "Self-hosted runner: Fixed git fetches failing with \"bad object refs/heads\" in sessions that reuse a checkout stored in git's reftable format",
+          "score": -7.0173
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 56,
+          "bullet": "[Claude Tag] Fixed links in Claude's Slack replies absorbing the closing bold or italic marks, or full-width punctuation, right after them, which broke the link and the formatting",
+          "score": -6.3325
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 62,
+          "bullet": "[Code Review] Fixed Code Review setup not resuming after you leave to connect GitHub; back in admin settings, it now reopens at the repository picker",
+          "score": -5.2358
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 19,
+          "bullet": "Fixed URLs written in backticks being clickable only on their first row when they wrap; the whole URL is now one link in terminals that support hyperlinks",
+          "score": -5.2116
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 10,
+          "bullet": "Fixed the PowerShell tool not finding commands in a plugin's `bin/` folder, and reporting an error when a search that finds nothing (rg, grep, findstr, git grep) is piped into `Select-Object` or another formatting cmdlet",
+          "score": -5.0206
+        }
+      ]
+    },
+    {
+      "id": "auto-color",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 7,
+          "bullet": "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+          "score": -8.6591
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 39,
+          "bullet": "[Cloud sessions] Added a banner on a routine's page that says why its last run didn't start, such as your organization reaching its limit on concurrent cloud sessions",
+          "score": -8.6515
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 38,
+          "bullet": "[VSCode] Fixed the `@browser` banner saying \"Browser connected\" when no browser with the Claude extension can be reached",
+          "score": -8.2053
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 31,
+          "bullet": "Changed the desktop app and VS Code to always run the main conversation's subagents in the background, as the terminal does, rather than let Claude choose; a subagent's own Agent calls in `claude -p`, the Agent SDK, the desktop app and VS Code now run in the foreground by default",
+          "score": -6.8789
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 23,
+          "bullet": "Fixed a cloud session's cost and usage restarting from zero after the session resumed in a new process",
+          "score": -6.5196
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 42,
+          "bullet": "[Cloud sessions] Fixed routine runs showing as Completed after their cloud session stopped unexpectedly, and as Cancelled when archived before they started, instead of failed",
+          "score": -6.4317
+        }
+      ]
+    },
+    {
+      "id": "feature-flag-toggles",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 25,
+          "bullet": "Windows: Fixed every file write being refused or asked about for projects on exFAT or FAT32 drives, including in sessions started with `--plugin-dir`",
+          "score": -7.2593
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 15,
+          "bullet": "Fixed `claude remote-control --help` not printing its usage and exiting when not signed in",
+          "score": -7.0678
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 5,
+          "bullet": "Fixed the Read tool loading an image file of any size, or a pipe or device named like an image, entirely into memory; image sources over 128 MB are now refused",
+          "score": -7.0295
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 47,
+          "bullet": "[Remote Control] Fixed a subagent's pane spinning forever in a Remote Control session after your computer goes offline; it now says Remote Control is disconnected",
+          "score": -6.613
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 7,
+          "bullet": "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+          "score": -5.9698
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 23,
+          "bullet": "Fixed a cloud session's cost and usage restarting from zero after the session resumed in a new process",
+          "score": -5.214
+        }
+      ]
+    },
+    {
+      "id": "spinner",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 23,
+          "bullet": "Fixed a cloud session's cost and usage restarting from zero after the session resumed in a new process",
+          "score": -7.1794
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 52,
+          "bullet": "[Claude Tag] Fixed custom connectors whose MCP servers share one host showing as a single connector in Claude Tag admin settings; each server is now its own connector",
+          "score": -7.0386
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 36,
+          "bullet": "[VSCode] Fixed text after an unclosed code block in a list showing as plain text while a reply streams, then turning into code",
+          "score": -6.8651
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 20,
+          "bullet": "Fixed `claude plugin details <name>@builtin` suggesting `claude plugin list`, which never shows built-in plugins, when the plugin isn't found; it now points to `/plugin`",
+          "score": -6.7916
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 27,
+          "bullet": "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+          "score": -6.3086
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 0,
+          "bullet": "Added `CLAUDE_CODE_AUTO_MODE_MODEL` to choose the model the client-side auto mode classifier uses; it does not change the model for server-side auto mode",
+          "score": -6.1667
+        }
+      ]
+    },
+    {
+      "id": "keyword-highlights",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 6,
+          "bullet": "Fixed `/autocompact` and `/effort` saving to the wrong model when a gateway names Opus 4 or 4.1 with a prefix, such as `anthropic/claude-opus-4-1`",
+          "score": -6.9798
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 56,
+          "bullet": "[Claude Tag] Fixed links in Claude's Slack replies absorbing the closing bold or italic marks, or full-width punctuation, right after them, which broke the link and the formatting",
+          "score": -6.8363
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 35,
+          "bullet": "Changed the message shown when your organization's policy turns off `/feedback`: it now points to GitHub issues instead of an organization admin",
+          "score": -5.263
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 16,
+          "bullet": "Fixed `/design consent` and `/design revoke` suggesting `/design-login` when they fail in a cloud session, where it isn't available; the message now points to claude.ai/design/settings",
+          "score": -4.8784
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 31,
+          "bullet": "Changed the desktop app and VS Code to always run the main conversation's subagents in the background, as the terminal does, rather than let Claude choose; a subagent's own Agent calls in `claude -p`, the Agent SDK, the desktop app and VS Code now run in the foreground by default",
+          "score": -4.5576
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 7,
+          "bullet": "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+          "score": -4.2425
+        }
+      ]
+    },
+    {
+      "id": "hook-envelope-strip",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 40,
+          "bullet": "[Cloud sessions] Fixed \"Rewind to here\" failing on every message except the newest in cloud sessions; self-hosted runners need Claude Code v2.1.246 or later",
+          "score": -6.9291
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 33,
+          "bullet": "Changed where the Claude in Chrome instructions sit in the system prompt so that new conversations can read them from the shared prompt cache",
+          "score": -6.7085
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 7,
+          "bullet": "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+          "score": -6.4903
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 18,
+          "bullet": "Fixed prompt suggestions spending usage credits on models your plan pays for only with credits: they are now skipped after a reply billed to credits",
+          "score": -6.1057
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 42,
+          "bullet": "[Cloud sessions] Fixed routine runs showing as Completed after their cloud session stopped unexpectedly, and as Cancelled when archived before they started, instead of failed",
+          "score": -4.3086
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 23,
+          "bullet": "Fixed a cloud session's cost and usage restarting from zero after the session resumed in a new process",
+          "score": -4.0485
+        }
+      ]
+    },
+    {
+      "id": "env-block-trim",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 12,
+          "bullet": "Fixed artifact publishes sometimes failing when Claude sent an empty list of edits, and Claude retrying an artifact update the wrong way after a newer version of the artifact turned it away",
+          "score": -6.3175
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 20,
+          "bullet": "Fixed `claude plugin details <name>@builtin` suggesting `claude plugin list`, which never shows built-in plugins, when the plugin isn't found; it now points to `/plugin`",
+          "score": -3.9431
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 50,
+          "bullet": "[Claude Tag] Fixed HEIC, SVG, TIFF and BMP images attached in Slack never reaching Claude; they now arrive as files in its working files, like other file types",
+          "score": -3.8852
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 46,
+          "bullet": "[Cloud sessions] Improved the error shown when a cloud session fails to start: it now says \"Connection lost\" or \"Server error\" instead of \"Something went wrong\"",
+          "score": -3.7853
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 14,
+          "bullet": "Fixed rows in the agents view staying blank after moving down a long list or folding a section",
+          "score": -3.7071
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 33,
+          "bullet": "Changed where the Claude in Chrome instructions sit in the system prompt so that new conversations can read them from the shared prompt cache",
+          "score": -3.5187
+        }
+      ]
+    },
+    {
+      "id": "ghostty-term",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 0,
+          "bullet": "Added `CLAUDE_CODE_AUTO_MODE_MODEL` to choose the model the client-side auto mode classifier uses; it does not change the model for server-side auto mode",
+          "score": -5.8146
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 30,
+          "bullet": "Changed fork subagents (`subagent_type: \"fork\"`) to be on by default in `claude -p`, the Agent SDK, the desktop app and VS Code, as they already are in the terminal; `CLAUDE_CODE_FORK_SUBAGENT=0` turns them off, and `claude mcp serve` never offers them",
+          "score": -5.0672
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 31,
+          "bullet": "Changed the desktop app and VS Code to always run the main conversation's subagents in the background, as the terminal does, rather than let Claude choose; a subagent's own Agent calls in `claude -p`, the Agent SDK, the desktop app and VS Code now run in the foreground by default",
+          "score": -4.6938
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 19,
+          "bullet": "Fixed URLs written in backticks being clickable only on their first row when they wrap; the whole URL is now one link in terminals that support hyperlinks",
+          "score": -3.7279
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 27,
+          "bullet": "Improved auto mode with the server-side classifier: a conversation too long for the safety check is now compacted, instead of every checked tool call being denied",
+          "score": -3.7279
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 15,
+          "bullet": "Fixed `claude remote-control --help` not printing its usage and exiting when not signed in",
+          "score": -3.3459
+        }
+      ]
+    },
+    {
+      "id": "system-reminders",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 52,
+          "bullet": "[Claude Tag] Fixed custom connectors whose MCP servers share one host showing as a single connector in Claude Tag admin settings; each server is now its own connector",
+          "score": -5.4812
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 26,
+          "bullet": "Improved startup time with many plugins enabled: plugin command and agent files now take far fewer file system calls to load, most of all on Windows",
+          "score": -5.463
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 61,
+          "bullet": "[Claude Tag] Changed the Roles page in organization settings to group the roles created for Claude Tag channel managers in a collapsed section below your organization's own roles",
+          "score": -5.3129
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 33,
+          "bullet": "Changed where the Claude in Chrome instructions sit in the system prompt so that new conversations can read them from the shared prompt cache",
+          "score": -5.183
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 34,
+          "bullet": "Changed prompt and agent hooks so that at most 12 of one event run at a time; the rest wait their turn",
+          "score": -4.4463
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 5,
+          "bullet": "Fixed the Read tool loading an image file of any size, or a pipe or device named like an image, entirely into memory; image sources over 128 MB are now refused",
+          "score": -4.1087
+        }
+      ]
+    },
+    {
+      "id": "teammate-workflow-gate",
+      "broken": false,
+      "matches": [
+        {
+          "version": "2.1.302",
+          "bulletIndex": 31,
+          "bullet": "Changed the desktop app and VS Code to always run the main conversation's subagents in the background, as the terminal does, rather than let Claude choose; a subagent's own Agent calls in `claude -p`, the Agent SDK, the desktop app and VS Code now run in the foreground by default",
+          "score": -4.3869
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 7,
+          "bullet": "Fixed a prompt cache miss when a tool added mid-session was loaded again through ToolSearch or after compaction",
+          "score": -4.2425
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 17,
+          "bullet": "Fixed MCP servers showing no tools, or every tool call failing, when the server negotiates protocol version 2026-07-28 but omits `resultType`, `ttlMs` or `cacheScope`",
+          "score": -3.7853
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 53,
+          "bullet": "[Claude Tag] Fixed Claude in Slack sometimes answering a direct message with \"DMs are temporarily unavailable\" and dropping it when a single Slack lookup stalled; it now retries first",
+          "score": -3.6182
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 12,
+          "bullet": "Fixed artifact publishes sometimes failing when Claude sent an empty list of edits, and Claude retrying an artifact update the wrong way after a newer version of the artifact turned it away",
+          "score": -3.4652
+        },
+        {
+          "version": "2.1.302",
+          "bulletIndex": 28,
+          "bullet": "Improved the message when a background session reopened from another folder has no LLM gateway: it now says why, instead of \"Not logged in\"",
+          "score": -3.3538
+        }
+      ]
+    }
+  ],
+  "reasoning": {
+    "_port": "Port 2.1.301 -> 2.1.302. 29/29 JS, one fork (disable-skills, latent gap, not a port break), 75/75 prompts after one find-only fix (agent-usage-notes). Flags: +11/-1 (sprightly_lagoon gone), moss_anchor default flipped true->false; none in our override or toggle set. Env: +3 (CLAUDE_CODE_ALLOW_OTHER_MODELS, CLAUDE_CODE_DESKTOP_SKILLS_PLUGIN_DIR, CLAUDE_CODE_MCP_SERVE_WORKSPACE_ROOT).",
+    "prompt-slim": "Semi-signal. The 'Don't race' bullet gate went from `bg&&!fork` to `bg&&!(fork&&alwaysBg)`, tied to the 'fork subagents on by default' / 'always run subagents in the background' bullets, not the Chrome-instructions top match. Our replace drops that block outright, so only agent-usage-notes.find.txt changed (`!(__TEAMS__&&__NVAR__)`); rendered prompt unchanged.",
+    "disable-skills": "Not broken by the port; forked for a latent gap. Runtime test showed a disabled skill hidden from skill_listing but still run by Skill(name): the Skill tool resolves names via its own loader (oe(): r=e.mcpCommands(), ...). Site 3 filters it; retest returns 'Unknown skill'. No changelog footprint."
+  }
+}
