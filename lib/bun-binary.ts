@@ -73,7 +73,6 @@ interface JsChunk {
   index: number;        // module-table index (identity for repack routing)
   name: string;         // /$bunfs/root/... module name
   contents: Buffer;     // raw content bytes (a view into bunData)
-  origOffset: number;   // contents offset within bunData
   origLen: number;      // contents length within bunData
   entryOffset: number;  // absolute offset of this module's record in bunData
   bytecode: StringPointer;
@@ -296,7 +295,6 @@ function extractAllJsModules(binaryPath: string): {
       index: i,
       name: getStringContent(bunData, module.name).toString('utf-8'),
       contents: getStringContent(bunData, module.contents),
-      origOffset: module.contents.offset,
       origLen: module.contents.length,
       entryOffset: tableBase + i * stride,
       bytecode: module.bytecode,
@@ -821,16 +819,16 @@ function validateRepackedBinary(outputPath: string): void {
 // are subprocesses doing find/replace on the temp file), so on apply we recover
 // the edits by DIFFING the pristine concat against the patched one, route each
 // edit hunk back to the single chunk it lives in (by original concat offset),
-// rebuild that chunk's content, and repack per-chunk (shrink+pad+length-update+
-// bytecode-zero — the primitive proven by the Phase 0 spike). A final
+// rebuild that chunk's content, and re-lay out the contents area around it
+// (pointer update + bytecode-zero on edited chunks). A final
 // reconstruction check (rebuilt concat === patched concat) guards correctness
 // before the binary is touched; a hunk that straddles a chunk boundary aborts.
 // Design: docs/plans/2026-08-26-multi-module-patching-design.md.
 
 // The __CLAUDE_PATCHES__ metadata comment is prepended to the concat by
-// writePatchMetadata (shared.js). Left in place it would land at concat offset 0
-// and grow chunk 0 past its original length (illegal under shrink-only). We
-// strip it before diffing and re-inject it into a chunk that has slack.
+// writePatchMetadata (shared.js). Left in place the diff would route it into
+// chunk 0 as an edit; we strip it before diffing and re-inject it into an
+// edited chunk.
 const META_RE = /\/\* __CLAUDE_PATCHES__ \{[\s\S]*?\} \*\/\n?/;
 
 /** Longest common prefix (in bytes) of a[aLo,aHi) and b[bLo,bHi). */
@@ -949,7 +947,7 @@ function recoverHunks(
  * the prepended __CLAUDE_PATCHES__ comment.
  */
 function repackMultiModule(binaryPath: string, modifiedJs: Buffer, outputPath: string): void {
-  const { chunks, bunData, elfBinary, format } = extractAllJsModules(binaryPath);
+  const { chunks, bunData, bunOffsets, elfBinary, format, stride } = extractAllJsModules(binaryPath);
   const { concat: pristine, boundaries } = concatJsModules(chunks);
 
   // Peel the metadata comment off the front; it is re-injected into a slack chunk.
@@ -1016,71 +1014,75 @@ function repackMultiModule(binaryPath: string, modifiedJs: Buffer, outputPath: s
     }
   }
 
-  // Re-inject the metadata comment into the edited chunk with the most slack.
+  // Re-inject the metadata comment into an edited chunk; the contents area
+  // budget below covers its size.
   if (meta) {
-    let best = -1, bestSlack = -1;
-    for (const [pos, buf] of newContent) {
-      const slack = (boundaries[pos].end - boundaries[pos].start) - buf.length;
-      if (slack > bestSlack) { bestSlack = slack; best = pos; }
-    }
-    if (best < 0 || bestSlack < meta.length) {
-      throw new Error(`No edited chunk has slack (${bestSlack}B) to store the ${meta.length}B patch metadata comment.`);
-    }
-    newContent.set(best, Buffer.concat([newContent.get(best), Buffer.from(meta, 'latin1')]));
+    const first = newContent.keys().next();
+    if (first.done) throw new Error('No edited chunk to store the patch metadata comment.');
+    newContent.set(first.value, Buffer.concat([newContent.get(first.value), Buffer.from(meta, 'latin1')]));
   }
 
-  // Splice each edited chunk in place: content at original offset, pad to
-  // original length (space), update the contents StringPointer length, zero the
-  // bytecode pointer (force recompile from patched source). Offsets never move,
-  // section size stays constant. See replaceClaudeJsInPlace for the rationale.
-  // A patch may GROW its chunk (an injection patch: feature-flag toggles, cron
-  // visibility, spinner frames, …). It cannot grow in place — the next chunk's
-  // bytes sit immediately after. But every edited chunk's bytecode pointer is
-  // zeroed anyway (recompile from source), so its bytecode region becomes dead
-  // space — and Phase 0 proved contents regions never overlap bytecode regions.
-  // So a grown chunk RELOCATES into its own freed bytecode region (repoint the
-  // contents StringPointer offset there). Shrunk/equal chunks stay in place.
-  const unplaceable = [];
-  for (const [pos, buf] of newContent) {
-    const chunk = chunks[pos];
-    if (buf.length > chunk.origLen && buf.length > chunk.bytecode.length) {
-      const bnd = boundaries[pos];
-      const pfx = commonPrefixLen(pristine, buf, bnd.start, bnd.end, 0, buf.length);
-      const snip = buf.subarray(pfx, Math.min(pfx + 80, buf.length)).toString('latin1');
-      unplaceable.push(
-        `chunk ${chunk.index}: ${chunk.origLen} -> ${buf.length} (+${buf.length - chunk.origLen}), ` +
-        `bytecode region only ${chunk.bytecode.length}B — near "${snip}"`
-      );
-    }
+  // Re-lay out the contents area. Every module's contents sits in one
+  // contiguous, contents-only span in offset order with short separators,
+  // apart from the bytecode. Since 2.1.310 the bytecode is one shared JSC cache
+  // whose bytes cross-reference each other (every pointer runs to the same
+  // end), so no part of it can host relocated source. Instead each module's
+  // contents (patched for edited chunks) is rewritten in order with its
+  // original separator and its pointer repointed; a chunk may grow as long as
+  // the area's net size does not. Only edited chunks lose their bytecode
+  // (recompile from patched source, see replaceClaudeJsInPlace); unedited
+  // modules keep identical bytes and their bytecode.
+  const tableBase = bunOffsets.modulesPtr.offset;
+  const edited = new Map(); // entryOffset -> patched contents
+  for (const [pos, buf] of newContent) edited.set(chunks[pos].entryOffset, buf);
+  const regions = [];       // every module's contents
+  const others = [bunOffsets.modulesPtr, bunOffsets.compileExecArgvPtr];
+  for (let i = 0; i < Math.floor(bunOffsets.modulesPtr.length / stride); i++) {
+    const entryOffset = tableBase + i * stride;
+    const m = parseModule(bunData, entryOffset, stride);
+    if (m.contents.length) regions.push({ entryOffset, offset: m.contents.offset, length: m.contents.length });
+    others.push(m.name, m.sourcemap, m.bytecode, ...(m.moduleInfo ? [m.moduleInfo, m.bytecodeOriginPath] : []));
   }
-  if (unplaceable.length > 0) {
-    throw new Error(
-      `cannot place ${unplaceable.length} grown chunk(s) — growth exceeds the freed bytecode region:\n  ` +
-      unplaceable.join('\n  ')
-    );
+  regions.sort((a, b) => a.offset - b.offset);
+  const areaStart = regions[0].offset;
+  const areaEnd = regions[regions.length - 1].offset + regions[regions.length - 1].length;
+  if (others.some(p => p.length && p.offset < areaEnd && areaStart < p.offset + p.length)) {
+    throw new Error('Contents area holds non-contents regions; cannot re-lay out. Binary untouched.');
+  }
+  if (regions.some((r, k) => k > 0 && r.offset < regions[k - 1].offset + regions[k - 1].length)) {
+    throw new Error('Contents regions overlap; cannot re-lay out. Binary untouched.');
   }
 
   const result = Buffer.from(bunData);
-  for (const [pos, buf] of newContent) {
-    const chunk = chunks[pos];
-    if (buf.length <= chunk.origLen) {
-      // In place: overwrite at original offset, pad tail to preserve size.
-      buf.copy(result, chunk.origOffset);
-      if (buf.length < chunk.origLen) {
-        result.fill(0x20, chunk.origOffset + buf.length, chunk.origOffset + chunk.origLen);
-      }
-      result.writeUInt32LE(buf.length, chunk.entryOffset + 12);     // contents.length
-    } else {
-      // Relocate into the (now-dead) bytecode region; repoint contents there.
-      buf.copy(result, chunk.bytecode.offset);
-      result.writeUInt32LE(chunk.bytecode.offset, chunk.entryOffset + 8);  // contents.offset
-      result.writeUInt32LE(buf.length, chunk.entryOffset + 12);           // contents.length
+  const area = [];
+  let cursor = areaStart;
+  for (let k = 0; k < regions.length; k++) {
+    const r = regions[k];
+    const bytes = edited.get(r.entryOffset) ?? bunData.subarray(r.offset, r.offset + r.length);
+    const sep = bunData.subarray(r.offset + r.length, k + 1 < regions.length ? regions[k + 1].offset : areaEnd);
+    result.writeUInt32LE(cursor, r.entryOffset + 8);         // contents.offset
+    result.writeUInt32LE(bytes.length, r.entryOffset + 12);  // contents.length
+    area.push(bytes, sep);
+    cursor += bytes.length + sep.length;
+  }
+  if (cursor > areaEnd) {
+    throw new Error(`Patched contents outgrow the contents area by ${cursor - areaEnd}B. Binary untouched.`);
+  }
+  Buffer.concat(area).copy(result, areaStart);
+  result.fill(0, cursor, areaEnd);
+  for (const r of regions) {
+    const off = result.readUInt32LE(r.entryOffset + 8), len = result.readUInt32LE(r.entryOffset + 12);
+    const want = edited.get(r.entryOffset) ?? bunData.subarray(r.offset, r.offset + r.length);
+    if (!result.subarray(off, off + len).equals(want)) {
+      throw new Error(`Contents re-layout verification failed at module entry ${r.entryOffset}. Binary untouched.`);
     }
-    result.writeUInt32LE(0, chunk.entryOffset + 24);                // bytecode.offset
-    result.writeUInt32LE(0, chunk.entryOffset + 28);                // bytecode.length
+  }
+  for (const entryOffset of edited.keys()) {
+    result.writeUInt32LE(0, entryOffset + 24);               // bytecode.offset
+    result.writeUInt32LE(0, entryOffset + 28);               // bytecode.length
   }
 
-  debug(`Multi-module repack: ${newContent.size} chunks edited of ${chunks.length}`);
+  debug(`Multi-module repack: ${newContent.size} chunks edited of ${chunks.length}, contents area ${areaEnd - cursor}B to spare`);
 
   const originalBinary = fs.readFileSync(binaryPath);
   if (format === 'overlay') {

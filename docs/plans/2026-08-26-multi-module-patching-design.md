@@ -136,6 +136,11 @@ when `chunks.length > 1`):
    into its own freed bytecode region** (repoint contents.offset; every grown
    chunk's bytecode region is 3–4× the space needed). Shrunk/equal chunks stay in
    place + pad. Section size stays constant.
+   **Superseded in 2.1.310:** the bytecode became one shared JSC cache (every
+   pointer runs to the same end address; the bytes cross-reference each other),
+   so writing anywhere in it crashes Bun at startup. `repackMultiModule` now
+   re-lays out the contiguous contents area instead: every module is rewritten in
+   order with its new size and repointed, and only the area's net size is bounded.
 4. **Metadata** is peeled off the concat front (it would grow chunk 0) and
    re-injected into the max-slack edited chunk (chunk 381, heavily shrunk by
    prompt-slim). `readPatchMetadata`/`--status` find it after re-extraction.

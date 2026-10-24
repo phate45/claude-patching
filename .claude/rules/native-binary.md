@@ -33,6 +33,11 @@ Patched JS **must be <= original size**. The data region uses overlapping string
 - LIEF's `elfBinary.write()` produces bloated output — bypass it entirely by splicing
   original ELF bytes + new overlay
 - Patches that add code eat into the budget. Prefer removing conditions over injecting logic.
+- Multi-chunk binaries (2.1.246+): `repackMultiModule()` re-lays out the contiguous
+  contents area, so a single chunk may grow; the budget is the area's net size, which
+  prompt-slim's savings cover. Never write into the bytecode data: since 2.1.310 it is one
+  shared JSC cache, and any overwrite crashes Bun at startup even for modules whose own
+  pointer is zeroed.
 
 ## Key Lessons
 
