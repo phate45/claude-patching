@@ -1,0 +1,1 @@
+ Reserve this tool for open-ended questions that span the codebase, or tasks that match an available agent type.
