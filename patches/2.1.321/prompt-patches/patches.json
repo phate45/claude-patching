@@ -282,6 +282,10 @@
       "file": "lean-bash-caveat"
     },
     {
+      "name": "lean: Bash git section (drop gh, commit/branch policy, attribution pointer)",
+      "file": "lean-bash-git"
+    },
+    {
       "name": "lean: # Corrections section",
       "file": "lean-corrections"
     },
