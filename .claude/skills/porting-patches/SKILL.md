@@ -131,6 +131,16 @@ A green `just check` also writes `patches/<v>/check.json`. Commit it with the po
 
 If the port also adds a new patch (a knob for a new upstream feature, etc.): write it under `patches/<newVersion>/js-patches/`, push an entry into `index.json` **and** add a one-line `notes[<id>]` there (the changelog scanner reads notes), then document it in `README.md` under the right section.
 
+## Retirement watch
+
+Patches that exist only because upstream lacks a feature. On each port, check whether that feature has shipped; once it has, the patch can go.
+
+- **`quiet-subagent-waits` → Yield.** The Yield tool (2.1.326+) lets a subagent block in-turn on its own background work, which is the upstream answer to the wait-cycle notifications this patch parks. It sits behind GrowthBook flag `tengu_dazzling_acorn` (default `null` = off; object value `{enabled, description}`) and is excluded under Code Mode. When the flag defaults on, or a changelog bullet announces Yield for subagents, verify a subagent's background wait goes quiet without the patch, then retire it.
+
+```bash
+jq '.["tengu_dazzling_acorn"] // .flags["tengu_dazzling_acorn"]' patches/<v>/flags.json   # default still "null"?
+```
+
 ## The leaked source caveat
 
 `src/` (gitignored) is a **~2.1.120 snapshot — ~90 versions stale**. Use it for *shape* only: file layout, function intent, which subsystem owns what. Every exact detail — gate conditions, env-var names, ternary shapes, minified structure — must be verified against `cli.js.native.pretty`/`.original`. The leaked ternary tells the story; the current bytes tell the truth.
