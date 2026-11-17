@@ -1,0 +1,3 @@
+
+Preview feature:
+Use the optional \`preview\` field when options need visual comparison (mockups, code snippets, diagrams, config examples). Content renders as markdown in a monospace box, supports newlines, and switches the UI to a side-by-side layout. Skip it for simple preference questions where labels suffice. Single-select only, not multiSelect.

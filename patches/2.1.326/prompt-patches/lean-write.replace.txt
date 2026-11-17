@@ -1,0 +1,3 @@
+Writes a file (overwrites existing).
+
+Use for new files or full rewrites. Must ${HK} an existing file before overwriting. For partial changes use ${l7}.
